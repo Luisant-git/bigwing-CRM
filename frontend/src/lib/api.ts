@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: import.meta.env.VITE_API_URL || "http://147.79.67.93:3005/api/v1",
   headers: { "Content-Type": "application/json" },
 });
 
@@ -46,7 +46,8 @@ api.interceptors.response.use(
 async function refreshAccessToken(): Promise<string> {
   const refreshToken = localStorage.getItem("refreshToken");
   if (!refreshToken) throw new Error("No refresh token");
-  const { data } = await axios.post("/api/v1/auth/refresh", { refreshToken });
+  const baseURL = import.meta.env.VITE_API_URL || "http://147.79.67.93:3005/api/v1";
+  const { data } = await axios.post(`${baseURL}/auth/refresh`, { refreshToken });
   const { accessToken, refreshToken: newRefresh } = data.data;
   localStorage.setItem("accessToken", accessToken);
   localStorage.setItem("refreshToken", newRefresh);
