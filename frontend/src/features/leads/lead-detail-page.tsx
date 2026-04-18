@@ -630,7 +630,6 @@ function PipelineProgress({ currentStage }: { currentStage: string }) {
                   }`}
                   style={{
                     backgroundColor: isCompleted ? stage.color : undefined,
-                    ringColor: isCurrent ? stage.color : undefined,
                   }}
                 >
                   {isCompleted && !isCurrent ? "✓" : i + 1}
