@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Design system colors from UX screens */
+  --color-navy: #1F3864;
+  --color-navy-light: #273B57;
+  --color-brand-blue: #2E75B6;
+  --color-brand-blue-hover: #245f96;
+  --color-accent-orange: #E8792F;
+  --color-page-bg: #F5F7FA;
+  --color-card-border: #E8EBF0;
+
+  --color-primary-50: #EBF2FA;
+  --color-primary-100: #D6E4F5;
+  --color-primary-200: #ADC9EB;
+  --color-primary-300: #85AEE0;
+  --color-primary-400: #5C93D6;
+  --color-primary-500: #2E75B6;
+  --color-primary-600: #255E92;
+  --color-primary-700: #1C476D;
+  --color-primary-800: #133049;
+  --color-primary-900: #1F3864;
+
+  --color-honda-red: #cc0000;
+}

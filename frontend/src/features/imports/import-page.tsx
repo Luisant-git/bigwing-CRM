@@ -1,0 +1,283 @@
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, RotateCw } from "lucide-react";
+import toast from "react-hot-toast";
+import api from "@/lib/api";
+import { Alert, Breadcrumb, ConfirmModal, StripedProgress } from "@/components/ui";
+
+type Step = "upload" | "preview" | "importing" | "done";
+
+export default function ImportPage() {
+  const [step, setStep] = useState<Step>("upload");
+  const [batchId, setBatchId] = useState<number | null>(null);
+  const [preview, setPreview] = useState<any>(null);
+  const [result, setResult] = useState<any>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const uploadMut = useMutation({
+    mutationFn: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return api.post("/import/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+    },
+    onSuccess: (res) => {
+      const data = res.data.data;
+      setBatchId(data.batchId);
+      toast.success(`File uploaded successfully`);
+      previewMut.mutate(data.batchId);
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Upload failed"),
+  });
+
+  const previewMut = useMutation({
+    mutationFn: (id: number) => api.post(`/import/${id}/preview`),
+    onSuccess: (res) => {
+      setPreview(res.data.data);
+      setStep("preview");
+    },
+  });
+
+  const commitMut = useMutation({
+    mutationFn: (id: number) => api.post(`/import/${id}/commit`),
+    onSuccess: (res) => {
+      setResult(res.data.data);
+      setProgress(100);
+      setTimeout(() => setStep("done"), 500);
+      toast.success("Import completed successfully!");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error?.message || "Import failed");
+      setStep("preview");
+    },
+  });
+
+  // Simulated progress during commit (real backend is sync so we fake the bar)
+  useEffect(() => {
+    if (step !== "importing") return;
+    setProgress(0);
+    const interval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 90) return 90;
+        return p + Math.random() * 15;
+      });
+    }, 250);
+    return () => clearInterval(interval);
+  }, [step]);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadMut.mutate(file);
+  };
+
+  const confirmImport = () => {
+    setShowConfirm(false);
+    setStep("importing");
+    commitMut.mutate(batchId!);
+  };
+
+  const reset = () => {
+    setStep("upload");
+    setPreview(null);
+    setResult(null);
+    setBatchId(null);
+    setProgress(0);
+  };
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Data Import", icon: Upload }]} />
+      <h1 className="mb-6 text-2xl font-bold text-[#1F3864]">Data Import</h1>
+
+      {/* Stepper */}
+      <div className="mb-6 flex items-center">
+        {[
+          { step: "upload", label: "Upload" },
+          { step: "preview", label: "Preview" },
+          { step: "importing", label: "Import" },
+          { step: "done", label: "Complete" },
+        ].map((s, i, arr) => {
+          const stepIdx = ["upload", "preview", "importing", "done"].indexOf(step);
+          const thisIdx = ["upload", "preview", "importing", "done"].indexOf(s.step);
+          const completed = thisIdx < stepIdx;
+          const current = thisIdx === stepIdx;
+          return (
+            <div key={s.step} className="flex flex-1 items-center">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                    current ? "bg-[#2E75B6] text-white shadow-md" :
+                    completed ? "bg-[#27AE60] text-white" :
+                    "bg-gray-200 text-gray-400"
+                  }`}
+                >
+                  {completed ? "✓" : i + 1}
+                </div>
+                <p className={`mt-1 text-[11px] font-medium uppercase tracking-wider ${current ? "text-[#2E75B6]" : completed ? "text-[#27AE60]" : "text-gray-400"}`}>{s.label}</p>
+              </div>
+              {i < arr.length - 1 && (
+                <div className={`mx-2 h-[2px] flex-1 ${completed ? "bg-[#27AE60]" : "bg-gray-200"}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Upload step */}
+      {step === "upload" && (
+        <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-12 transition-colors hover:border-[#2E75B6]">
+          <Upload size={48} className="mb-4 text-gray-300" />
+          <p className="mb-2 text-lg font-semibold text-[#1F3864]">
+            Upload Excel or CSV file
+          </p>
+          <p className="mb-6 text-sm text-gray-400">
+            Supports .xlsx, .xls, .csv — maximum 25 MB
+          </p>
+          <label className="cursor-pointer rounded-lg bg-[#2E75B6] px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#245f96] hover:shadow-lg transition-all">
+            {uploadMut.isPending ? "Uploading..." : "Choose File"}
+            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" disabled={uploadMut.isPending} />
+          </label>
+
+          {uploadMut.isPending && (
+            <div className="mt-6 w-full max-w-sm">
+              <StripedProgress percent={50} label="Uploading file..." />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Preview step */}
+      {step === "preview" && preview && (
+        <div className="space-y-4">
+          <Alert type={preview.errorRows > 0 ? "warning" : "success"}>
+            <strong>{preview.validRows} valid rows</strong> ready to import.
+            {preview.errorRows > 0 && <> {preview.errorRows} rows have errors and will be skipped.</>}
+          </Alert>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Stat icon={<FileSpreadsheet size={20} />} label="Total Rows" value={preview.totalRows} color="text-[#2E75B6]" />
+            <Stat icon={<CheckCircle size={20} />} label="Valid" value={preview.validRows} color="text-[#27AE60]" />
+            <Stat icon={<AlertCircle size={20} />} label="Errors" value={preview.errorRows} color="text-[#EB5757]" />
+          </div>
+
+          <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-black/5">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b bg-[#F8FAFC] uppercase text-gray-500">
+                <tr>
+                  <th className="px-3 py-2">Row</th>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Mobile</th>
+                  <th className="px-3 py-2">Model</th>
+                  <th className="px-3 py-2">Stage</th>
+                  <th className="px-3 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {preview.preview.map((r: any) => (
+                  <tr key={r.rowNum} className={r.errors.length > 0 ? "bg-red-50" : ""}>
+                    <td className="px-3 py-2 font-medium">{r.rowNum}</td>
+                    <td className="px-3 py-2">{r.data.firstName} {r.data.lastName ?? ""}</td>
+                    <td className="px-3 py-2">{r.data.mobile}</td>
+                    <td className="px-3 py-2">{r.data.modelName ?? "—"}</td>
+                    <td className="px-3 py-2">{r.data.stage}</td>
+                    <td className="px-3 py-2">
+                      {r.errors.length > 0
+                        ? <span className="text-[#EB5757] font-medium">{r.errors.map((e: any) => e.error).join(", ")}</span>
+                        : <span className="text-[#27AE60] font-medium">✓ OK</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="flex gap-3">
+            <button onClick={reset} className="rounded-lg border px-5 py-2 text-sm font-medium hover:bg-gray-50">Cancel</button>
+            <button
+              onClick={() => setShowConfirm(true)}
+              disabled={preview.validRows === 0}
+              className="rounded-lg bg-[#27AE60] px-6 py-2 text-sm font-semibold text-white shadow hover:bg-[#219150] disabled:opacity-50"
+            >
+              Import {preview.validRows} Valid Rows
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Importing step — striped progress */}
+      {step === "importing" && (
+        <div className="rounded-xl bg-white p-10 shadow-sm ring-1 ring-black/5">
+          <div className="mx-auto max-w-md text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 mx-auto">
+              <RotateCw size={28} className="animate-spin text-[#2E75B6]" />
+            </div>
+            <h2 className="mb-1 text-xl font-bold text-[#1F3864]">Importing Data</h2>
+            <p className="mb-6 text-sm text-gray-500">Please wait while we process your file...</p>
+            <StripedProgress percent={Math.round(progress)} label="Importing records into the database..." />
+          </div>
+        </div>
+      )}
+
+      {/* Done step */}
+      {step === "done" && result && (
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-black/5">
+          <CheckCircle size={48} className="mx-auto mb-4 text-[#27AE60]" />
+          <h2 className="mb-2 text-2xl font-bold text-[#1F3864]">Import Complete!</h2>
+
+          <div className="mx-auto my-6 grid max-w-md grid-cols-3 gap-3">
+            <div className="rounded-lg bg-blue-50 p-3">
+              <p className="text-xs text-[#2E75B6]">Total</p>
+              <p className="text-2xl font-bold text-[#2E75B6]">{result.totalRows}</p>
+            </div>
+            <div className="rounded-lg bg-green-50 p-3">
+              <p className="text-xs text-[#27AE60]">Imported</p>
+              <p className="text-2xl font-bold text-[#27AE60]">{result.successRows}</p>
+            </div>
+            <div className="rounded-lg bg-red-50 p-3">
+              <p className="text-xs text-[#EB5757]">Errors</p>
+              <p className="text-2xl font-bold text-[#EB5757]">{result.errorRows}</p>
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-3">
+            {result.errorRows > 0 && (
+              <a
+                href={`/api/v1/import/${batchId}/errors.xlsx`}
+                className="flex items-center gap-1.5 rounded-lg border border-[#EB5757] px-4 py-2 text-sm font-medium text-[#EB5757] hover:bg-red-50"
+              >
+                <Download size={14} /> Download Error Report
+              </a>
+            )}
+            <button onClick={reset} className="rounded-lg bg-[#2E75B6] px-6 py-2 text-sm font-semibold text-white hover:bg-[#245f96]">
+              Import Another File
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm modal */}
+      <ConfirmModal
+        open={showConfirm}
+        title="Confirm Import"
+        message={`Are you sure you want to import ${preview?.validRows ?? 0} records into the database? This action cannot be undone.`}
+        confirmLabel="Yes, Import"
+        cancelLabel="Review Again"
+        variant="warning"
+        onConfirm={confirmImport}
+        onCancel={() => setShowConfirm(false)}
+      />
+    </div>
+  );
+}
+
+function Stat({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+      <div className={color}>{icon}</div>
+      <div>
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-2xl font-bold">{value}</p>
+      </div>
+    </div>
+  );
+}

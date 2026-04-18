@@ -1,0 +1,30 @@
+{
+  "name": "bigwing-crm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bigwing CRM — Honda two-wheeler premium dealership CRM",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "backend/db",
+    "shared"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev:api": "npm run dev --workspace=@bigwing/api",
+    "dev:web": "npm run dev --workspace=@bigwing/web",
+    "dev": "npm run dev:api & npm run dev:web",
+    "build:shared": "npm run build --workspace=@bigwing/shared",
+    "build:db": "npm run build --workspace=@bigwing/db",
+    "build:api": "npm run build --workspace=@bigwing/api",
+    "build:web": "npm run build --workspace=@bigwing/web",
+    "build": "npm run build:shared && npm run build:db && npm run build:api && npm run build:web",
+    "lint": "npm run lint --workspaces",
+    "test": "npm run test --workspaces",
+    "db:migrate": "npm run migrate --workspace=@bigwing/db",
+    "db:seed": "npm run seed --workspace=@bigwing/db",
+    "db:studio": "npm run studio --workspace=@bigwing/db"
+  }
+}

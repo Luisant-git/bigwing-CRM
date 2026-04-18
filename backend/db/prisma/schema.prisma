@@ -1,0 +1,529 @@
+// ─────────────────────────────────────────────────────────────────
+// Bigwing CRM — Prisma Schema
+// PostgreSQL schemas: auth, core, master, app
+// ─────────────────────────────────────────────────────────────────
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth", "core", "master", "app"]
+}
+
+// Load .env from project root
+// Run with: npx dotenv -e ../../.env -- prisma migrate dev
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTH SCHEMA
+// ═══════════════════════════════════════════════════════════════════
+
+model User {
+  id        BigInt   @id @default(autoincrement())
+  email     String   @unique @db.VarChar(120)
+  password  String   @db.VarChar(255)
+  fullName  String   @map("full_name") @db.VarChar(160)
+  mobile    String?  @db.VarChar(15)
+  gender    String?  @db.VarChar(10)  // MALE / FEMALE / OTHER
+  avatarUrl String?  @map("avatar_url") @db.VarChar(500)
+  isActive  Boolean  @default(true) @map("is_active")
+  lastLogin DateTime? @map("last_login")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  createdBy BigInt?  @map("created_by")
+  updatedBy BigInt?  @map("updated_by")
+
+  // Relations
+  userRoles     UserRole[]
+  refreshTokens RefreshToken[]
+  assignedLeads Lead[]         @relation("AssignedTo")
+  followups     LeadFollowup[] @relation("FollowupCreatedBy")
+  auditLogs     AuditLog[]     @relation("AuditUser")
+
+  @@map("user")
+  @@schema("auth")
+}
+
+model Role {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique @db.VarChar(40)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  userRoles UserRole[]
+
+  @@map("role")
+  @@schema("auth")
+}
+
+model UserRole {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  roleId    BigInt   @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  role Role @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, roleId])
+  @@map("user_role")
+  @@schema("auth")
+}
+
+model RefreshToken {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("refresh_token")
+  @@schema("auth")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MASTER SCHEMA (Lookup / Reference tables)
+// All master tables share: id, name, display_order, is_active, timestamps
+// ═══════════════════════════════════════════════════════════════════
+
+model EnquirySource {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  leads Lead[]
+
+  @@map("enquiry_source")
+  @@schema("master")
+}
+
+model EnquiryTypeLookup {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  leads Lead[]
+
+  @@map("enquiry_type")
+  @@schema("master")
+}
+
+model InterestLevelLookup {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("interest_level")
+  @@schema("master")
+}
+
+model ClosureReason {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  leads Lead[]
+
+  @@map("closure_reason")
+  @@schema("master")
+}
+
+model VehicleModel {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  segment      String?  @db.VarChar(40)
+  bodyType     String?  @map("body_type") @db.VarChar(40)
+  obdType      String?  @map("obd_type") @db.VarChar(40)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  variants VehicleVariant[]
+  leads    Lead[]
+
+  @@map("vehicle_model")
+  @@schema("master")
+}
+
+model VehicleVariant {
+  id           BigInt   @id @default(autoincrement())
+  modelId      BigInt   @map("model_id")
+  name         String   @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  model VehicleModel @relation(fields: [modelId], references: [id])
+  leads Lead[]
+
+  @@unique([modelId, name])
+  @@map("vehicle_variant")
+  @@schema("master")
+}
+
+model VehicleColour {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  leads Lead[]
+
+  @@map("vehicle_colour")
+  @@schema("master")
+}
+
+model ReferredBranch {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @unique @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("referred_branch")
+  @@schema("master")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CORE SCHEMA (Transactional business data)
+// ═══════════════════════════════════════════════════════════════════
+
+model Customer {
+  id           BigInt       @id @default(autoincrement())
+  firstName    String       @map("first_name") @db.VarChar(80)
+  lastName     String?      @map("last_name") @db.VarChar(80)
+  mobile       String       @unique @db.VarChar(15)
+  altMobile    String?      @map("alt_mobile") @db.VarChar(15)
+  email        String?      @db.VarChar(120)
+  dob          DateTime?    @db.Date
+  anniversary  DateTime?    @db.Date
+  location     String?      @db.VarChar(120)
+  customerType String?      @map("customer_type") @db.VarChar(40)
+  accountType  String?      @map("account_type") @db.VarChar(40)
+  accountName  String?      @map("account_name") @db.VarChar(160)
+  isDeleted    Boolean      @default(false) @map("is_deleted")
+  rowVersion   Int          @default(1) @map("row_version")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  createdBy    BigInt?      @map("created_by")
+  updatedBy    BigInt?      @map("updated_by")
+
+  leads    Lead[]
+  contacts CustomerContact[]
+
+  @@map("customer")
+  @@schema("core")
+}
+
+model CustomerContact {
+  id         BigInt   @id @default(autoincrement())
+  customerId BigInt   @map("customer_id")
+  type       String   @db.VarChar(40) // MOBILE, EMAIL, WHATSAPP
+  value      String   @db.VarChar(160)
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@map("customer_contact")
+  @@schema("core")
+}
+
+model Lead {
+  id                BigInt    @id @default(autoincrement())
+  enquiryNo         String    @unique @map("enquiry_no") @db.VarChar(40)
+  dmsEnquiryNo      String?   @unique @map("dms_enquiry_no") @db.VarChar(40)
+  customerId        BigInt    @map("customer_id")
+  channel           String    @db.VarChar(20)
+  sourceId          BigInt    @map("source_id")
+  enquiryTypeId     BigInt    @map("enquiry_type_id")
+  purchaseType      String?   @map("purchase_type") @db.VarChar(20)
+  exchangeFlag      Boolean   @default(false) @map("exchange_flag")
+  modelId           BigInt?   @map("model_id")
+  variantId         BigInt?   @map("variant_id")
+  colourId          BigInt?   @map("colour_id")
+  assignedTo        BigInt?   @map("assigned_to")
+  stage             String    @default("NOT_CONTACTED") @db.VarChar(30)
+  interestLevel     String?   @map("interest_level") @db.VarChar(10)
+  closureReasonId   BigInt?   @map("closure_reason_id")
+  testRideFlag      Boolean   @default(false) @map("test_ride_flag")
+  nextFollowupAt    DateTime? @map("next_followup_at")
+  enquiryDate       DateTime  @map("enquiry_date") @db.Date
+  closedAt          DateTime? @map("closed_at")
+  remark            String?   @db.Text
+  referredFromBranch String?  @map("referred_from_branch") @db.VarChar(80)
+  // Service enquiry attributes (channel=SERVICE)
+  typeOfService      String?  @map("type_of_service") @db.VarChar(60)
+  pickupDropFlag     Boolean  @default(false) @map("pickup_drop_flag")
+  expectedServiceDate DateTime? @map("expected_service_date") @db.Date
+  isDeleted         Boolean   @default(false) @map("is_deleted")
+  rowVersion        Int       @default(1) @map("row_version")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  createdBy         BigInt?   @map("created_by")
+  updatedBy         BigInt?   @map("updated_by")
+
+  // Relations
+  customer      Customer          @relation(fields: [customerId], references: [id])
+  source        EnquirySource     @relation(fields: [sourceId], references: [id])
+  enquiryType   EnquiryTypeLookup @relation(fields: [enquiryTypeId], references: [id])
+  model         VehicleModel?     @relation(fields: [modelId], references: [id])
+  variant       VehicleVariant?   @relation(fields: [variantId], references: [id])
+  colour        VehicleColour?    @relation(fields: [colourId], references: [id])
+  closureReason ClosureReason?    @relation(fields: [closureReasonId], references: [id])
+  assignedUser  User?             @relation("AssignedTo", fields: [assignedTo], references: [id])
+  followups     LeadFollowup[]
+  stageHistory  LeadStageHistory[]
+
+  // Indexes
+  @@index([stage, assignedTo], map: "ix_lead_stage_assigned")
+  @@index([nextFollowupAt], map: "ix_lead_next_followup")
+  @@index([enquiryDate(sort: Desc)], map: "ix_lead_enquiry_date")
+  @@index([customerId], map: "ix_lead_customer")
+  @@index([referredFromBranch], map: "ix_lead_referred_branch")
+
+  @@map("lead")
+  @@schema("core")
+}
+
+model LeadFollowup {
+  id           BigInt    @id @default(autoincrement())
+  leadId       BigInt    @map("lead_id")
+  seqNo        Int       @map("seq_no") @db.SmallInt
+  followupDate DateTime  @map("followup_date")
+  channel      String?   @db.VarChar(20)
+  remark       String?   @db.Text
+  outcome      String?   @db.VarChar(40)
+  nextActionAt DateTime? @map("next_action_at")
+  createdBy    BigInt    @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  lead    Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  creator User @relation("FollowupCreatedBy", fields: [createdBy], references: [id])
+
+  @@index([leadId, seqNo], map: "ix_followup_lead_seq")
+  @@map("lead_followup")
+  @@schema("core")
+}
+
+model LeadStageHistory {
+  id        BigInt   @id @default(autoincrement())
+  leadId    BigInt   @map("lead_id")
+  fromStage String   @map("from_stage") @db.VarChar(30)
+  toStage   String   @map("to_stage") @db.VarChar(30)
+  remark    String?  @db.Text
+  changedBy BigInt   @map("changed_by")
+  changedAt DateTime @default(now()) @map("changed_at")
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@index([leadId, changedAt(sort: Desc)])
+  @@map("lead_stage_history")
+  @@schema("core")
+}
+
+model Quotation {
+  id           BigInt   @id @default(autoincrement())
+  leadId       BigInt   @map("lead_id")
+  quotationNo  String   @unique @map("quotation_no") @db.VarChar(40)
+  variantId    BigInt   @map("variant_id")
+  colourId     BigInt?  @map("colour_id")
+  exShowroom   Decimal  @map("ex_showroom") @db.Decimal(12, 2)
+  onRoad       Decimal  @map("on_road") @db.Decimal(12, 2)
+  discount     Decimal  @default(0) @db.Decimal(12, 2)
+  netAmount    Decimal  @map("net_amount") @db.Decimal(12, 2)
+  validTill    DateTime @map("valid_till") @db.Date
+  remark       String?  @db.Text
+  isDeleted    Boolean  @default(false) @map("is_deleted")
+  rowVersion   Int      @default(1) @map("row_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    BigInt?  @map("created_by")
+  updatedBy    BigInt?  @map("updated_by")
+
+  @@map("quotation")
+  @@schema("core")
+}
+
+model Booking {
+  id            BigInt   @id @default(autoincrement())
+  leadId        BigInt   @map("lead_id")
+  bookingNo     String   @unique @map("booking_no") @db.VarChar(40)
+  bookingAmount Decimal  @map("booking_amount") @db.Decimal(12, 2)
+  bookingDate   DateTime @map("booking_date") @db.Date
+  remark        String?  @db.Text
+  isDeleted     Boolean  @default(false) @map("is_deleted")
+  rowVersion    Int      @default(1) @map("row_version")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdBy     BigInt?  @map("created_by")
+  updatedBy     BigInt?  @map("updated_by")
+
+  @@map("booking")
+  @@schema("core")
+}
+
+model Invoice {
+  id           BigInt   @id @default(autoincrement())
+  leadId       BigInt   @map("lead_id")
+  invoiceNo    String   @unique @map("invoice_no") @db.VarChar(40)
+  invoiceDate  DateTime @map("invoice_date") @db.Date
+  totalAmount  Decimal  @map("total_amount") @db.Decimal(12, 2)
+  remark       String?  @db.Text
+  isDeleted    Boolean  @default(false) @map("is_deleted")
+  rowVersion   Int      @default(1) @map("row_version")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  createdBy    BigInt?  @map("created_by")
+  updatedBy    BigInt?  @map("updated_by")
+
+  @@map("invoice")
+  @@schema("core")
+}
+
+model Delivery {
+  id           BigInt   @id @default(autoincrement())
+  leadId       BigInt   @map("lead_id")
+  deliveryDate DateTime @map("delivery_date") @db.Date
+  remark       String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  createdBy    BigInt?  @map("created_by")
+
+  @@map("delivery")
+  @@schema("core")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// APP SCHEMA (System / Operational)
+// ═══════════════════════════════════════════════════════════════════
+
+model Task {
+  id          BigInt    @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  assignedTo  BigInt    @map("assigned_to")
+  leadId      BigInt?   @map("lead_id")
+  dueAt       DateTime? @map("due_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdBy   BigInt?   @map("created_by")
+
+  @@map("task")
+  @@schema("app")
+}
+
+model Notification {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  type      String    @db.VarChar(40)
+  title     String    @db.VarChar(255)
+  body      String?   @db.Text
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, readAt])
+  @@map("notification")
+  @@schema("app")
+}
+
+model AuditLog {
+  id         BigInt   @id @default(autoincrement())
+  userId     BigInt   @map("user_id")
+  entityType String   @map("entity_type") @db.VarChar(40)
+  entityId   BigInt   @map("entity_id")
+  action     String   @db.VarChar(20) // CREATE, UPDATE, DELETE
+  changes    Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User @relation("AuditUser", fields: [userId], references: [id])
+
+  @@index([entityType, entityId, createdAt(sort: Desc)], map: "ix_audit_entity_date")
+  @@map("audit_log")
+  @@schema("app")
+}
+
+model ImportBatch {
+  id           BigInt    @id @default(autoincrement())
+  fileName     String    @map("file_name") @db.VarChar(255)
+  fileHash     String    @map("file_hash") @db.VarChar(64)
+  totalRows    Int       @default(0) @map("total_rows")
+  successRows  Int       @default(0) @map("success_rows")
+  errorRows    Int       @default(0) @map("error_rows")
+  skippedRows  Int       @default(0) @map("skipped_rows")
+  status       String    @default("PENDING") @db.VarChar(20) // PENDING, PROCESSING, COMPLETED, FAILED
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  createdBy    BigInt    @map("created_by")
+
+  errors ImportRowError[]
+
+  @@map("import_batch")
+  @@schema("app")
+}
+
+model ImportRowError {
+  id        BigInt   @id @default(autoincrement())
+  batchId   BigInt   @map("batch_id")
+  rowNumber Int      @map("row_number")
+  column    String?  @db.VarChar(80)
+  value     String?  @db.VarChar(500)
+  error     String   @db.VarChar(500)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  batch ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@map("import_row_error")
+  @@schema("app")
+}
+
+model ReportSnapshot {
+  id        BigInt   @id @default(autoincrement())
+  reportKey String   @map("report_key") @db.VarChar(60)
+  data      Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([reportKey, createdAt(sort: Desc)])
+  @@map("report_snapshot")
+  @@schema("app")
+}
+
+model AppSetting {
+  id    BigInt @id @default(autoincrement())
+  key   String @unique @db.VarChar(120)
+  value String @db.Text
+
+  @@map("app_setting")
+  @@schema("app")
+}
