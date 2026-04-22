@@ -88,17 +88,11 @@ export class ImportService {
 
   async upload(filePath: string, fileName: string, createdBy: bigint) {
     const fileBuffer = readFileSync(filePath);
+    // Hash is kept on the batch row for traceability (which file produced which batch),
+    // but we no longer block re-uploads of the same file — the Hirise Honda DMS export
+    // is run daily and operators routinely import the latest dump. Row-level dedupe by
+    // enquiryNo (see importRow) guarantees we won't create duplicate leads.
     const fileHash = createHash("sha256").update(fileBuffer).digest("hex");
-
-    // Check duplicate file
-    const existing = await importRepository.findBatchByHash(fileHash);
-    if (existing) {
-      throw new AppError(
-        409,
-        "DUPLICATE_FILE",
-        `This file was already uploaded (batch #${Number(existing.id)})`
-      );
-    }
 
     const workbook = XLSX.read(fileBuffer, { type: "buffer" });
     const sheets = workbook.SheetNames;
@@ -207,7 +201,7 @@ export class ImportService {
         if (channelOverride) row.mapped.__channelOverride = channelOverride;
 
         try {
-          await this.importRow(
+          const result = await this.importRow(
             row.mapped,
             batch.createdBy,
             sourceMap,
@@ -217,7 +211,11 @@ export class ImportService {
             colourMap,
             userMap
           );
-          successRows++;
+          if (result === "skipped") {
+            skippedRows++;
+          } else {
+            successRows++;
+          }
         } catch (err: any) {
           errorRows++;
           rowErrors.push({
@@ -236,6 +234,7 @@ export class ImportService {
         totalRows: parsed.length,
         successRows,
         errorRows,
+        skippedRows,
       });
     }
 
@@ -552,11 +551,13 @@ export class ImportService {
         ) ?? null
       : null;
 
-    // Dedupe lead
+    // Dedupe lead. When the Hirise Honda export is re-imported (daily habit) the same
+    // enquiryNo rows will appear again — skip them so we don't create duplicates, and
+    // signal "skipped" to the caller for accurate success/skip counts.
     let enquiryNo = mapped.enquiryNo;
     if (enquiryNo) {
       const existing = await importRepository.findLeadByEnquiryNo(enquiryNo);
-      if (existing) return; // Skip duplicate
+      if (existing) return "skipped" as const;
     } else {
       // Generate new enquiry number
       const now = mapped.enquiryDate ?? new Date();

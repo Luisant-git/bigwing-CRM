@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, RotateCw } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, RotateCw, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { Alert, Breadcrumb, ConfirmModal, StripedProgress } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth";
+
+// The Truncate button is a dev-only maintenance/testing helper. It is shown
+// exclusively for this account; the backend enforces the same check.
+const SENIOR_DEVELOPER_EMAIL = "seniordeveloper@bigwing.in";
 
 type Step = "upload" | "preview" | "importing" | "done";
 
@@ -14,6 +19,30 @@ export default function ImportPage() {
   const [result, setResult] = useState<any>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [showTruncate, setShowTruncate] = useState(false);
+  const [truncateInput, setTruncateInput] = useState("");
+
+  const qc = useQueryClient();
+  const currentUser = useAuthStore((s) => s.user);
+  const isSeniorDeveloper = currentUser?.email === SENIOR_DEVELOPER_EMAIL;
+
+  const truncateMut = useMutation({
+    mutationFn: () => api.post("/admin/truncate", { confirm: "TRUNCATE" }),
+    onSuccess: (res) => {
+      const d = res.data.data.deleted;
+      toast.success(
+        `All data truncated — ${d.leads} leads, ${d.customers} customers, ${d.followups} follow-ups, ${d.batches} batches removed`,
+        { duration: 6000 }
+      );
+      // Every list/detail view is now stale; blow away the query cache
+      qc.clear();
+      setShowTruncate(false);
+      setTruncateInput("");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error?.message || "Truncate failed");
+    },
+  });
 
   const uploadMut = useMutation({
     mutationFn: (file: File) => {
@@ -87,7 +116,18 @@ export default function ImportPage() {
   return (
     <div className="mx-auto max-w-4xl">
       <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Data Import", icon: Upload }]} />
-      <h1 className="mb-6 text-2xl font-bold text-[#1F3864]">Data Import</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-[#1F3864]">Data Import</h1>
+        {isSeniorDeveloper && (
+          <button
+            onClick={() => setShowTruncate(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-sm font-semibold text-[#EB5757] hover:bg-red-100 transition-colors"
+            title="Dev-only: wipe all transactional data"
+          >
+            <Trash2 size={14} /> Truncate All Data
+          </button>
+        )}
+      </div>
 
       {/* Stepper */}
       <div className="mb-6 flex items-center">
@@ -266,6 +306,56 @@ export default function ImportPage() {
         onConfirm={confirmImport}
         onCancel={() => setShowConfirm(false)}
       />
+
+      {/* Truncate confirmation — senior-developer only */}
+      {showTruncate && isSeniorDeveloper && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <div className="mb-3 flex items-center gap-2 text-[#EB5757]">
+              <Trash2 size={20} />
+              <h3 className="text-lg font-semibold">Truncate All Data</h3>
+            </div>
+            <p className="text-sm text-gray-600">
+              This permanently deletes <strong>all</strong> leads, customers, follow-ups, stage
+              history, quotations, bookings, invoices, deliveries, tasks, notifications, and
+              import batches.
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              Users, roles, and lookup catalogs (models, variants, colours, sources, branches)
+              are preserved so the app stays usable.
+            </p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Type <span className="font-mono text-[#EB5757]">TRUNCATE</span> to confirm
+            </p>
+            <input
+              autoFocus
+              value={truncateInput}
+              onChange={(e) => setTruncateInput(e.target.value)}
+              placeholder="TRUNCATE"
+              className="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-mono focus:border-[#EB5757] focus:outline-none focus:ring-2 focus:ring-red-100"
+            />
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowTruncate(false);
+                  setTruncateInput("");
+                }}
+                disabled={truncateMut.isPending}
+                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => truncateMut.mutate()}
+                disabled={truncateInput !== "TRUNCATE" || truncateMut.isPending}
+                className="rounded-lg bg-[#EB5757] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#d14545] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {truncateMut.isPending ? "Truncating..." : "OK, Truncate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

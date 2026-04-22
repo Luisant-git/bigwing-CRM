@@ -84,4 +84,80 @@ router.post("/purge", rbac(["SUPER_ADMIN"]), async (req, res, next) => {
   }
 });
 
+/**
+ * POST /admin/truncate
+ * DEV-ONLY maintenance/testing button surfaced on the Import page.
+ * Same blast radius as /purge (business data only — preserves users, roles,
+ * lookups, settings), but gated on a specific email rather than a role so that
+ * regular SUPER_ADMINs can't trigger it from the UI by accident.
+ *
+ * Gate: req.user.email must be exactly `seniordeveloper@bigwing.in`.
+ * Body: { confirm: "TRUNCATE" } — the UI requires the operator to type this.
+ */
+const SENIOR_DEVELOPER_EMAIL = "seniordeveloper@bigwing.in";
+
+router.post("/truncate", async (req, res, next) => {
+  try {
+    if (req.user?.email !== SENIOR_DEVELOPER_EMAIL) {
+      throw new AppError(403, "FORBIDDEN", "Truncate is restricted to the senior developer account");
+    }
+    if (req.body?.confirm !== "TRUNCATE") {
+      throw new AppError(
+        400,
+        "CONFIRMATION_REQUIRED",
+        'Set body { "confirm": "TRUNCATE" } to proceed'
+      );
+    }
+
+    const userId = BigInt(req.user!.userId);
+
+    const before = {
+      leads: await prisma.lead.count(),
+      customers: await prisma.customer.count(),
+      followups: await prisma.leadFollowup.count(),
+      batches: await prisma.importBatch.count(),
+    };
+
+    await prisma.$transaction([
+      prisma.delivery.deleteMany({}),
+      prisma.invoice.deleteMany({}),
+      prisma.booking.deleteMany({}),
+      prisma.quotation.deleteMany({}),
+      prisma.leadStageHistory.deleteMany({}),
+      prisma.leadFollowup.deleteMany({}),
+      prisma.lead.deleteMany({}),
+      prisma.customerContact.deleteMany({}),
+      prisma.customer.deleteMany({}),
+      prisma.auditLog.deleteMany({
+        where: { entityType: { in: ["lead", "customer"] } },
+      }),
+      prisma.task.deleteMany({}),
+      prisma.notification.deleteMany({}),
+      prisma.importRowError.deleteMany({}),
+      prisma.importBatch.deleteMany({}),
+    ]);
+
+    await prisma.auditLog.create({
+      data: {
+        userId,
+        entityType: "system",
+        entityId: BigInt(0),
+        action: "DELETE",
+        changes: { action: "TRUNCATE_ALL", by: SENIOR_DEVELOPER_EMAIL, before },
+        ipAddress: req.ip,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        message: "All business data truncated",
+        deleted: before,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export { router as adminRoutes };

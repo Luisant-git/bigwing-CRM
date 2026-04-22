@@ -26,7 +26,7 @@ export default function LeadFormPage() {
     firstName: "", lastName: "", mobile: "",
     channel: "WALKIN", sourceId: "", enquiryTypeId: "", modelId: "",
     variantId: "", colourId: "", assignedTo: "", interestLevel: "",
-    purchaseType: "", exchangeFlag: false, testRideFlag: false,
+    purchaseType: "", exchangeFlag: false,
     enquiryDate: new Date().toISOString().split("T")[0],
     remark: "",
   });
@@ -57,7 +57,7 @@ export default function LeadFormPage() {
       interestLevel: form.interestLevel || undefined,
       purchaseType: form.purchaseType || undefined,
       exchangeFlag: form.exchangeFlag,
-      testRideFlag: form.testRideFlag,
+      testRideFlag: false,
       enquiryDate: form.enquiryDate,
       remark: form.remark || undefined,
     });
@@ -99,6 +99,31 @@ export default function LeadFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Vehicle Interest — shown first so the sales rep locks in the product of interest up front */}
+        <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <SelectField
+              label="Model"
+              value={form.modelId}
+              onChange={(v) => { set("modelId", v); setSelectedModel(v); set("variantId", ""); }}
+              options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))}
+            />
+            <SelectField
+              label="Variant"
+              value={form.variantId}
+              onChange={(v) => set("variantId", v)}
+              options={(variants ?? []).map((v: any) => ({ value: String(v.id), label: v.name }))}
+              disabled={!selectedModel}
+            />
+            <SelectField
+              label="Colour"
+              value={form.colourId}
+              onChange={(v) => set("colourId", v)}
+              options={(colours ?? []).map((c: any) => ({ value: String(c.id), label: c.name }))}
+            />
+          </div>
+        </Section>
+
         {/* Customer Info */}
         <Section icon={UserIcon} title="Customer Information" subtitle="Who is the enquiry for" required>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -182,43 +207,22 @@ export default function LeadFormPage() {
             <SelectField
               label="Purchase Type"
               value={form.purchaseType}
-              onChange={(v) => set("purchaseType", v)}
+              onChange={(v) => {
+                set("purchaseType", v);
+                // Exchange is only meaningful alongside Cash/Finance; reset when cleared
+                if (!v) set("exchangeFlag", false);
+              }}
               options={[
                 { value: "CASH", label: "Cash" },
                 { value: "FINANCE", label: "Finance" },
-                { value: "EXCHANGE", label: "Exchange" },
               ]}
             />
           </div>
-          <div className="mt-3 flex gap-3">
-            <ToggleChip label="Exchange" active={form.exchangeFlag} onChange={(v) => set("exchangeFlag", v)} />
-            <ToggleChip label="Test Ride" active={form.testRideFlag} onChange={(v) => set("testRideFlag", v)} />
-          </div>
-        </Section>
-
-        {/* Vehicle Interest */}
-        <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <SelectField
-              label="Model"
-              value={form.modelId}
-              onChange={(v) => { set("modelId", v); setSelectedModel(v); set("variantId", ""); }}
-              options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))}
-            />
-            <SelectField
-              label="Variant"
-              value={form.variantId}
-              onChange={(v) => set("variantId", v)}
-              options={(variants ?? []).map((v: any) => ({ value: String(v.id), label: v.name }))}
-              disabled={!selectedModel}
-            />
-            <SelectField
-              label="Colour"
-              value={form.colourId}
-              onChange={(v) => set("colourId", v)}
-              options={(colours ?? []).map((c: any) => ({ value: String(c.id), label: c.name }))}
-            />
-          </div>
+          {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
+            <div className="mt-3 flex gap-3">
+              <ToggleChip label="Exchange" active={form.exchangeFlag} onChange={(v) => set("exchangeFlag", v)} />
+            </div>
+          )}
         </Section>
 
         {/* Assignment */}
