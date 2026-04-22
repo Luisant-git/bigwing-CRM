@@ -107,11 +107,9 @@ export class AuthService {
   // ─── Private helpers ────────────────────────────────────────────
 
   private generateAccessToken(userId: bigint, email: string, roles: string[]): string {
-    return jwt.sign(
-      { userId: Number(userId), email, roles },
-      env.JWT_SECRET,
-      { expiresIn: env.JWT_EXPIRES_IN }
-    );
+    const payload = { userId: Number(userId), email, roles };
+    const options = { expiresIn: env.JWT_EXPIRES_IN };
+    return jwt.sign(payload, env.JWT_SECRET, options);
   }
 
   private async generateRefreshToken(userId: bigint): Promise<string> {
