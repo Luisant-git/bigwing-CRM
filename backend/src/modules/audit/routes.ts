@@ -14,8 +14,8 @@ router.get(
   async (req, res, next) => {
     try {
       const data = await auditService.getByEntity(
-        req.params.entityType,
-        BigInt(req.params.entityId)
+        req.params.entityType as string,
+        BigInt(req.params.entityId as string)
       );
       res.json({ success: true, data });
     } catch (err) {

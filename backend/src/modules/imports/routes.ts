@@ -47,7 +47,7 @@ router.get(
   async (req, res, next) => {
     try {
       const { importRepository } = await import("./repository.js");
-      const batch = await importRepository.findBatchById(BigInt(req.params.id));
+      const batch = await importRepository.findBatchById(BigInt(req.params.id as string));
       if (!batch) {
         res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Batch not found" } });
         return;

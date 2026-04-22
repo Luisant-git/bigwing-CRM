@@ -4,7 +4,7 @@ import { followupService } from "./service.js";
 export class FollowupController {
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const leadId = BigInt(req.params.id);
+      const leadId = BigInt(req.params.id as string);
       const createdBy = BigInt(req.user!.userId);
       const followup = await followupService.create(
         leadId,

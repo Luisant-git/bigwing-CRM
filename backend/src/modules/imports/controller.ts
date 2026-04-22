@@ -26,7 +26,7 @@ export class ImportController {
 
   async preview(req: Request, res: Response, next: NextFunction) {
     try {
-      const batchId = BigInt(req.params.id);
+      const batchId = BigInt(req.params.id as string);
       const sheetName = req.query.sheet as string | undefined;
       const result = await importService.preview(batchId, sheetName);
       res.json({ success: true, data: result });
@@ -37,7 +37,7 @@ export class ImportController {
 
   async commit(req: Request, res: Response, next: NextFunction) {
     try {
-      const batchId = BigInt(req.params.id);
+      const batchId = BigInt(req.params.id as string);
       const sheetName = req.query.sheet as string | undefined;
       const channel = req.query.channel as string | undefined;
       const result = await importService.commit(batchId, sheetName, channel);
@@ -49,7 +49,7 @@ export class ImportController {
 
   async downloadErrors(req: Request, res: Response, next: NextFunction) {
     try {
-      const batchId = BigInt(req.params.id);
+      const batchId = BigInt(req.params.id as string);
       const buffer = await importService.getErrors(batchId);
       res.setHeader(
         "Content-Disposition",

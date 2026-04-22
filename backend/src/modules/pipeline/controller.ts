@@ -5,7 +5,7 @@ export class PipelineController {
   // ─── Quotation ────────────────────────────────────────────────
   async getQuotations(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await pipelineService.getQuotations(BigInt(req.params.id));
+      const data = await pipelineService.getQuotations(BigInt(req.params.id as string));
       res.json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -14,7 +14,7 @@ export class PipelineController {
     try {
       const createdBy = BigInt(req.user!.userId);
       const data = await pipelineService.createQuotation(
-        BigInt(req.params.id), req.body, createdBy
+        BigInt(req.params.id as string), req.body, createdBy
       );
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }
@@ -23,7 +23,7 @@ export class PipelineController {
   // ─── Booking ──────────────────────────────────────────────────
   async getBookings(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await pipelineService.getBookings(BigInt(req.params.id));
+      const data = await pipelineService.getBookings(BigInt(req.params.id as string));
       res.json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -32,7 +32,7 @@ export class PipelineController {
     try {
       const createdBy = BigInt(req.user!.userId);
       const data = await pipelineService.createBooking(
-        BigInt(req.params.id), req.body, createdBy
+        BigInt(req.params.id as string), req.body, createdBy
       );
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }
@@ -41,7 +41,7 @@ export class PipelineController {
   // ─── Invoice ──────────────────────────────────────────────────
   async getInvoices(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await pipelineService.getInvoices(BigInt(req.params.id));
+      const data = await pipelineService.getInvoices(BigInt(req.params.id as string));
       res.json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -50,7 +50,7 @@ export class PipelineController {
     try {
       const createdBy = BigInt(req.user!.userId);
       const data = await pipelineService.createInvoice(
-        BigInt(req.params.id), req.body, createdBy
+        BigInt(req.params.id as string), req.body, createdBy
       );
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }
@@ -59,7 +59,7 @@ export class PipelineController {
   // ─── Delivery ─────────────────────────────────────────────────
   async getDeliveries(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = await pipelineService.getDeliveries(BigInt(req.params.id));
+      const data = await pipelineService.getDeliveries(BigInt(req.params.id as string));
       res.json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -68,7 +68,7 @@ export class PipelineController {
     try {
       const createdBy = BigInt(req.user!.userId);
       const data = await pipelineService.createDelivery(
-        BigInt(req.params.id), req.body, createdBy
+        BigInt(req.params.id as string), req.body, createdBy
       );
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }

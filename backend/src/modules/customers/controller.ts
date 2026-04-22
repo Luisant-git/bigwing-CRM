@@ -18,7 +18,7 @@ export class CustomerController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const customer = await customerService.getById(BigInt(req.params.id));
+      const customer = await customerService.getById(BigInt(req.params.id as string));
       res.json({ success: true, data: customer });
     } catch (err) {
       next(err);
@@ -39,7 +39,7 @@ export class CustomerController {
     try {
       const updatedBy = req.user ? BigInt(req.user.userId) : undefined;
       const customer = await customerService.update(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         req.body,
         updatedBy
       );
@@ -52,7 +52,7 @@ export class CustomerController {
     try {
       const deletedBy = req.user ? BigInt(req.user.userId) : undefined;
       const result = await customerService.softDelete(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         deletedBy!
       );
       res.json({ success: true, data: result });

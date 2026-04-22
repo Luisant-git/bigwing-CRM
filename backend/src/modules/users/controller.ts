@@ -18,7 +18,7 @@ export class UserController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await userService.getById(BigInt(req.params.id));
+      const user = await userService.getById(BigInt(req.params.id as string));
       res.json({ success: true, data: user });
     } catch (err) {
       next(err);
@@ -39,7 +39,7 @@ export class UserController {
     try {
       const updatedBy = req.user ? BigInt(req.user.userId) : undefined;
       const user = await userService.update(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         req.body,
         updatedBy
       );
@@ -53,7 +53,7 @@ export class UserController {
     try {
       const { password } = req.body;
       const result = await userService.resetPassword(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         password
       );
       res.json({ success: true, data: result });

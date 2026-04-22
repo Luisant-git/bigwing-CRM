@@ -23,7 +23,7 @@ export class LeadController {
 
   async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const lead = await leadService.getById(BigInt(req.params.id));
+      const lead = await leadService.getById(BigInt(req.params.id as string));
       res.json({ success: true, data: lead });
     } catch (err) {
       next(err);
@@ -34,7 +34,7 @@ export class LeadController {
     try {
       const updatedBy = req.user ? BigInt(req.user.userId) : undefined;
       const lead = await leadService.update(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         req.body,
         updatedBy
       );
@@ -48,7 +48,7 @@ export class LeadController {
     try {
       const changedBy = BigInt(req.user!.userId);
       const lead = await leadService.moveStage(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         req.body,
         changedBy
       );
@@ -62,7 +62,7 @@ export class LeadController {
     try {
       const updatedBy = BigInt(req.user!.userId);
       const lead = await leadService.assign(
-        BigInt(req.params.id),
+        BigInt(req.params.id as string),
         req.body.assignedTo,
         updatedBy
       );
@@ -75,7 +75,7 @@ export class LeadController {
   async remove(req: Request, res: Response, next: NextFunction) {
     try {
       const deletedBy = BigInt(req.user!.userId);
-      const result = await leadService.softDelete(BigInt(req.params.id), deletedBy);
+      const result = await leadService.softDelete(BigInt(req.params.id as string), deletedBy);
       res.json({ success: true, data: result });
     } catch (err) {
       next(err);

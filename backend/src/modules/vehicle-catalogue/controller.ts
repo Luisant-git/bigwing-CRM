@@ -13,7 +13,7 @@ export class VehicleCatalogueController {
 
   async getModel(req: Request, res: Response, next: NextFunction) {
     try {
-      const model = await vehicleCatalogueService.getModel(BigInt(req.params.id));
+      const model = await vehicleCatalogueService.getModel(BigInt(req.params.id as string));
       res.json({ success: true, data: model });
     } catch (err) { next(err); }
   }
@@ -27,7 +27,7 @@ export class VehicleCatalogueController {
 
   async updateModel(req: Request, res: Response, next: NextFunction) {
     try {
-      const model = await vehicleCatalogueService.updateModel(BigInt(req.params.id), req.body);
+      const model = await vehicleCatalogueService.updateModel(BigInt(req.params.id as string), req.body);
       res.json({ success: true, data: model });
     } catch (err) { next(err); }
   }
@@ -44,7 +44,7 @@ export class VehicleCatalogueController {
 
   async getVariant(req: Request, res: Response, next: NextFunction) {
     try {
-      const variant = await vehicleCatalogueService.getVariant(BigInt(req.params.id));
+      const variant = await vehicleCatalogueService.getVariant(BigInt(req.params.id as string));
       res.json({ success: true, data: variant });
     } catch (err) { next(err); }
   }
@@ -58,7 +58,7 @@ export class VehicleCatalogueController {
 
   async updateVariant(req: Request, res: Response, next: NextFunction) {
     try {
-      const variant = await vehicleCatalogueService.updateVariant(BigInt(req.params.id), req.body);
+      const variant = await vehicleCatalogueService.updateVariant(BigInt(req.params.id as string), req.body);
       res.json({ success: true, data: variant });
     } catch (err) { next(err); }
   }
@@ -74,7 +74,7 @@ export class VehicleCatalogueController {
 
   async getColour(req: Request, res: Response, next: NextFunction) {
     try {
-      const colour = await vehicleCatalogueService.getColour(BigInt(req.params.id));
+      const colour = await vehicleCatalogueService.getColour(BigInt(req.params.id as string));
       res.json({ success: true, data: colour });
     } catch (err) { next(err); }
   }
@@ -88,7 +88,7 @@ export class VehicleCatalogueController {
 
   async updateColour(req: Request, res: Response, next: NextFunction) {
     try {
-      const colour = await vehicleCatalogueService.updateColour(BigInt(req.params.id), req.body);
+      const colour = await vehicleCatalogueService.updateColour(BigInt(req.params.id as string), req.body);
       res.json({ success: true, data: colour });
     } catch (err) { next(err); }
   }
