@@ -4,9 +4,9 @@ import { lookupService } from "./service.js";
 export class LookupController {
   async getItems(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name } = req.params;
+      const name = req.params.name as string;
 
-      if (!lookupService.isValidLookup(name as string)) {
+      if (!lookupService.isValidLookup(name)) {
         res.status(404).json({
           success: false,
           error: {
@@ -28,8 +28,8 @@ export class LookupController {
 
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name } = req.params;
-      if (!lookupService.isValidLookup(name as string)) {
+      const name = req.params.name as string;
+      if (!lookupService.isValidLookup(name)) {
         res.status(404).json({ success: false, error: { code: "INVALID_LOOKUP", message: `Unknown lookup: ${name}` } });
         return;
       }
@@ -42,12 +42,13 @@ export class LookupController {
 
   async update(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, id } = req.params;
-      if (!lookupService.isValidLookup(name as string)) {
+      const name = req.params.name as string;
+      const id = req.params.id as string;
+      if (!lookupService.isValidLookup(name)) {
         res.status(404).json({ success: false, error: { code: "INVALID_LOOKUP", message: `Unknown lookup: ${name}` } });
         return;
       }
-      const item = await lookupService.update(name, BigInt(id as string), req.body);
+      const item = await lookupService.update(name, BigInt(id), req.body);
       res.json({ success: true, data: item });
     } catch (err) {
       next(err);
