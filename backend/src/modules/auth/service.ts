@@ -108,7 +108,7 @@ export class AuthService {
 
   private generateAccessToken(userId: bigint, email: string, roles: string[]): string {
     const payload = { userId: Number(userId), email, roles };
-    return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN as string | number });
+    return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
   }
 
   private async generateRefreshToken(userId: bigint): Promise<string> {
