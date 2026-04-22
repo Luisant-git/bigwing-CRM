@@ -56,7 +56,12 @@ const WALKIN_HEADERS: Record<string, string> = {
   "mobile no": "mobile",
   "mobile number": "mobile",
   "next follow up date": "nextFollowupAt",
+  "next follow up": "nextFollowupAt",
+  "current follow up date": "currentFollowupDate",
+  "current follow up": "currentFollowupDate",
+  "follow up id": "followupId",
   "follow up remark": "followupRemark",
+  "follow up remarks": "followupRemark",
   "date of birth": "dob",
   "date of marriage": "anniversary",
   "enquiry created date": "enquiryDate",
@@ -438,8 +443,13 @@ export class ImportService {
     }
 
     mapped.nextFollowupAt = normalizeDate(mapped.nextFollowupAt);
+    mapped.currentFollowupDate = normalizeDate(mapped.currentFollowupDate);
     mapped.dob = normalizeDate(mapped.dob);
     mapped.anniversary = normalizeDate(mapped.anniversary);
+
+    if (mapped.followupId) {
+      mapped.followupId = String(mapped.followupId).trim() || undefined;
+    }
 
     // Normalize enums
     mapped.stage = normalizeStage(mapped.stage);
@@ -552,12 +562,16 @@ export class ImportService {
       : null;
 
     // Dedupe lead. When the Hirise Honda export is re-imported (daily habit) the same
-    // enquiryNo rows will appear again — skip them so we don't create duplicates, and
-    // signal "skipped" to the caller for accurate success/skip counts.
+    // enquiryNo rows will appear again. The Hirise DMS emits one row per follow-up, so
+    // several rows can share an enquiryNo — treat the extra rows as additional follow-ups
+    // on the existing lead rather than dropping them (which was losing follow-up history).
     let enquiryNo = mapped.enquiryNo;
     if (enquiryNo) {
       const existing = await importRepository.findLeadByEnquiryNo(enquiryNo);
-      if (existing) return "skipped" as const;
+      if (existing) {
+        await this.appendImportedFollowup(existing.id, mapped, createdBy);
+        return "skipped" as const;
+      }
     } else {
       // Generate new enquiry number
       const now = mapped.enquiryDate ?? new Date();
@@ -608,16 +622,98 @@ export class ImportService {
       },
     });
 
-    // Create follow-up if present
-    if (mapped.followupRemark) {
+    // Create initial follow-up from the Excel row (Hirise DMS exports one follow-up
+    // per row; later rows for the same enquiryNo are appended by appendImportedFollowup).
+    if (mapped.followupRemark || mapped.currentFollowupDate || mapped.followupId) {
+      const followupDate =
+        mapped.currentFollowupDate ?? mapped.enquiryDate ?? new Date();
       await prisma.leadFollowup.create({
         data: {
           leadId: lead.id,
           seqNo: 1,
-          followupDate: new Date(),
-          remark: mapped.followupRemark,
+          followupDate,
+          remark: this.buildFollowupRemark(
+            mapped.followupRemark,
+            mapped.followupId
+          ),
           createdBy,
         },
+      });
+    }
+  }
+
+  // Compose the follow-up remark so the Hirise follow-up id is preserved alongside
+  // the free-text remark. The id is the natural key we use for dedupe on re-import.
+  private buildFollowupRemark(
+    remark: string | null | undefined,
+    followupId: string | null | undefined
+  ): string | null {
+    const r = remark ? String(remark).trim() : "";
+    const id = followupId ? String(followupId).trim() : "";
+    if (r && id) return `[${id}] ${r}`;
+    if (r) return r;
+    if (id) return `[${id}]`;
+    return null;
+  }
+
+  // Append an imported follow-up to an existing lead. De-dupes on Hirise Follow Up Id
+  // when present (exact natural key), otherwise falls back to (date + remark) so
+  // re-imports of the same file don't double up rows.
+  private async appendImportedFollowup(
+    leadId: bigint,
+    mapped: Record<string, any>,
+    createdBy: bigint
+  ) {
+    const remark = this.buildFollowupRemark(
+      mapped.followupRemark,
+      mapped.followupId
+    );
+    const followupDate: Date | null =
+      mapped.currentFollowupDate ?? mapped.enquiryDate ?? null;
+
+    // Nothing to record
+    if (!remark && !followupDate) return;
+
+    const existing = await prisma.leadFollowup.findMany({
+      where: { leadId },
+      select: { seqNo: true, followupDate: true, remark: true },
+      orderBy: { seqNo: "desc" },
+    });
+
+    // Dedup check
+    const followupIdTag = mapped.followupId
+      ? `[${String(mapped.followupId).trim()}]`
+      : null;
+    const alreadyExists = existing.some((f) => {
+      if (followupIdTag && f.remark?.startsWith(followupIdTag)) return true;
+      if (
+        followupDate &&
+        f.followupDate &&
+        f.remark === remark &&
+        new Date(f.followupDate).getTime() === followupDate.getTime()
+      ) {
+        return true;
+      }
+      return false;
+    });
+    if (alreadyExists) return;
+
+    const nextSeqNo = (existing[0]?.seqNo ?? 0) + 1;
+
+    await prisma.leadFollowup.create({
+      data: {
+        leadId,
+        seqNo: nextSeqNo,
+        followupDate: followupDate ?? new Date(),
+        remark,
+        createdBy,
+      },
+    });
+
+    if (mapped.nextFollowupAt) {
+      await prisma.lead.update({
+        where: { id: leadId },
+        data: { nextFollowupAt: mapped.nextFollowupAt },
       });
     }
   }

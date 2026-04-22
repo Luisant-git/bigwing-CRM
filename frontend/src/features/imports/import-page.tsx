@@ -10,6 +10,31 @@ import { useAuthStore } from "@/stores/auth";
 // exclusively for this account; the backend enforces the same check.
 const SENIOR_DEVELOPER_EMAIL = "seniordeveloper@bigwing.in";
 
+// The errors.xlsx route is auth-protected; a plain <a href> skips the Authorization
+// header and gets a 401. Fetch via the axios client (which injects the Bearer token
+// and handles 401→refresh) as a blob, then trigger a client-side download.
+async function downloadErrorReport(batchId: number) {
+  try {
+    const res = await api.get(`/import/${batchId}/errors.xlsx`, {
+      responseType: "blob",
+    });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `import-errors-${batchId}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err: any) {
+    const msg =
+      err?.response?.data?.error?.message ??
+      err?.message ??
+      "Failed to download error report";
+    toast.error(msg);
+  }
+}
+
 type Step = "upload" | "preview" | "importing" | "done";
 
 export default function ImportPage() {
@@ -281,12 +306,13 @@ export default function ImportPage() {
 
           <div className="flex justify-center gap-3">
             {result.errorRows > 0 && (
-              <a
-                href={`/api/v1/import/${batchId}/errors.xlsx`}
+              <button
+                type="button"
+                onClick={() => downloadErrorReport(batchId!)}
                 className="flex items-center gap-1.5 rounded-lg border border-[#EB5757] px-4 py-2 text-sm font-medium text-[#EB5757] hover:bg-red-50"
               >
                 <Download size={14} /> Download Error Report
-              </a>
+              </button>
             )}
             <button onClick={reset} className="rounded-lg bg-[#2E75B6] px-6 py-2 text-sm font-semibold text-white hover:bg-[#245f96]">
               Import Another File

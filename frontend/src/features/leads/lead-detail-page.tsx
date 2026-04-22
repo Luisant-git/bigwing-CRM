@@ -95,11 +95,12 @@ export default function LeadDetailPage() {
     });
   });
   (lead.followups ?? []).forEach((f: any) => {
+    const { remark } = splitFollowupRemark(f.remark);
     timelineEvents.push({
       id: `followup-${f.id}`,
       type: "followup",
       title: `Follow-up #${f.seqNo} — ${f.channel ?? "—"}`,
-      description: f.remark,
+      description: remark ?? f.remark,
       time: f.followupDate,
       user: f.createdBy?.fullName,
     });
@@ -229,37 +230,7 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Follow-ups */}
-          <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
-            <h2 className="mb-4 font-semibold">
-              Follow-ups ({lead.followups?.length ?? 0})
-            </h2>
-            {lead.followups?.length > 0 ? (
-              <div className="space-y-3">
-                {lead.followups.map((f: any) => (
-                  <div
-                    key={f.id}
-                    className="rounded-lg border p-3 text-sm"
-                  >
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>
-                        #{f.seqNo} — {f.channel ?? "—"} —{" "}
-                        {f.outcome ?? "—"}
-                      </span>
-                      <span>{formatDateTime(f.followupDate)}</span>
-                    </div>
-                    {f.remark && (
-                      <p className="mt-1 text-gray-700">{f.remark}</p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-400">
-                      by {f.createdBy?.fullName}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-gray-400">No follow-ups yet</p>
-            )}
-          </div>
+          <FollowupsSection followups={lead.followups ?? []} />
 
           {/* Pipeline Documents */}
           <PipelineSection leadId={id!} />
@@ -410,6 +381,107 @@ function HiriseStatusCard({ dmsEnquiryNo }: { dmsEnquiryNo?: string | null }) {
       )}
     </div>
   );
+}
+
+// Follow-ups panel — admin/manager friendly view.
+// Shows total count + earliest→latest date range in the heading, lists follow-ups
+// chronologically (oldest first) so reviewers can read the conversation in order.
+// Remark prefix like "[1-1VWMAFFS] ..." is the Hirise DMS Follow Up Id preserved
+// from import; we render it as a small badge so the free-text stays clean.
+function FollowupsSection({ followups }: { followups: any[] }) {
+  const sorted = [...followups].sort(
+    (a, b) =>
+      new Date(a.followupDate).getTime() - new Date(b.followupDate).getTime()
+  );
+  const count = sorted.length;
+  const firstDate = sorted[0]?.followupDate;
+  const lastDate = sorted[count - 1]?.followupDate;
+  const dateRange =
+    count === 0
+      ? ""
+      : count === 1
+        ? formatDate(firstDate)
+        : `${formatDate(firstDate)} → ${formatDate(lastDate)}`;
+
+  return (
+    <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="font-semibold">
+          Follow-ups{" "}
+          <span className="text-sm font-medium text-gray-500">({count})</span>
+        </h2>
+        {dateRange && (
+          <span className="text-xs text-gray-500">{dateRange}</span>
+        )}
+      </div>
+      {count === 0 ? (
+        <p className="text-sm text-gray-400">No follow-ups yet</p>
+      ) : (
+        <ol className="space-y-2.5">
+          {sorted.map((f: any, i: number) => {
+            const { dmsId, remark } = splitFollowupRemark(f.remark);
+            return (
+              <li
+                key={f.id}
+                className="rounded-lg border border-gray-200 p-3 text-sm"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 font-medium text-gray-800">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
+                      {i + 1}
+                    </span>
+                    <span>{formatDate(f.followupDate)}</span>
+                    {f.channel && (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                        {f.channel}
+                      </span>
+                    )}
+                    {f.outcome && (
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                        {f.outcome.replace(/_/g, " ")}
+                      </span>
+                    )}
+                  </div>
+                  {dmsId && (
+                    <span
+                      className="truncate text-[10px] text-gray-400"
+                      title={`DMS Follow Up Id: ${dmsId}`}
+                    >
+                      {dmsId}
+                    </span>
+                  )}
+                </div>
+                {remark && (
+                  <p className="mt-1.5 text-gray-700">{remark}</p>
+                )}
+                <p className="mt-1.5 text-[11px] text-gray-400">
+                  {f.createdBy?.fullName ? `by ${f.createdBy.fullName}` : "—"}
+                  {f.nextActionAt && (
+                    <>
+                      {" · "}Next action {formatDateTime(f.nextActionAt)}
+                    </>
+                  )}
+                </p>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+// Imported follow-ups store the Hirise Follow Up Id as a `[id] remark` prefix;
+// peel it off here so the UI can show the free-text remark clean and the id
+// discreetly as metadata.
+function splitFollowupRemark(raw: string | null | undefined): {
+  dmsId: string | null;
+  remark: string | null;
+} {
+  if (!raw) return { dmsId: null, remark: null };
+  const m = raw.match(/^\[([^\]]+)\]\s*(.*)$/);
+  if (!m) return { dmsId: null, remark: raw };
+  return { dmsId: m[1], remark: m[2] || null };
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
