@@ -35,6 +35,8 @@ const TELE_HEADERS: Record<string, string> = {
   "model interested": "modelName",
   "variant": "variantName",
   "colour preference": "colourName",
+  "color": "colourName",
+  "colour": "colourName",
   "executive assigned": "executive",
   "next follow up date": "nextFollowupAt",
   "enquiry stage": "stage",
@@ -543,9 +545,18 @@ export class ImportService {
     const modelId = mapped.modelName
       ? modelMap.get(mapped.modelName.toLowerCase()) ?? null
       : null;
-    const colourId = mapped.colourName
+    let colourId = mapped.colourName
       ? colourMap.get(mapped.colourName.toLowerCase()) ?? null
       : null;
+
+    if (mapped.colourName && !colourId) {
+      // Auto-create new colour if it doesn't exist
+      const newColour = await prisma.vehicleColour.create({
+        data: { name: mapped.colourName, displayOrder: 999, isActive: true },
+      });
+      colourId = newColour.id;
+      colourMap.set(mapped.colourName.toLowerCase(), colourId);
+    }
 
     // Resolve variant (needs model context)
     let variantId: bigint | null = null;
