@@ -8,7 +8,7 @@ import bcrypt from "bcrypt";
 //            (or: npm run -w @bigwing/db -- exec tsx prisma/create-senior-developer.ts)
 
 const EMAIL = "seniordeveloper@bigwing.in";
-const PASSWORD = "Admin@123";
+const PASSWORD = "SeniorDev@2026";
 const FULL_NAME = "Senior Developer";
 const ROLE_NAME = "SUPER_ADMIN";
 

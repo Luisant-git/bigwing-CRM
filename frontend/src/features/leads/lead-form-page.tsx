@@ -99,31 +99,6 @@ export default function LeadFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Vehicle Interest — shown first so the sales rep locks in the product of interest up front */}
-        <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <SelectField
-              label="Model"
-              value={form.modelId}
-              onChange={(v) => { set("modelId", v); setSelectedModel(v); set("variantId", ""); }}
-              options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))}
-            />
-            <SelectField
-              label="Variant"
-              value={form.variantId}
-              onChange={(v) => set("variantId", v)}
-              options={(variants ?? []).map((v: any) => ({ value: String(v.id), label: v.name }))}
-              disabled={!selectedModel}
-            />
-            <SelectField
-              label="Colour"
-              value={form.colourId}
-              onChange={(v) => set("colourId", v)}
-              options={(colours ?? []).map((c: any) => ({ value: String(c.id), label: c.name }))}
-            />
-          </div>
-        </Section>
-
         {/* Customer Info */}
         <Section icon={UserIcon} title="Customer Information" subtitle="Who is the enquiry for" required>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -171,6 +146,31 @@ export default function LeadFormPage() {
               onChange={(v) => set("enquiryTypeId", v)}
               options={(types ?? []).map((t: any) => ({ value: String(t.id), label: t.name }))}
               required
+            />
+          </div>
+        </Section>
+
+        {/* Vehicle Interest */}
+        <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <SelectField
+              label="Model"
+              value={form.modelId}
+              onChange={(v) => { set("modelId", v); setSelectedModel(v); set("variantId", ""); }}
+              options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))}
+            />
+            <SelectField
+              label="Variant"
+              value={form.variantId}
+              onChange={(v) => set("variantId", v)}
+              options={(variants ?? []).map((v: any) => ({ value: String(v.id), label: v.name }))}
+              disabled={!selectedModel}
+            />
+            <SelectField
+              label="Colour"
+              value={form.colourId}
+              onChange={(v) => set("colourId", v)}
+              options={(colours ?? []).map((c: any) => ({ value: String(c.id), label: c.name }))}
             />
           </div>
         </Section>
@@ -225,6 +225,26 @@ export default function LeadFormPage() {
           )}
         </Section>
 
+        {/* Notes */}
+        <Section icon={Sparkles} title="Notes & Remarks">
+          <div>
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+              Remark (min 300 characters)
+            </label>
+            <textarea
+              value={form.remark}
+              onChange={(e) => set("remark", e.target.value)}
+              rows={3}
+              minLength={300}
+              placeholder="Add any additional notes about this lead... (minimum 300 characters required)"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {form.remark.length} / 300 characters
+            </p>
+          </div>
+        </Section>
+
         {/* Assignment */}
         <Section icon={UserIcon} title="Assignment">
           <SelectField
@@ -233,22 +253,6 @@ export default function LeadFormPage() {
             onChange={(v) => set("assignedTo", v)}
             options={(users ?? []).map((u: any) => ({ value: String(u.id), label: u.fullName }))}
           />
-        </Section>
-
-        {/* Notes */}
-        <Section icon={Sparkles} title="Notes & Remarks">
-          <div>
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-              Remark
-            </label>
-            <textarea
-              value={form.remark}
-              onChange={(e) => set("remark", e.target.value)}
-              rows={3}
-              placeholder="Add any additional notes about this lead..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-            />
-          </div>
         </Section>
       </form>
 
