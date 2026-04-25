@@ -113,6 +113,8 @@ const WALKIN_HEADERS: Record<string, string> = {
   "enquiry type": "enquiryType",
   "type of enquiry": "enquiryType",
   "type": "enquiryType",
+  "real next followup": "realNextFollowup",
+  "real next follow up": "realNextFollowup",
   "enq type": "enquiryType",
   "customer type": "customerType",
   "customer category": "accountType",
@@ -716,9 +718,9 @@ export class ImportService {
         // Smart update of the existing lead:
         // 1. Pick the best Next Date (from main column or fallback 'real' column)
         let nextDate = mapped.nextFollowupAt ? new Date(mapped.nextFollowupAt) : null;
-        if (!nextDate && raw["real next followup"]) {
+        if (!nextDate && mapped.realNextFollowup) {
           // Extract date from format like "ENQ...|18-03-2026 00:00|..."
-          const parts = String(raw["real next followup"]).split("|");
+          const parts = String(mapped.realNextFollowup).split("|");
           const datePart = parts.find(p => p.match(/\d{1,2}[\-\/]\d{1,2}[\-\/]\d{2,4}/));
           if (datePart) nextDate = normalizeDate(datePart);
         }
