@@ -12,6 +12,7 @@ const lookupModels = {
   "vehicle-variants": () => prisma.vehicleVariant,
   "vehicle-colours": () => prisma.vehicleColour,
   "referred-branches": () => prisma.referredBranch,
+  "active-stages": () => ({} as any), // Dummy for mapping
 } as const;
 
 // Lookups that support admin CRUD via this module
@@ -37,6 +38,14 @@ export class LookupService {
   }
 
   async getItems(name: LookupName, modelId?: number, includeInactive = false) {
+    if (name === "active-stages") {
+      const stages = await prisma.lead.groupBy({
+        by: ["stage"],
+        where: { NOT: { stage: "DELIVERED_CLOSED" } },
+      });
+      return stages.map((s) => ({ stage: s.stage, label: s.stage.replace(/_/g, " ") }));
+    }
+
     const model = lookupModels[name]() as any;
 
     const where: any = includeInactive ? {} : { isActive: true };

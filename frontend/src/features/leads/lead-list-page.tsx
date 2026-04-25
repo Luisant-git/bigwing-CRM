@@ -167,6 +167,13 @@ export default function LeadListPage() {
           <ExecAvatar userId={l.assignedTo.id} name={l.assignedTo.fullName} />
           <span className="text-sm text-gray-600">{l.assignedTo.fullName}</span>
         </div>
+      ) : l.executiveName ? (
+        <div className="flex items-center gap-1.5 opacity-60">
+           <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
+           <span className="text-[11px] font-medium text-gray-500 italic">
+             {l.executiveName}
+           </span>
+        </div>
       ) : <span className="text-gray-300">Unassigned</span>,
     },
     {
@@ -282,7 +289,7 @@ export default function LeadListPage() {
       {showFilters && tab === "all" && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <FilterSelect label="Stage" value={stage} onChange={setStage} options={["NOT_CONTACTED","CONTACTED","NOT_REACHABLE","TEST_RIDE_SCHEDULED","TEST_RIDE_COMPLETED","QUOTATION_SHARED","BOOKED","INVOICED","DELIVERED_CLOSED","LOST"].map(s => ({ value: s, label: s.replace(/_/g," ") }))} />
+            <FilterSelect label="Stage" value={stage} onChange={setStage} options={["NEW","ENQUIRED","NOT_REACHABLE","TEST_RIDE_SCHEDULED","TEST_RIDE_COMPLETED","QUOTATION_SHARED","BOOKED","INVOICED","DELIVERED_CLOSED","LOST"].map(s => ({ value: s, label: s.replace(/_/g," ") }))} />
             <FilterSelect label="Channel" value={channel} onChange={setChannel} options={["WALKIN","TELE","DIGITAL","SOCIAL","REFERENCE","WEBSITE","SERVICE"].map(c => ({ value: c, label: c }))} />
             <FilterSelect label="Source" value={sourceId} onChange={setSourceId} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
@@ -353,3 +360,5 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
     </div>
   );
 }
+
+

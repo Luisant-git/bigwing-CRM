@@ -21,19 +21,52 @@ export function normalizeDate(value: any): Date | null {
     return new Date((value - 25569) * 86400000);
   }
 
-  const str = String(value).trim();
+  let str = String(value).trim();
+  if (!str) return null;
 
-  // DD-MM-YYYY or DD/MM/YYYY
-  const ddmmyyyy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (ddmmyyyy) {
-    const [, d, m, y] = ddmmyyyy;
-    const date = new Date(Number(y), Number(m) - 1, Number(d));
+  // 1. Handle formats with month names: "03 Jun 2026", "June 3, 2026", etc.
+  // Regex to find: Day (1-2 digits), Month (3+ letters), Year (4 digits)
+  const monthMatch = str.match(/(\d{1,2})[\s\-\/]([A-Za-z]{3,})[\s\-\/](\d{4})/);
+  if (monthMatch) {
+    const [, d, m, y] = monthMatch;
+    const months: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, 
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
+    };
+    const monthIndex = months[m.toLowerCase().slice(0, 3)];
+    if (monthIndex !== undefined) {
+      // Set to Noon to prevent day-shift in UTC/Local conversions
+      const date = new Date(Number(y), monthIndex, Number(d), 12, 0, 0);
+      console.log(`[Import Date] Parsed Month Name: ${str} -> ${date.toDateString()}`);
+      if (!isNaN(date.getTime())) return date;
+    }
+  }
+
+  // 2. Handle YYYY-MM-DD or YYYY/MM/DD
+  const yyyymmdd = str.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+  if (yyyymmdd) {
+    const [, y, m, d] = yyyymmdd;
+    // Set to Noon to prevent day-shift in UTC/Local conversions
+    const date = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
+    console.log(`[Import Date] Parsed YYYY-MM-DD: ${str} -> ${date.toDateString()}`);
     if (!isNaN(date.getTime())) return date;
   }
 
-  // YYYY-MM-DD (ISO)
-  const iso = new Date(str);
-  if (!isNaN(iso.getTime())) return iso;
+  // 3. Handle DD-MM-YYYY or DD/MM/YYYY
+  const ddmmyyyy = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/);
+  if (ddmmyyyy) {
+    let [, d, m, y] = ddmmyyyy;
+    let year = Number(y);
+    if (year < 100) year += 2000;
+    // Set to Noon to prevent day-shift in UTC/Local conversions
+    const date = new Date(year, Number(m) - 1, Number(d), 12, 0, 0);
+    console.log(`[Import Date] Parsed DD-MM-YYYY: ${str} -> ${date.toDateString()}`);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  // 4. Fallback to native JS parser
+  const fallback = new Date(str);
+  if (!isNaN(fallback.getTime())) return fallback;
 
   return null;
 }
@@ -59,8 +92,10 @@ export function normalizeName(
 
 // ─── Stage alias mapping ────────────────────────────────────────
 const stageAliases: Record<string, string> = {
-  "NOT CONTACTED": "NOT_CONTACTED",
-  "CONTACTED": "CONTACTED",
+  "NEW": "NEW",
+  "ENQUIRED": "ENQUIRED",
+  "CONTACTED": "ENQUIRED",
+  "CONTACT": "ENQUIRED",
   "NOT REACHABLE": "NOT_REACHABLE",
   "RNR": "NOT_REACHABLE",
   "SWITCHED OFF": "NOT_REACHABLE",
@@ -79,52 +114,45 @@ const stageAliases: Record<string, string> = {
   "LOST": "LOST",
   "ENQUIRY LOST": "LOST",
   "LEAD LOST": "LOST",
-  "ENQUIRY": "NOT_CONTACTED",
-  "ENQUIRY RECEIVED": "NOT_CONTACTED",
-  "NEW ENQUIRY": "NOT_CONTACTED",
+  "ENQUIRY": "NEW",
+  "ENQUIRY RECEIVED": "NEW",
+  "NEW ENQUIRY": "NEW",
   "CANCELLED AFTER BOOKING": "LOST",
   "CANCELLED": "LOST",
   "NOT INTERESTED": "LOST",
 };
 
 export function normalizeStage(value: any): string {
-  if (!value) return "NOT_CONTACTED";
-  const key = String(value).toUpperCase().trim();
-  return stageAliases[key] ?? "NOT_CONTACTED";
+  if (!value) return "NEW";
+  const str = String(value).trim();
+  const key = str.toUpperCase();
+  // Return the mapped key if it exists in aliases, otherwise return the raw trimmed string
+  // and format it nicely.
+  const mapped = stageAliases[key];
+  if (mapped) return mapped;
+  
+  // Title Case for dynamic stages
+  return str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-// ─── Source alias mapping ───────────────────────────────────────
-const sourceAliases: Record<string, string> = {
-  "ALWAYS ON HOT": "Campaign",
-  "SHOWROOM": "Walk-in",
-  "SHOWROOM WALKIN": "Walk-in",
-  "SHOWROOM WALK-IN": "Walk-in",
-  "SHOWROOM WALK IN": "Walk-in",
-  "WALK-IN": "Walk-in",
-  "WALK IN": "Walk-in",
-  "WALKIN": "Walk-in",
-  "CALL AT SHOWROOM": "Call at Showroom",
-  "PHONE": "Call at Showroom",
-  "GOOGLE ADS": "Google",
-  "GOOGLE SEARCH": "Google",
-  "FACEBOOK ADS": "Facebook",
-  "FB": "Facebook",
-  "INSTA": "Instagram",
-  "IG": "Instagram",
-  "WHATSAPP": "WhatsApp",
-  "WHATS APP": "WhatsApp",
-  "WEBSITE ENQUIRY": "Website",
-  "META LEAD": "Meta Lead Ads",
-  "META": "Meta Lead Ads",
-  "REFERRAL": "Reference",
-  "REF": "Reference",
-  "CUSTOMER REFERENCE": "Reference",
-};
-
+// ─── Source normalization ───────────────────────────────────────
 export function normalizeSource(value: any): string {
   if (!value) return "Other";
+  let s = String(value).trim();
+  // Simple title case: "digital campaign" -> "Digital Campaign"
+  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function normalizeChannel(value: any): string | undefined {
+  if (!value) return undefined;
   const key = String(value).toUpperCase().trim();
-  return sourceAliases[key] ?? String(value).trim();
+  if (key.includes("WALK")) return "WALKIN";
+  if (key.includes("TELE") || key.includes("PHONE") || key.includes("CALL")) return "TELE";
+  if (key.includes("DIGITAL") || key.includes("ONLINE") || key.includes("WEB")) return "DIGITAL";
+  if (key.includes("SOCIAL") || key.includes("FB") || key.includes("FACEBOOK") || key.includes("INSTA")) return "SOCIAL";
+  if (key.includes("REF")) return "REFERENCE";
+  if (key.includes("SERVICE")) return "SERVICE";
+  return key;
 }
 
 // ─── Boolean normalization ──────────────────────────────────────
@@ -207,13 +235,11 @@ export function normalizeColourName(value: any): string | null {
 }
 
 // ─── Enquiry Type alias mapping ─────────────────────────────────
-export function normalizeEnquiryType(value: any): string {
-  if (!value) return "New";
-  const key = String(value).toUpperCase().trim();
-  if (key.includes("NEW") || key === "WALK-IN" || key === "TELEPHONIC" || key === "DIGITAL") return "New";
-  if (key.includes("SERVICE")) return "Service";
-  if (key.includes("SPARE")) return "Spares";
-  if (key.includes("INSURANCE")) return "Insurance";
-  if (key.includes("ACCESS")) return "Accessories";
-  return "New";
+export function normalizeEnquiryType(value: any): string | null {
+  if (!value) return null;
+  let s = String(value).trim();
+  // Simple title case: "new vehicle" -> "New Vehicle"
+  return s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+

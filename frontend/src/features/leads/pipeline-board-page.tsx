@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Kanban } from "lucide-react";
@@ -5,10 +6,11 @@ import api from "@/lib/api";
 import { InterestBadge } from "@/components/interest-badge";
 import { Breadcrumb } from "@/components/ui";
 import { PageLoader } from "@/components/spinner";
+import { formatDate } from "@/lib/hooks";
 
 const COLUMNS = [
-  { stage: "NOT_CONTACTED", label: "Not Contacted", color: "#6C757D" },
-  { stage: "CONTACTED", label: "Contacted", color: "#2D9CDB" },
+  { stage: "NEW", label: "New", color: "#6C757D" },
+  { stage: "ENQUIRED", label: "Enquired", color: "#2D9CDB" },
   { stage: "NOT_REACHABLE", label: "Not Reachable", color: "#F59E0B" },
   { stage: "TEST_RIDE_SCHEDULED", label: "Test Ride Scheduled", color: "#9B59B6" },
   { stage: "TEST_RIDE_COMPLETED", label: "Test Ride Done", color: "#7D3C98" },
@@ -24,9 +26,40 @@ const CARDS_PER_COLUMN = 50; // only render first 50 cards per column for perf
 export default function PipelineBoardPage() {
   const navigate = useNavigate();
 
-  // Fetch each stage in parallel — each query returns its own total count
+  // 1. Fetch the list of active stages from the database
+  const stagesQuery = useQueries({
+    queries: [
+      {
+        queryKey: ["lookups", "active-stages"],
+        queryFn: () => api.get("/lookups/active-stages").then((r) => r.data.data),
+      },
+    ],
+  })[0];
+
+  const activeStages = stagesQuery.data || [];
+
+  // 2. Merge hardcoded columns with dynamic ones
+  const columns = useMemo(() => {
+    const base = [...COLUMNS];
+    const baseKeys = new Set(base.map((c) => c.stage));
+
+    // Add any stage found in the database that isn't in our hardcoded list
+    activeStages.forEach((s: any) => {
+      if (!baseKeys.has(s.stage)) {
+        base.push({
+          stage: s.stage,
+          label: s.label,
+          color: "#94A3B8", // default gray for dynamic stages
+        });
+      }
+    });
+
+    return base;
+  }, [activeStages]);
+
+  // 3. Fetch leads for each resulting column
   const queries = useQueries({
-    queries: COLUMNS.map((col) => ({
+    queries: columns.map((col) => ({
       queryKey: ["leads", "pipeline", col.stage],
       queryFn: () =>
         api
@@ -35,10 +68,11 @@ export default function PipelineBoardPage() {
           })
           .then((r) => r.data),
       staleTime: 30_000,
+      enabled: !!activeStages, // wait for stages to load
     })),
   });
 
-  const isLoading = queries.some((q) => q.isLoading);
+  const isLoading = stagesQuery.isLoading || queries.some((q) => q.isLoading);
   if (isLoading) return <PageLoader message="Loading pipeline..." />;
 
   const totalLeads = queries.reduce((sum, q) => sum + (q.data?.meta?.total ?? 0), 0);
@@ -51,13 +85,13 @@ export default function PipelineBoardPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#1F3864]">Pipeline Board</h1>
           <p className="text-[12px] text-gray-400">
-            {totalLeads} leads across {COLUMNS.length} stages
+            {totalLeads} leads across {columns.length} stages
           </p>
         </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4" style={{ maxHeight: "calc(100vh - 200px)" }}>
-        {COLUMNS.map((col, i) => {
+        {columns.map((col, i) => {
           const q = queries[i];
           const leads = q.data?.data ?? [];
           const total = q.data?.meta?.total ?? 0;
@@ -100,9 +134,24 @@ export default function PipelineBoardPage() {
                     {lead.model && (
                       <p className="mt-1 text-[12px] font-medium text-gray-600">{lead.model}</p>
                     )}
-                    <div className="mt-2 flex items-center justify-between">
+                    <div className="mt-2 space-y-1">
+                      {lead.lastFollowupAt && (
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-gray-400">Current F/Up:</span>
+                          <span className="font-semibold text-gray-600">{formatDate(lead.lastFollowupAt)}</span>
+                        </div>
+                      )}
+                      {lead.nextFollowupAt && (
+                        <div className="flex items-center justify-between text-[10px]">
+                          <span className="text-gray-400">Next F/Up:</span>
+                          <span className="font-semibold text-[#2E75B6]">{formatDate(lead.nextFollowupAt)}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-3 flex items-center justify-between border-t border-gray-50 pt-2">
                       <div className="flex items-center gap-1.5">
-                        {lead.assignedTo && (
+                        {lead.assignedTo ? (
                           <>
                             <div
                               className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-white"
@@ -114,6 +163,15 @@ export default function PipelineBoardPage() {
                               {lead.assignedTo.fullName}
                             </span>
                           </>
+                        ) : lead.executiveName ? (
+                          <div className="flex items-center gap-1">
+                             <div className="h-2 w-2 rounded-full bg-gray-300" />
+                             <span className="truncate text-[11px] font-medium text-gray-400 italic">
+                                {lead.executiveName}
+                             </span>
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-gray-300">Unassigned</span>
                         )}
                       </div>
                       <span className="text-[10px] text-gray-400 font-mono">{lead.enquiryNo}</span>
@@ -146,3 +204,5 @@ export default function PipelineBoardPage() {
     </div>
   );
 }
+
+

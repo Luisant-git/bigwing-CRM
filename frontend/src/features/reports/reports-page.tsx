@@ -109,8 +109,8 @@ function ExecutiveReport({ params }: { params: any }) {
       sortValue: (e) => e.totalLeads,
     },
     {
-      key: "contactedPct",
-      label: "Contacted",
+      key: "ENQUIREDPct",
+      label: "ENQUIRED",
       sortable: true,
       align: "right",
       render: (e) => (
@@ -118,13 +118,13 @@ function ExecutiveReport({ params }: { params: any }) {
           <div className="h-1.5 w-16 overflow-hidden rounded-full bg-gray-100">
             <div
               className="h-full rounded-full bg-gradient-to-r from-[#2E75B6] to-[#27AE60] transition-all"
-              style={{ width: `${e.contactedPct}%` }}
+              style={{ width: `${e.ENQUIREDPct}%` }}
             />
           </div>
-          <span className="min-w-[40px] text-right font-semibold text-gray-700">{e.contactedPct}%</span>
+          <span className="min-w-[40px] text-right font-semibold text-gray-700">{e.ENQUIREDPct}%</span>
         </div>
       ),
-      sortValue: (e) => e.contactedPct,
+      sortValue: (e) => e.ENQUIREDPct,
     },
     {
       key: "testRides",
@@ -465,16 +465,16 @@ function TelecallerReport({ params }: { params: any }) {
       sortValue: (r) => r.total,
     },
     {
-      key: "notContacted",
-      label: "Not Contacted",
+      key: "notENQUIRED",
+      label: "NEW",
       align: "right",
-      render: (r) => <span className="font-semibold text-gray-500">{r.stages?.NOT_CONTACTED ?? 0}</span>,
+      render: (r) => <span className="font-semibold text-gray-500">{r.stages?.NEW ?? 0}</span>,
     },
     {
-      key: "contacted",
-      label: "Contacted",
+      key: "ENQUIRED",
+      label: "ENQUIRED",
       align: "right",
-      render: (r) => <span className="font-semibold text-[#2E75B6]">{r.stages?.CONTACTED ?? 0}</span>,
+      render: (r) => <span className="font-semibold text-[#2E75B6]">{r.stages?.ENQUIRED ?? 0}</span>,
     },
     {
       key: "invoiced",
@@ -501,3 +501,5 @@ function TelecallerReport({ params }: { params: any }) {
     />
   );
 }
+
+

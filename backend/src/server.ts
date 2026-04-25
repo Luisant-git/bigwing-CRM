@@ -337,7 +337,7 @@ app.get("/api/docs/openapi.json", (_req, res) => {
             { name: "page", in: "query", schema: { type: "integer", default: 1 } },
             { name: "pageSize", in: "query", schema: { type: "integer", default: 25, maximum: 200 } },
             { name: "q", in: "query", schema: { type: "string" }, description: "Search by enquiryNo, customer name, or mobile" },
-            { name: "stage", in: "query", schema: { type: "string", enum: ["NOT_CONTACTED", "CONTACTED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] } },
+            { name: "stage", in: "query", schema: { type: "string", enum: ["NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] } },
             { name: "channel", in: "query", schema: { type: "string", enum: ["TELE", "WALKIN", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"] } },
             { name: "interestLevel", in: "query", schema: { type: "string", enum: ["HOT", "WARM", "COLD"] } },
             { name: "assignedTo", in: "query", schema: { type: "integer" } },
@@ -494,7 +494,7 @@ app.get("/api/docs/openapi.json", (_req, res) => {
                   type: "object",
                   required: ["stage"],
                   properties: {
-                    stage: { type: "string", enum: ["NOT_CONTACTED", "CONTACTED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] },
+                    stage: { type: "string", enum: ["NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] },
                     closureReasonId: { type: "integer", description: "Required for LOST stage" },
                     remark: { type: "string" },
                   },
@@ -695,7 +695,7 @@ app.get("/api/docs/openapi.json", (_req, res) => {
         get: { tags: ["Reports"], summary: "Stage-wise funnel", description: "Lead counts per stage, ordered by pipeline position", security: [{ bearerAuth: [] }], parameters: [{ name: "dateFrom", in: "query", schema: { type: "string", format: "date" } }, { name: "dateTo", in: "query", schema: { type: "string", format: "date" } }], responses: { "200": { description: "Funnel data" } } },
       },
       "/api/v1/reports/executive": {
-        get: { tags: ["Reports"], summary: "Executive performance", description: "Per-executive: total leads, contacted %, test rides, bookings, invoiced, lost", security: [{ bearerAuth: [] }], parameters: [{ name: "dateFrom", in: "query", schema: { type: "string", format: "date" } }, { name: "dateTo", in: "query", schema: { type: "string", format: "date" } }], responses: { "200": { description: "Executive metrics" } } },
+        get: { tags: ["Reports"], summary: "Executive performance", description: "Per-executive: total leads, ENQUIRED %, test rides, bookings, invoiced, lost", security: [{ bearerAuth: [] }], parameters: [{ name: "dateFrom", in: "query", schema: { type: "string", format: "date" } }, { name: "dateTo", in: "query", schema: { type: "string", format: "date" } }], responses: { "200": { description: "Executive metrics" } } },
       },
       "/api/v1/reports/source": {
         get: { tags: ["Reports"], summary: "Source performance", description: "Per-source: enquiry count, invoiced, delivered, lost, conversion %", security: [{ bearerAuth: [] }], parameters: [{ name: "dateFrom", in: "query", schema: { type: "string", format: "date" } }, { name: "dateTo", in: "query", schema: { type: "string", format: "date" } }], responses: { "200": { description: "Source metrics" } } },
@@ -798,3 +798,5 @@ app.listen(env.PORT, () => {
 });
 
 export default app;
+
+

@@ -270,14 +270,16 @@ model Lead {
   variantId         BigInt?   @map("variant_id")
   colourId          BigInt?   @map("colour_id")
   assignedTo        BigInt?   @map("assigned_to")
-  stage             String    @default("NOT_CONTACTED") @db.VarChar(30)
+  stage             String    @default("NEW") @db.VarChar(30)
   interestLevel     String?   @map("interest_level") @db.VarChar(10)
   closureReasonId   BigInt?   @map("closure_reason_id")
   testRideFlag      Boolean   @default(false) @map("test_ride_flag")
   nextFollowupAt    DateTime? @map("next_followup_at")
+  lastFollowupAt    DateTime? @map("last_followup_at")
   enquiryDate       DateTime  @map("enquiry_date") @db.Date
   closedAt          DateTime? @map("closed_at")
   remark            String?   @db.Text
+  executiveName     String?   @map("executive_name") @db.VarChar(100)
   referredFromBranch String?  @map("referred_from_branch") @db.VarChar(80)
   // Service enquiry attributes (channel=SERVICE)
   typeOfService      String?  @map("type_of_service") @db.VarChar(60)
@@ -527,3 +529,5 @@ model AppSetting {
   @@map("app_setting")
   @@schema("app")
 }
+
+

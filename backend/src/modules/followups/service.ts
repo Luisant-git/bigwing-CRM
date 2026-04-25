@@ -39,6 +39,7 @@ export class FollowupService {
           nextFollowupAt: data.nextActionAt
             ? new Date(data.nextActionAt)
             : null,
+          lastFollowupAt: new Date(data.followupDate),
           updatedBy: createdBy,
         },
       }),

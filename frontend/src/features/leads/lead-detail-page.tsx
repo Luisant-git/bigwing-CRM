@@ -206,8 +206,11 @@ export default function LeadDetailPage() {
                 {lead.testRideFlag ? "Yes" : "No"}
               </Field>
               <Field label="Enquiry Date">{formatDate(lead.enquiryDate)}</Field>
+              <Field label="Current Follow-up">
+                {formatDateTime(lead.lastFollowupAt) || "—"}
+              </Field>
               <Field label="Next Follow-up">
-                {formatDateTime(lead.nextFollowupAt)}
+                {formatDateTime(lead.nextFollowupAt) || "—"}
               </Field>
               <Field label="Assigned To">
                 {lead.assignedTo?.fullName ?? "Unassigned"}
@@ -411,7 +414,7 @@ function FollowupsSection({ followups }: { followups: any[] }) {
           <span className="text-sm font-medium text-gray-500">({count})</span>
         </h2>
         {dateRange && (
-          <span className="text-xs text-gray-500">{dateRange}</span>
+          <span className="text-xs font-bold text-gray-500">{dateRange}</span>
         )}
       </div>
       {count === 0 ? (
@@ -430,7 +433,7 @@ function FollowupsSection({ followups }: { followups: any[] }) {
                     <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
                       {i + 1}
                     </span>
-                    <span>{formatDate(f.followupDate)}</span>
+                    <span className="font-bold">{formatDate(f.followupDate)}</span>
                     {f.channel && (
                       <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
                         {f.channel}
@@ -444,7 +447,7 @@ function FollowupsSection({ followups }: { followups: any[] }) {
                   </div>
                   {dmsId && (
                     <span
-                      className="truncate text-[10px] text-gray-400"
+                      className="truncate text-[11px] font-bold text-gray-500"
                       title={`DMS Follow Up Id: ${dmsId}`}
                     >
                       {dmsId}
@@ -521,7 +524,7 @@ function Modal({
 }
 
 const STAGES = [
-  "NOT_CONTACTED", "CONTACTED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED",
+  "NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED",
   "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED",
   "DELIVERED_CLOSED", "LOST",
 ];
@@ -693,8 +696,8 @@ function FollowupForm({
 // ─── Pipeline Progress Bar ──────────────────────────────────────
 
 const PIPELINE_STAGES = [
-  { key: "NOT_CONTACTED", label: "New", color: "#6C757D" },
-  { key: "CONTACTED", label: "Contacted", color: "#2D9CDB" },
+  { key: "NEW", label: "New", color: "#6C757D" },
+  { key: "ENQUIRED", label: "Enquired", color: "#2D9CDB" },
   { key: "TEST_RIDE_SCHEDULED", label: "Test Ride", color: "#9B59B6" },
   { key: "QUOTATION_SHARED", label: "Quotation", color: "#F2994A" },
   { key: "BOOKED", label: "Booked", color: "#E8792F" },
@@ -839,3 +842,5 @@ function PipelineSection({ leadId }: { leadId: string }) {
     </div>
   );
 }
+
+

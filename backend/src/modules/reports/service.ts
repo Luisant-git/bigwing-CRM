@@ -102,8 +102,8 @@ export class ReportService {
     });
 
     const stageOrder = [
-      "NOT_CONTACTED",
-      "CONTACTED",
+      "NEW",
+      "ENQUIRED",
       "NOT_REACHABLE",
       "TEST_RIDE_SCHEDULED",
       "TEST_RIDE_COMPLETED",
@@ -166,8 +166,8 @@ export class ReportService {
       executiveId: Number(id),
       executiveName: userNameMap.get(id) ?? "Unknown",
       totalLeads: data.total,
-      contacted: (data.stages["CONTACTED"] ?? 0) + (data.stages["TEST_RIDE_SCHEDULED"] ?? 0) + (data.stages["TEST_RIDE_COMPLETED"] ?? 0) + (data.stages["QUOTATION_SHARED"] ?? 0) + (data.stages["BOOKED"] ?? 0) + (data.stages["INVOICED"] ?? 0) + (data.stages["DELIVERED_CLOSED"] ?? 0),
-      contactedPct: data.total > 0 ? Math.round(((data.total - (data.stages["NOT_CONTACTED"] ?? 0) - (data.stages["NOT_REACHABLE"] ?? 0)) / data.total) * 100) : 0,
+      ENQUIRED: (data.stages["ENQUIRED"] ?? 0) + (data.stages["TEST_RIDE_SCHEDULED"] ?? 0) + (data.stages["TEST_RIDE_COMPLETED"] ?? 0) + (data.stages["QUOTATION_SHARED"] ?? 0) + (data.stages["BOOKED"] ?? 0) + (data.stages["INVOICED"] ?? 0) + (data.stages["DELIVERED_CLOSED"] ?? 0),
+      ENQUIREDPct: data.total > 0 ? Math.round(((data.total - (data.stages["NEW"] ?? 0) - (data.stages["NOT_REACHABLE"] ?? 0)) / data.total) * 100) : 0,
       testRides: (data.stages["TEST_RIDE_SCHEDULED"] ?? 0) + (data.stages["TEST_RIDE_COMPLETED"] ?? 0),
       bookings: data.stages["BOOKED"] ?? 0,
       invoiced: data.stages["INVOICED"] ?? 0,
@@ -385,3 +385,5 @@ export class ReportService {
 }
 
 export const reportService = new ReportService();
+
+
