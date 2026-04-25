@@ -272,7 +272,7 @@ export class ReportService {
       where: { id: { in: modelIds } },
       select: { id: true, name: true, segment: true },
     });
-    const nameMap = new Map(
+    const nameMap = new Map<string, { name: string; segment: string | null }>(
       models.map((m) => [String(m.id), { name: m.name, segment: m.segment }])
     );
 
@@ -361,7 +361,7 @@ export class ReportService {
       select: { id: true, name: true },
       orderBy: { displayOrder: "asc" },
     });
-    const nameMap = new Map(sources.map((s) => [String(s.id), s.name]));
+    const nameMap = new Map<string, string>(sources.map((s) => [String(s.id), s.name]));
 
     // Build matrix: source → { stage → count }
     const matrix = new Map<string, { source: string; stages: Record<string, number>; total: number }>();
