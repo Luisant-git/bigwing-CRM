@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS } from "@/lib/hooks";
+import { formatDate, formatDateTime, STAGE_COLORS, useUsers } from "@/lib/hooks";
 import { InterestBadge } from "@/components/interest-badge";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal, Timeline, Breadcrumb, Tooltip, ConfirmModal, type TimelineEvent } from "@/components/ui";
@@ -30,8 +30,11 @@ export default function LeadDetailPage() {
   const [showPipelineForm, setShowPipelineForm] = useState<string | null>(null);
 
   const user = useAuthStore((s) => s.user);
-  // Only SUPER_ADMIN and MANAGER can delete (matches backend RBAC)
+  // Roles allowed to assign/delete
+  const canAssign = user?.roles?.some((r) => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r));
   const canDelete = user?.roles?.some((r) => r === "SUPER_ADMIN" || r === "MANAGER");
+
+  const [showAssignForm, setShowAssignForm] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["leads", id],
@@ -69,6 +72,17 @@ export default function LeadDetailPage() {
     },
     onError: (err: any) =>
       toast.error(err.response?.data?.error?.message || "Delete failed"),
+  });
+
+  const assignMut = useMutation({
+    mutationFn: (body: { assignedTo: number }) => api.post(`/leads/${id}/assign`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leads", id] });
+      toast.success("Lead assigned successfully");
+      setShowAssignForm(false);
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Assignment failed"),
   });
 
   if (isLoading) return <PageLoader message="Loading lead details..." />;
@@ -213,7 +227,19 @@ export default function LeadDetailPage() {
                 {formatDateTime(lead.nextFollowupAt) || "—"}
               </Field>
               <Field label="Assigned To">
-                {lead.assignedTo?.fullName ?? "Unassigned"}
+                <div className="flex items-center gap-2">
+                  <span className={!lead.assignedTo && !lead.executiveName ? "font-semibold text-red-600" : "font-medium text-gray-700"}>
+                    {lead.assignedTo?.fullName ?? lead.executiveName ?? "Unassigned"}
+                  </span>
+                  {canAssign && !lead.assignedTo && !lead.executiveName && (
+                    <button
+                      onClick={() => setShowAssignForm(true)}
+                      className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-[#2E75B6] hover:bg-gray-200"
+                    >
+                      Assign Executive
+                    </button>
+                  )}
+                </div>
               </Field>
               {lead.referredFromBranch && (
                 <Field label="Referred From">{lead.referredFromBranch}</Field>
@@ -359,7 +385,72 @@ export default function LeadDetailPage() {
           />
         </Modal>
       )}
+
+      {/* Assignment modal */}
+      {showAssignForm && (
+        <Modal
+          onClose={() => setShowAssignForm(false)}
+          title="Assign Executive"
+        >
+          <AssignForm
+            currentId={lead.assignedTo?.id}
+            onSubmit={(d) => assignMut.mutate(d)}
+            loading={assignMut.isPending}
+          />
+        </Modal>
+      )}
     </div>
+  );
+}
+
+function AssignForm({
+  currentId,
+  onSubmit,
+  loading,
+}: {
+  currentId?: number;
+  onSubmit: (d: { assignedTo: number }) => void;
+  loading: boolean;
+}) {
+  const { data: users, isLoading } = useUsers();
+  const [selectedId, setSelectedId] = useState<string>(currentId ? String(currentId) : "");
+
+  if (isLoading) return <div className="py-4 text-center text-sm text-gray-500">Loading executives...</div>;
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (selectedId) onSubmit({ assignedTo: Number(selectedId) });
+      }}
+      className="space-y-4"
+    >
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700">Select Executive</label>
+        <select
+          value={selectedId}
+          onChange={(e) => setSelectedId(e.target.value)}
+          required
+          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+        >
+          <option value="">Select executive...</option>
+          {(users ?? []).map((u: any) => (
+            <option key={u.id} value={u.id}>
+              {u.fullName} ({u.roles?.join(", ")})
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          type="submit"
+          disabled={!selectedId || loading || Number(selectedId) === currentId}
+          className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-semibold text-white shadow-md hover:bg-[#245f96] disabled:opacity-50"
+        >
+          {loading ? "Assigning..." : "Confirm Assignment"}
+        </button>
+      </div>
+    </form>
   );
 }
 

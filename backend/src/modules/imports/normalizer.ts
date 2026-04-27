@@ -114,7 +114,7 @@ const stageAliases: Record<string, string> = {
   "LOST": "LOST",
   "ENQUIRY LOST": "LOST",
   "LEAD LOST": "LOST",
-  "ENQUIRY": "NEW",
+  "ENQUIRY": "ENQUIRED",
   "ENQUIRY RECEIVED": "NEW",
   "NEW ENQUIRY": "NEW",
   "CANCELLED AFTER BOOKING": "LOST",

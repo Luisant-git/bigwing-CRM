@@ -6,13 +6,21 @@ import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
 
 // Roles that can see all leads
-const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"];
+const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER", "TELE_CALLER"];
 
 function ownDataFilter(user?: any): any {
   if (!user) return {};
   const canSeeAll = user.roles?.some((r: string) => ALL_DATA_ROLES.includes(r));
   if (canSeeAll) return {};
-  return { assignedTo: BigInt(user.userId) };
+  
+  // Restricted roles (e.g. SALES_EXECUTIVE) see leads assigned to them 
+  // OR leads that are currently unassigned (so they can pick them up).
+  return {
+    OR: [
+      { assignedTo: BigInt(user.userId) },
+      { assignedTo: null }
+    ]
+  };
 }
 
 export class LeadService {

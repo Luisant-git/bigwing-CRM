@@ -150,31 +150,24 @@ export default function PipelineBoardPage() {
                     </div>
 
                     <div className="mt-3 flex items-center justify-between border-t border-gray-50 pt-2">
-                      <div className="flex items-center gap-1.5">
-                        {lead.assignedTo ? (
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        {lead.assignedTo || lead.executiveName ? (
                           <>
                             <div
-                              className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold text-white"
-                              style={{ backgroundColor: "#2E75B6" }}
+                              className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+                              style={{ backgroundColor: lead.assignedTo ? "#2E75B6" : "#64748B" }}
                             >
-                              {lead.assignedTo.fullName?.[0] ?? "?"}
+                              {(lead.assignedTo?.fullName ?? lead.executiveName)?.[0] ?? "?"}
                             </div>
-                            <span className="truncate text-[11px] text-gray-500">
-                              {lead.assignedTo.fullName}
+                            <span className="truncate text-[11px] font-medium text-gray-600">
+                              {lead.assignedTo?.fullName ?? lead.executiveName}
                             </span>
                           </>
-                        ) : lead.executiveName ? (
-                          <div className="flex items-center gap-1">
-                             <div className="h-2 w-2 rounded-full bg-gray-300" />
-                             <span className="truncate text-[11px] font-medium text-gray-400 italic">
-                                {lead.executiveName}
-                             </span>
-                          </div>
                         ) : (
-                          <span className="text-[11px] text-gray-300">Unassigned</span>
+                          <span className="text-[11px] text-gray-300 italic">Unassigned</span>
                         )}
                       </div>
-                      <span className="text-[10px] text-gray-400 font-mono">{lead.enquiryNo}</span>
+                      <span className="ml-2 shrink-0 text-[10px] text-gray-400 font-mono">{lead.enquiryNo}</span>
                     </div>
                   </div>
                 ))}
