@@ -787,8 +787,8 @@ function FollowupForm({
 // ─── Pipeline Progress Bar ──────────────────────────────────────
 
 const PIPELINE_STAGES = [
-  { key: "NEW", label: "New", color: "#6C757D" },
-  { key: "ENQUIRED", label: "Enquired", color: "#2D9CDB" },
+  { key: "NOT_CONTACTED", label: "New", color: "#6C757D" },
+  { key: "CONTACTED", label: "Contacted", color: "#2D9CDB" },
   { key: "TEST_RIDE_SCHEDULED", label: "Test Ride", color: "#9B59B6" },
   { key: "QUOTATION_SHARED", label: "Quotation", color: "#F2994A" },
   { key: "BOOKED", label: "Booked", color: "#E8792F" },

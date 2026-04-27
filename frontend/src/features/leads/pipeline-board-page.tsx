@@ -9,7 +9,7 @@ import { PageLoader } from "@/components/spinner";
 import { formatDate } from "@/lib/hooks";
 
 const COLUMNS = [
-  { stage: "NOT_CONTACTED", label: "Not Contacted", color: "#6C757D" },
+  { stage: "NOT_CONTACTED", label: "New", color: "#6C757D" },
   { stage: "CONTACTED", label: "Contacted", color: "#2D9CDB" },
   { stage: "NOT_REACHABLE", label: "Not Reachable", color: "#F59E0B" },
   { stage: "TEST_RIDE_SCHEDULED", label: "Test Ride Scheduled", color: "#9B59B6" },
