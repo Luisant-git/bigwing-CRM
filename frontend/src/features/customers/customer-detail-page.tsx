@@ -42,7 +42,7 @@ export default function CustomerDetailPage() {
   const leadCount = c.leads?.length ?? 0;
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="w-full">
       <Breadcrumb
         items={[
           { label: "Home", to: "/" },
@@ -51,30 +51,25 @@ export default function CustomerDetailPage() {
         ]}
       />
 
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link to="/customers" className="rounded-lg p-1.5 hover:bg-gray-200">
-            <ArrowLeft size={18} />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold text-[#1F3864]">
-              {c.firstName} {c.lastName ?? ""}
-            </h1>
-            <p className="text-sm text-gray-500">{c.mobile}</p>
-          </div>
+      <div className="mt-6 flex items-center justify-between border-b pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1F3864]">
+            {c.firstName} {c.lastName ?? ""}
+          </h1>
+          <p className="text-gray-500">{c.mobile}</p>
         </div>
         <div className="flex gap-2">
           <Link
             to="/customers/$id/edit"
             params={{ id: String(c.id) }}
-            className="flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium hover:bg-gray-50"
+            className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
           >
             <Pencil size={14} /> Edit
           </Link>
           {canDelete && (
             <button
               onClick={() => setShowConfirmDelete(true)}
-              className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm font-medium text-[#EB5757] hover:bg-red-100 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
             >
               <Trash2 size={14} /> Delete
             </button>
@@ -82,98 +77,100 @@ export default function CustomerDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2">
-          {/* Lead history */}
-          <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
-            <h2 className="mb-4 font-semibold">
-              Lead History ({leadCount})
-            </h2>
-            {leadCount > 0 ? (
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <h2 className="mb-4 text-lg font-bold">Lead History ({leadCount})</h2>
+          {leadCount > 0 ? (
+            <div className="overflow-x-auto rounded-lg border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b text-xs text-gray-500 uppercase">
+                <thead className="bg-gray-50 border-b text-xs font-bold uppercase text-gray-500">
                   <tr>
-                    <th className="pb-2">Enquiry No</th>
-                    <th className="pb-2">Model</th>
-                    <th className="pb-2">Stage</th>
-                    <th className="pb-2">Source</th>
-                    <th className="pb-2">Date</th>
+                    <th className="px-4 py-3">Enquiry No</th>
+                    <th className="px-4 py-3">Model</th>
+                    <th className="px-4 py-3">Stage</th>
+                    <th className="px-4 py-3">Source</th>
+                    <th className="px-4 py-3">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {c.leads.map((l: any) => (
                     <tr key={l.id} className="hover:bg-gray-50">
-                      <td className="py-2">
+                      <td className="px-4 py-3">
                         <Link
                           to="/leads/$id"
                           params={{ id: String(l.id) }}
-                          className="font-medium text-[#2E75B6] hover:underline"
+                          className="font-bold text-[#2E75B6] hover:underline"
                         >
                           {l.enquiryNo}
                         </Link>
                       </td>
-                      <td className="py-2">{l.model ?? "—"}</td>
-                      <td className="py-2">
+                      <td className="px-4 py-3">{l.model ?? "—"}</td>
+                      <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-medium ${STAGE_COLORS[l.stage] ?? ""}`}
                         >
                           {l.stage?.replace(/_/g, " ")}
                         </span>
                       </td>
-                      <td className="py-2 text-gray-500">{l.source}</td>
-                      <td className="py-2 text-gray-500">
+                      <td className="px-4 py-3 text-gray-500">{l.source}</td>
+                      <td className="px-4 py-3 text-gray-400">
                         {formatDate(l.enquiryDate)}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            ) : (
-              <p className="text-sm text-gray-400">No leads for this customer</p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p className="py-10 text-center text-sm text-gray-400 border rounded-lg">No lead history found.</p>
+          )}
         </div>
 
-        {/* Customer details */}
-        <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
-          <h2 className="mb-4 font-semibold">Details</h2>
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Phone size={14} /> {c.mobile}
+        <div>
+          <h2 className="mb-4 text-lg font-bold">Details</h2>
+          <div className="rounded-lg border p-5 space-y-4 text-sm">
+            <div>
+              <p className="text-xs font-bold uppercase text-gray-400">Mobile Number</p>
+              <p className="mt-1 font-medium">{c.mobile}</p>
             </div>
             {c.altMobile && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <Phone size={14} /> {c.altMobile} (alt)
+              <div>
+                <p className="text-xs font-bold uppercase text-gray-400">Alt Mobile</p>
+                <p className="mt-1 font-medium">{c.altMobile}</p>
               </div>
             )}
             {c.email && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <Mail size={14} /> {c.email}
+              <div>
+                <p className="text-xs font-bold uppercase text-gray-400">Email Address</p>
+                <p className="mt-1 font-medium">{c.email}</p>
               </div>
             )}
             {c.location && (
-              <div className="flex items-center gap-2 text-gray-600">
-                <MapPin size={14} /> {c.location}
+              <div>
+                <p className="text-xs font-bold uppercase text-gray-400">Location</p>
+                <p className="mt-1 font-medium">{c.location}</p>
               </div>
             )}
             {c.customerType && (
-              <p className="text-gray-500">
-                Type: {c.customerType.replace(/_/g, " ")}
-              </p>
+              <div>
+                <p className="text-xs font-bold uppercase text-gray-400">Customer Type</p>
+                <p className="mt-1 font-medium">{c.customerType.replace(/_/g, " ")}</p>
+              </div>
             )}
             {c.dob && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <Calendar size={14} /> DOB: {formatDate(c.dob)}
+              <div>
+                <p className="text-xs font-bold uppercase text-gray-400">Date of Birth</p>
+                <p className="mt-1 font-medium">{formatDate(c.dob)}</p>
               </div>
             )}
             {c.anniversary && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <Calendar size={14} /> Anniversary: {formatDate(c.anniversary)}
+              <div>
+                <p className="text-xs font-bold uppercase text-gray-400">Anniversary</p>
+                <p className="mt-1 font-medium">{formatDate(c.anniversary)}</p>
               </div>
             )}
-            {c.accountName && <p className="text-gray-500">Account: {c.accountName}</p>}
-            <hr />
-            <p className="text-xs text-gray-400">Created {formatDate(c.createdAt)}</p>
+            <hr className="my-4" />
+            <p className="text-[11px] text-gray-400">Created on {formatDate(c.createdAt)}</p>
           </div>
         </div>
       </div>
@@ -194,6 +191,29 @@ export default function CustomerDetailPage() {
         onConfirm={() => deleteMut.mutate()}
         onCancel={() => setShowConfirmDelete(false)}
       />
+    </div>
+  );
+}
+
+function DetailItem({
+  icon,
+  label,
+  value,
+  dark = false,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string;
+  dark?: boolean;
+}) {
+  return (
+    <div>
+      <p className={`text-[10px] font-bold uppercase tracking-widest ${dark ? "text-gray-400" : "text-blue-200/40"}`}>
+        {label}
+      </p>
+      <div className={`mt-1 flex items-center gap-2 text-sm font-semibold ${dark ? "text-gray-700" : "text-white"}`}>
+        {icon} {value}
+      </div>
     </div>
   );
 }

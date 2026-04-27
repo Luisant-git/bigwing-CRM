@@ -12,6 +12,7 @@ const lookupModels = {
   "vehicle-variants": () => prisma.vehicleVariant,
   "vehicle-colours": () => prisma.vehicleColour,
   "referred-branches": () => prisma.referredBranch,
+  "sales-executives": () => prisma.salesExecutive,
   "active-stages": () => ({} as any), // Dummy for mapping
 } as const;
 
@@ -22,6 +23,7 @@ const EDITABLE_LOOKUPS = new Set([
   "interest-levels",
   "closure-reasons",
   "referred-branches",
+  "sales-executives",
 ]);
 
 type LookupName = keyof typeof lookupModels;
@@ -77,6 +79,7 @@ export class LookupService {
     const item = await model.create({
       data: {
         name: data.name,
+        ...(data.mobile !== undefined && { mobile: data.mobile }),
         displayOrder: data.displayOrder ?? 0,
         isActive: data.isActive ?? true,
       },
@@ -104,6 +107,7 @@ export class LookupService {
       where: { id },
       data: {
         ...(data.name !== undefined && { name: data.name }),
+        ...(data.mobile !== undefined && { mobile: data.mobile }),
         ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
@@ -131,6 +135,10 @@ export class LookupService {
 
     if (name === "vehicle-variants") {
       return { ...base, modelId: Number(item.modelId) };
+    }
+
+    if (name === "sales-executives") {
+      return { ...base, mobile: item.mobile };
     }
 
     return base;

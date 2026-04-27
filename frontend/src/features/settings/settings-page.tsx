@@ -13,6 +13,7 @@ const LOOKUP_SECTIONS = [
   { key: "interest-levels", label: "Interest Levels", description: "Hot / Warm / Cold classification" },
   { key: "closure-reasons", label: "Closure Reasons", description: "Why a lead was lost or closed" },
   { key: "referred-branches", label: "Referred Branches", description: "Other Honda branches that refer enquiries" },
+  { key: "sales-executives", label: "Sales Executives", description: "Manage names and contact numbers of Sales Executives" },
 ];
 
 export default function SettingsPage() {
@@ -68,6 +69,7 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newMobile, setNewMobile] = useState("");
   const [newOrder, setNewOrder] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -84,6 +86,7 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
       toast.success(`${label} item added`);
       setShowForm(false);
       setNewName("");
+      setNewMobile("");
       setNewOrder("");
     },
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
@@ -105,6 +108,7 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
     if (!newName.trim()) return;
     createMut.mutate({
       name: newName.trim(),
+      ...(apiName === "sales-executives" && { mobile: newMobile.trim() }),
       displayOrder: newOrder ? Number(newOrder) : 0,
     });
   };
@@ -136,8 +140,16 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
             onChange={(e) => setNewName(e.target.value)}
             required
             autoFocus
-            className="flex-1 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+            className="flex-1 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
           />
+          {apiName === "sales-executives" && (
+            <input
+              placeholder="Mobile Number"
+              value={newMobile}
+              onChange={(e) => setNewMobile(e.target.value)}
+              className="w-40 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none"
+            />
+          )}
           <input
             type="number"
             placeholder="Order"
@@ -184,6 +196,7 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
                 <GripVertical size={14} className="text-gray-300 cursor-grab" />
                 <span className="flex-1 text-sm font-medium text-gray-700">
                   {item.name}
+                  {item.mobile && <span className="ml-2 font-normal text-gray-400">({item.mobile})</span>}
                 </span>
                 <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
                   Order: {item.displayOrder}
@@ -230,13 +243,18 @@ function EditRow({
   saving: boolean;
 }) {
   const [name, setName] = useState(item.name);
+  const [mobile, setMobile] = useState(item.mobile ?? "");
   const [order, setOrder] = useState(String(item.displayOrder ?? 0));
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        onSave({ name: name.trim(), displayOrder: Number(order) || 0 });
+        onSave({ 
+          name: name.trim(), 
+          ...(item.mobile !== undefined && { mobile: mobile.trim() }),
+          displayOrder: Number(order) || 0 
+        });
       }}
       className="flex items-center gap-2 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-200"
     >
@@ -248,11 +266,19 @@ function EditRow({
         autoFocus
         className="flex-1 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
       />
+      {item.mobile !== undefined && (
+        <input
+          placeholder="Mobile"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
+          className="w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+        />
+      )}
       <input
         type="number"
         value={order}
         onChange={(e) => setOrder(e.target.value)}
-        className="w-24 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+        className="w-20 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
       />
       <button
         type="submit"
