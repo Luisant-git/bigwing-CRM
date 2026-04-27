@@ -63,7 +63,7 @@ export class LookupService {
     return items.map((item: any) => this.formatItem(item, name));
   }
 
-  async create(name: LookupName, data: { name: string; displayOrder?: number; isActive?: boolean }) {
+  async create(name: LookupName, data: { name: string; mobile?: string; displayOrder?: number; isActive?: boolean }) {
     if (!this.isEditableLookup(name)) {
       throw new AppError(400, "NOT_EDITABLE", `Lookup '${name}' is managed via its dedicated module`);
     }

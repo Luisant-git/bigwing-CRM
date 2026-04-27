@@ -701,9 +701,11 @@ export class ImportService {
 
     // Normalize Stage
     const normalizeStage = (s: string | null | undefined): string => {
-      if (!s) return "NEW";
+      if (!s) return "NOT_CONTACTED";
       const val = s.toUpperCase().trim();
-      if (val === "ENQUIRY") return "ENQUIRED";
+      if (val === "ENQUIRY") return "CONTACTED";
+      if (val === "NEW") return "NOT_CONTACTED";
+      if (val === "ENQUIRED") return "CONTACTED";
       if (val === "ENQUIRY LOST") return "LOST";
       if (val === "TEST RIDE DONE" || val === "TEST RIDE COMPLETED") return "TEST_RIDE_COMPLETED";
       if (val === "TEST RIDE SCHEDULED") return "TEST_RIDE_SCHEDULED";
