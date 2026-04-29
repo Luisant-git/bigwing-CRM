@@ -9,29 +9,34 @@ import { auditService } from "../audit/service.js";
 export const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 export function ownDataFilter(user?: any): any {
-  if (!user) return { id: -1 }; // Force no results if no user
+  if (!user) return { id: -1 };
   
-  const roles = (user.roles || []).map((r: string) => r.toUpperCase());
+  const roles = (user.roles || []).map((r: string) => r.toUpperCase().replace(/\s+/g, "_"));
   
   const canSeeAll = roles.some((r: string) => ALL_DATA_ROLES.includes(r));
   if (canSeeAll) return {};
 
-  // For restricted roles (MANAGER, TELE_CALLER, SALES_EXECUTIVE):
-  // They should see leads that:
-  // 1. Are assigned to them
-  // 2. OR were created by them
-  // 3. OR are unassigned (only if they are allowed to pick up new leads)
-  
-  // If the user wants strictly individual data (only assigned or created by them):
-  const restrictedRoles = ["MANAGER", "TELE_CALLER", "SALES_EXECUTIVE"];
-  const isRestricted = roles.some(r => restrictedRoles.includes(r));
+  const isManager = roles.includes("MANAGER");
+  const isTelecaller = roles.includes("TELE_CALLER");
+  const isSalesExec = roles.includes("SALES_EXECUTIVE");
 
-  if (isRestricted) {
+  if (isTelecaller || isSalesExec) {
+    // Strictly individual data: only what they created OR what is assigned to them
+    return {
+      OR: [
+        { createdBy: BigInt(user.userId) },
+        { assignedTo: BigInt(user.userId) }
+      ]
+    };
+  }
+
+  if (isManager) {
+    // Managers see their own leads, what they created, and unassigned leads to manage/assign
     return {
       OR: [
         { createdBy: BigInt(user.userId) },
         { assignedTo: BigInt(user.userId) },
-        { assignedTo: null } // Allow seeing unassigned leads to pick them up
+        { assignedTo: null }
       ]
     };
   }
