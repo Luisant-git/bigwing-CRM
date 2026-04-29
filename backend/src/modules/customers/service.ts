@@ -1,11 +1,16 @@
 import { customerRepository } from "./repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
+import { ALL_DATA_ROLES } from "../leads/service.js";
 
 export class CustomerService {
-  async list(page: number, pageSize: number, q?: string) {
+  async list(page: number, pageSize: number, q?: string, user?: any) {
+    const roles = user?.roles || [];
+    const canSeeAll = roles.some((r: string) => ALL_DATA_ROLES.includes(r));
+
     const where: any = {
       isDeleted: false,
+      ...(!canSeeAll && roles.includes("TELE_CALLER") && { createdBy: BigInt(user.userId) }),
       ...(q && {
         OR: [
           { firstName: { contains: q, mode: "insensitive" } },

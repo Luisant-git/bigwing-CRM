@@ -8,7 +8,8 @@ export class CustomerController {
       const result = await customerService.list(
         Number(page) || 1,
         Number(pageSize) || 25,
-        q as string
+        q as string,
+        (req as any).user
       );
       res.json({ success: true, ...result });
     } catch (err) {

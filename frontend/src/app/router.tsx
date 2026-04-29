@@ -58,6 +58,11 @@ const leadsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: "/leads",
   component: LeadListPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      tab: (search.tab as string) || "all",
+    };
+  },
 });
 
 const leadNewRoute = createRoute({

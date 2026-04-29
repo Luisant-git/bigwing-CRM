@@ -37,16 +37,16 @@ export default function DashboardPage() {
   if (kpiLoading) return <PageLoader message="Loading dashboard..." />;
 
   const cards = [
-    { label: "Total Enquiries", value: kpi?.totalEnquiries, icon: ClipboardList, accent: "#2E75B6", bg: "bg-blue-50" },
-    { label: "Active", value: kpi?.active, icon: TrendingUp, accent: "#6366F1", bg: "bg-indigo-50" },
-    { label: "Today's Follow-ups", value: kpi?.today, icon: Clock, accent: "#0891B2", bg: "bg-cyan-50" },
-    { label: "Overdue", value: kpi?.overdue, icon: AlertTriangle, accent: "#EB5757", bg: "bg-red-50" },
-    { label: "Upcoming", value: kpi?.upcoming, icon: CalendarClock, accent: "#F2994A", bg: "bg-amber-50" },
-    { label: "No Follow-up", value: kpi?.noFollowup, icon: Ban, accent: "#D97706", bg: "bg-orange-50" },
-    { label: "Booked", value: kpi?.booked, icon: Bookmark, accent: "#E8792F", bg: "bg-orange-50" },
-    { label: "Invoiced", value: kpi?.invoiced, icon: FileCheck, accent: "#27AE60", bg: "bg-green-50" },
-    { label: "Delivered", value: kpi?.delivered, icon: Truck, accent: "#059669", bg: "bg-emerald-50" },
-    { label: "Lost", value: kpi?.lost, icon: XCircle, accent: "#EB5757", bg: "bg-red-50" },
+    { label: "Total Enquiries", value: kpi?.totalEnquiries, icon: ClipboardList, accent: "#2E75B6", bg: "bg-blue-50", tab: "all" },
+    { label: "Active", value: kpi?.active, icon: TrendingUp, accent: "#6366F1", bg: "bg-indigo-50", tab: "all" },
+    { label: "Today's Follow-ups", value: kpi?.today, icon: Clock, accent: "#0891B2", bg: "bg-cyan-50", tab: "today" },
+    { label: "Overdue", value: kpi?.overdue, icon: AlertTriangle, accent: "#EB5757", bg: "bg-red-50", tab: "overdue" },
+    { label: "Upcoming", value: kpi?.upcoming, icon: CalendarClock, accent: "#F2994A", bg: "bg-amber-50", tab: "upcoming" },
+    { label: "No Follow-up", value: kpi?.noFollowup, icon: Ban, accent: "#D97706", bg: "bg-orange-50", tab: "no-followup" },
+    { label: "Booked", value: kpi?.booked, icon: Bookmark, accent: "#E8792F", bg: "bg-orange-50", tab: "all" },
+    { label: "Invoiced", value: kpi?.invoiced, icon: FileCheck, accent: "#27AE60", bg: "bg-green-50", tab: "all" },
+    { label: "Delivered", value: kpi?.delivered, icon: Truck, accent: "#059669", bg: "bg-emerald-50", tab: "all" },
+    { label: "Lost", value: kpi?.lost, icon: XCircle, accent: "#EB5757", bg: "bg-red-50", tab: "all" },
   ];
 
   const funnelData = (funnel ?? [])
@@ -68,6 +68,7 @@ export default function DashboardPage() {
           <Link
             key={card.label}
             to="/leads"
+            search={{ tab: card.tab }}
             className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md`}
           >
             {/* Accent bar */}

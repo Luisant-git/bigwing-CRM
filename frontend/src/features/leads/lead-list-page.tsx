@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, STAGE_COLORS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { Breadcrumb, Tooltip } from "@/components/ui";
-import { Avatar } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
 
@@ -25,7 +24,14 @@ const TABS: { key: Tab; label: string; endpoint: string }[] = [
 
 export default function LeadListPage() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("all");
+  const searchParams = useSearch({ strict: false }) as any;
+  const [tab, setTab] = useState<Tab>(searchParams.tab || "all");
+
+  useEffect(() => {
+    if (searchParams.tab) {
+      setTab(searchParams.tab);
+    }
+  }, [searchParams.tab]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
@@ -141,44 +147,62 @@ export default function LeadListPage() {
       ) : <span className="text-gray-300">—</span>,
       sortValue: (l) => l.model ?? "",
     },
+    ...(channel === "SERVICE" ? [
+      {
+        key: "expectedServiceDate",
+        label: "Service Date",
+        sortable: true,
+        render: (l: any) => <span className="font-semibold text-[#2E75B6]">{formatDate(l.expectedServiceDate)}</span>,
+      },
+      {
+        key: "typeOfService",
+        label: "Type",
+        render: (l: any) => <span className="text-gray-600">{l.typeOfService || "—"}</span>,
+      },
+      {
+        key: "pickupDropFlag",
+        label: "P/D",
+        render: (l: any) => <span>{l.pickupDropFlag ? "✅" : "—"}</span>,
+      }
+    ] : [
+      {
+        key: "interestLevel",
+        label: "Interest",
+        sortable: true,
+        render: (l) => <InterestBadge level={l.interestLevel} />,
+        sortValue: (l) => ({ HOT: 0, WARM: 1, COLD: 2 }[l.interestLevel as string] ?? 3),
+      }
+    ]),
     {
       key: "stage",
       label: "Stage",
       sortable: true,
       render: (l) => (
         <span className={`inline-block rounded px-2.5 py-0.5 text-[11px] font-semibold transition-all hover:brightness-105 hover:scale-105 ${STAGE_COLORS[l.stage] ?? "bg-gray-100"}`}>
-          {l.stage.replace(/_/g, " ")}
+          {STAGE_LABELS[l.stage] ?? l.stage.replace(/_/g, " ")}
         </span>
       ),
       sortValue: (l) => l.stage,
     },
     {
-      key: "interestLevel",
-      label: "Interest",
-      sortable: true,
-      render: (l) => <InterestBadge level={l.interestLevel} />,
-      sortValue: (l) => ({ HOT: 0, WARM: 1, COLD: 2 }[l.interestLevel as string] ?? 3),
-    },
-    {
       key: "assignedTo",
       label: "Assigned To",
-      render: (l) => l.assignedTo ? (
-        <div className="flex items-center gap-2">
-          <ExecAvatar userId={l.assignedTo.id} name={l.assignedTo.fullName} />
-          <span className="text-sm text-gray-600">{l.assignedTo.fullName}</span>
-        </div>
-      ) : l.executiveName ? (
-        <div className="flex items-center gap-1.5 opacity-60">
-           <div className="h-1.5 w-1.5 rounded-full bg-gray-400" />
-           <span className="text-[11px] font-medium text-gray-500 italic">
-             {l.executiveName}
-           </span>
-        </div>
-      ) : <span className="text-gray-300">Unassigned</span>,
+      render: (l) => {
+        const name = l.assignedTo?.fullName ?? l.executiveName;
+        if (!name) return <span className="text-gray-300 italic text-[11px] whitespace-nowrap">Unassigned</span>;
+        return (
+          <div className="flex items-center gap-1.5 opacity-80 whitespace-nowrap">
+            <div className="h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
+            <span className="text-[11px] font-semibold uppercase italic text-gray-500 tracking-wider">
+              {name}
+            </span>
+          </div>
+        );
+      },
     },
     {
       key: "enquiryDate",
-      label: "Date",
+      label: "Enquiry Date",
       sortable: true,
       render: (l) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
       sortValue: (l) => l.enquiryDate,
@@ -289,8 +313,8 @@ export default function LeadListPage() {
       {showFilters && tab === "all" && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <FilterSelect label="Stage" value={stage} onChange={setStage} options={["NEW","ENQUIRED","NOT_REACHABLE","TEST_RIDE_SCHEDULED","TEST_RIDE_COMPLETED","QUOTATION_SHARED","BOOKED","INVOICED","DELIVERED_CLOSED","LOST"].map(s => ({ value: s, label: s.replace(/_/g," ") }))} />
-            <FilterSelect label="Channel" value={channel} onChange={setChannel} options={["WALKIN","TELE","DIGITAL","SOCIAL","REFERENCE","WEBSITE","SERVICE"].map(c => ({ value: c, label: c }))} />
+            <FilterSelect label="Stage" value={stage} onChange={setStage} options={["NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].map(s => ({ value: s, label: STAGE_LABELS[s] ?? s.replace(/_/g, " ") }))} />
+            <FilterSelect label="Channel" value={channel} onChange={setChannel} options={["WALKIN", "TELE", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"].map(c => ({ value: c, label: c }))} />
             <FilterSelect label="Source" value={sourceId} onChange={setSourceId} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
             <FilterSelect label="Assigned To" value={assignedTo} onChange={setAssignedTo} options={(users ?? []).map((u: any) => ({ value: String(u.id), label: u.fullName }))} />
@@ -322,12 +346,12 @@ export default function LeadListPage() {
         onRowClick={(l) => navigate({ to: "/leads/$id", params: { id: String(l.id) } })}
         rowAccent={(l) =>
           l.interestLevel === "HOT" ? "#EF4444" :
-          l.interestLevel === "WARM" ? "#F59E0B" :
-          undefined
+            l.interestLevel === "WARM" ? "#F59E0B" :
+              undefined
         }
         rowClassName={(l) =>
           l.interestLevel === "HOT" ? "!bg-gradient-to-r !from-red-50/40 !to-transparent" :
-          l.stage === "LOST" ? "opacity-50" : ""
+            l.stage === "LOST" ? "opacity-50" : ""
         }
         footer={meta && meta.total > 0 && (
           <Pagination
@@ -343,11 +367,7 @@ export default function LeadListPage() {
   );
 }
 
-function ExecAvatar({ userId, name }: { userId: number; name: string }) {
-  const { data: users } = useUsers();
-  const user = users?.find((u: any) => u.id === userId);
-  return <Avatar name={name} gender={user?.gender} url={user?.avatarUrl} size={26} />;
-}
+
 
 function FilterSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
   return (

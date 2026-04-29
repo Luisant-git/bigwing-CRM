@@ -90,6 +90,7 @@ export const createLeadSchema = z.object({
   variantId: z.number().int().positive().optional(),
   colourId: z.number().int().positive().optional(),
   assignedTo: z.number().int().positive().optional(),
+  executiveName: z.string().max(100).optional(),
   interestLevel: z.nativeEnum(InterestLevel).optional(),
   testRideFlag: z.boolean().default(false),
   nextFollowupAt: z.string().datetime().optional(),
@@ -115,7 +116,7 @@ export const moveStageSchema = z.object({
 });
 
 export const assignLeadSchema = z.object({
-  assignedTo: z.number().int().positive(),
+  assignedTo: z.union([z.number().int().positive(), z.string().min(1)]),
 });
 
 // ─── Follow-up ──────────────────────────────────────────────────
@@ -133,6 +134,7 @@ export const leadListQuerySchema = paginationSchema.extend({
   channel: z.nativeEnum(LeadChannel).optional(),
   interestLevel: z.nativeEnum(InterestLevel).optional(),
   assignedTo: z.coerce.number().int().positive().optional(),
+  executiveName: z.string().optional(),
   sourceId: z.coerce.number().int().positive().optional(),
   modelId: z.coerce.number().int().positive().optional(),
   dateFrom: z.string().date().optional(),
@@ -203,6 +205,7 @@ export const createDeliverySchema = z.object({
 // ─── Lookup (master table) ──────────────────────────────────────
 export const createLookupSchema = z.object({
   name: z.string().min(1).max(120),
+  mobile: z.string().max(15).optional(),
   displayOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
 });

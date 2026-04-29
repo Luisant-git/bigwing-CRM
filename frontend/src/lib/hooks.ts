@@ -40,7 +40,9 @@ export function formatDateTime(d: string | null | undefined) {
 
 // Badge colors aligned with Bigwing UX designs
 export const STAGE_COLORS: Record<string, string> = {
+  NEW: "bg-[#F1F3F5] text-[#6C757D]",
   NOT_CONTACTED: "bg-[#F1F3F5] text-[#6C757D]",
+  ENQUIRED: "bg-[#DBEAFE] text-[#1D4ED8]", // Map Enquired to Contacted blue
   CONTACTED: "bg-[#DBEAFE] text-[#1D4ED8]",
   NOT_REACHABLE: "bg-[#FFE8CC] text-[#D97706]",
   TEST_RIDE_SCHEDULED: "bg-[#EDE9FE] text-[#7C3AED]",
@@ -50,6 +52,21 @@ export const STAGE_COLORS: Record<string, string> = {
   INVOICED: "bg-[#D1FAE5] text-[#047857]",
   DELIVERED_CLOSED: "bg-[#1F3864] text-white",
   LOST: "bg-[#FEE2E2] text-[#DC2626]",
+};
+
+export const STAGE_LABELS: Record<string, string> = {
+  NEW: "NEW",
+  NOT_CONTACTED: "NEW",
+  ENQUIRED: "CONTACTED",
+  CONTACTED: "CONTACTED",
+  NOT_REACHABLE: "NOT REACHABLE",
+  TEST_RIDE_SCHEDULED: "TEST RIDE SCHEDULED",
+  TEST_RIDE_COMPLETED: "TEST RIDE COMPLETED",
+  QUOTATION_SHARED: "QUOTATION SHARED",
+  BOOKED: "BOOKED",
+  INVOICED: "INVOICED",
+  DELIVERED_CLOSED: "DELIVERED",
+  LOST: "LOST",
 };
 
 export const INTEREST_COLORS: Record<string, string> = {

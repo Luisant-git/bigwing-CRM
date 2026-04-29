@@ -55,14 +55,14 @@ export default function AppLayout() {
   }, []);
 
   const { data: unread } = useQuery({
-    queryKey: ["notifications", "unread-count"],
+    queryKey: ["notifications", "unread-count", user?.id],
     queryFn: () =>
       api.get("/notifications/unread-count").then((r) => r.data.data.count),
     refetchInterval: 30000,
   });
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", "me"],
+    queryKey: ["profile", "me", user?.id],
     queryFn: () => api.get("/profile/me").then((r) => r.data.data),
   });
 
@@ -99,7 +99,15 @@ export default function AppLayout() {
       </div>
 
       <nav className={`flex-1 space-y-0.5 overflow-y-auto ${isCollapsed ? "p-2" : "p-3"}`}>
-        {navItems.map((item) =>
+        {navItems
+          .filter((item) => {
+            const isTele = user?.roles?.includes("TELE_CALLER");
+            if (isTele) {
+              return item.to !== "/users";
+            }
+            return true;
+          })
+          .map((item) =>
           isCollapsed ? (
             <Tooltip key={item.to} content={item.label} side="right">
               <Link

@@ -4,10 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ClipboardList, Bike, User as UserIcon, Target,
   FileText, Save, X, CircleDollarSign, Sparkles, CheckCircle2,
+  Calendar, MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { useLookup, useUsers, STAGE_COLORS } from "@/lib/hooks";
+import { useLookup, useUsers, STAGE_COLORS, STAGE_LABELS } from "@/lib/hooks";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { PageLoader } from "@/components/spinner";
 import { InterestBadge } from "@/components/interest-badge";
@@ -26,7 +27,7 @@ export default function LeadEditPage() {
   const { data: types } = useLookup("enquiry-types");
   const { data: models } = useLookup("vehicle-models");
   const { data: colours } = useLookup("vehicle-colours");
-  const { data: users } = useUsers();
+  const { data: executives } = useLookup("sales-executives");
 
   const [form, setForm] = useState<any>({});
   const [dirty, setDirty] = useState(false);
@@ -49,13 +50,18 @@ export default function LeadEditPage() {
         modelId: modId ? String(modId) : "",
         variantId: "",
         colourId: colId ? String(colId) : "",
-        assignedTo: lead.assignedTo?.id ? String(lead.assignedTo.id) : "",
+        executiveName: lead.executiveName ?? (lead.assignedTo?.fullName || ""),
         interestLevel: lead.interestLevel ?? "",
         purchaseType: lead.purchaseType ?? "",
         exchangeFlag: lead.exchangeFlag ?? false,
         testRideFlag: lead.testRideFlag ?? false,
         remark: lead.remark ?? "",
         referredFromBranch: lead.referredFromBranch ?? "",
+        // Service fields
+        typeOfService: lead.typeOfService ?? "",
+        expectedServiceDate: lead.expectedServiceDate ? lead.expectedServiceDate.split("T")[0] : "",
+        pickupDropFlag: lead.pickupDropFlag ?? false,
+        location: lead.customer?.location ?? "",
       });
       if (modId) setSelectedModel(String(modId));
     }
@@ -74,8 +80,14 @@ export default function LeadEditPage() {
       toast.success("Lead updated successfully");
       navigate({ to: "/leads/$id", params: { id: id! } });
     },
-    onError: (err: any) =>
-      toast.error(err.response?.data?.error?.message || "Update failed"),
+    onError: (err: any) => {
+      const details = err.response?.data?.error?.details;
+      if (details && Array.isArray(details) && details.length > 0) {
+        toast.error(`${details[0].message} (${details[0].field})`);
+      } else {
+        toast.error(err.response?.data?.error?.message || "Update failed");
+      }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -86,12 +98,18 @@ export default function LeadEditPage() {
     if (form.modelId) body.modelId = Number(form.modelId);
     if (form.variantId) body.variantId = Number(form.variantId);
     if (form.colourId) body.colourId = Number(form.colourId);
-    if (form.assignedTo) body.assignedTo = Number(form.assignedTo);
+    if (form.executiveName !== undefined) body.executiveName = form.executiveName;
     if (form.interestLevel) body.interestLevel = form.interestLevel;
     if (form.purchaseType) body.purchaseType = form.purchaseType;
     body.exchangeFlag = form.exchangeFlag;
     if (form.remark !== undefined) body.remark = form.remark;
     if (form.referredFromBranch !== undefined) body.referredFromBranch = form.referredFromBranch;
+    
+    // Service fields
+    if (form.typeOfService !== undefined) body.typeOfService = form.typeOfService;
+    if (form.expectedServiceDate !== undefined) body.expectedServiceDate = form.expectedServiceDate || null;
+    body.pickupDropFlag = form.pickupDropFlag;
+    
     mut.mutate(body);
   };
 
@@ -126,13 +144,14 @@ export default function LeadEditPage() {
               <p className="mt-0.5 text-sm text-white/70">
                 {lead.customer?.firstName} {lead.customer?.lastName ?? ""}
                 {lead.customer?.mobile && <> · {lead.customer.mobile}</>}
+                {lead.customer?.location && <> · {lead.customer.location}</>}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${STAGE_COLORS[lead.stage] ?? "bg-white/20"}`}>
-              {lead.stage?.replace(/_/g, " ")}
+            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${lead.channel === "SERVICE" ? "bg-purple-500/20 text-purple-200 border border-purple-500/30" : STAGE_COLORS[lead.stage] ?? "bg-white/20"}`}>
+              {lead.channel === "SERVICE" ? "SERVICE" : STAGE_LABELS[lead.stage] ?? lead.stage?.replace(/_/g, " ")}
             </span>
             {lead.interestLevel && <InterestBadge level={lead.interestLevel} />}
           </div>
@@ -140,7 +159,30 @@ export default function LeadEditPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Vehicle Interest — shown first so the sales rep locks in the product of interest up front */}
+        {lead.channel === "SERVICE" && (
+          <Section icon={Bike} title="Service Details" subtitle="Specifics for the service visit">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <InputField 
+                label="Expected Service Date" 
+                icon={Calendar} 
+                value={form.expectedServiceDate} 
+                onChange={(v: string) => set("expectedServiceDate", v)} 
+                type="date" 
+              />
+              <InputField 
+                label="Type Of Service" 
+                value={form.typeOfService} 
+                onChange={(v: string) => set("typeOfService", v)} 
+                placeholder="e.g. Paid Service, Running Repair" 
+              />
+              <div className="flex items-end pb-1">
+                <ToggleChip label="Pick-up and Drop" active={form.pickupDropFlag} onChange={(v: boolean) => set("pickupDropFlag", v)} />
+              </div>
+            </div>
+          </Section>
+        )}
+
+        {/* Vehicle Interest */}
         <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <SelectField
@@ -185,58 +227,67 @@ export default function LeadEditPage() {
               options={(types ?? []).map((t: any) => ({ value: String(t.id), label: t.name }))}
               current={lead.enquiryType}
             />
+            <InputField 
+              label="Location" 
+              icon={MapPin} 
+              value={form.location} 
+              onChange={(v: string) => set("location", v)} 
+              placeholder="e.g. HSR Layout" 
+            />
           </div>
         </Section>
 
         {/* Interest & Purchase */}
-        <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <SelectField
-              label="Interest Level"
-              value={form.interestLevel}
-              onChange={(v) => set("interestLevel", v)}
-              options={[
-                { value: "HOT", label: "🔥 Hot — Ready to buy" },
-                { value: "WARM", label: "🌤️ Warm — Interested, needs time" },
-                { value: "COLD", label: "❄️ Cold — Low interest" },
-              ]}
-              current={lead.interestLevel}
-            />
-            <SelectField
-              label="Purchase Type"
-              value={form.purchaseType}
-              onChange={(v) => {
-                set("purchaseType", v);
-                // Exchange is only meaningful alongside Cash/Finance; reset when cleared
-                if (!v) set("exchangeFlag", false);
-              }}
-              options={[
-                { value: "CASH", label: "Cash" },
-                { value: "FINANCE", label: "Finance" },
-              ]}
-              current={lead.purchaseType}
-              icon={CircleDollarSign}
-            />
-          </div>
-          {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
-            <div className="mt-3 flex gap-3">
-              <ToggleChip
-                label="Exchange"
-                active={form.exchangeFlag ?? false}
-                onChange={(v) => set("exchangeFlag", v)}
+        {lead.channel !== "SERVICE" && (
+          <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <SelectField
+                label="Interest Level"
+                value={form.interestLevel}
+                onChange={(v) => set("interestLevel", v)}
+                options={[
+                  { value: "HOT", label: "🔥 Hot — Ready to buy" },
+                  { value: "WARM", label: "🌤️ Warm — Interested, needs time" },
+                  { value: "COLD", label: "❄️ Cold — Low interest" },
+                ]}
+                current={lead.interestLevel}
+              />
+              <SelectField
+                label="Purchase Type"
+                value={form.purchaseType}
+                onChange={(v) => {
+                  set("purchaseType", v);
+                  // Exchange is only meaningful alongside Cash/Finance; reset when cleared
+                  if (!v) set("exchangeFlag", false);
+                }}
+                options={[
+                  { value: "CASH", label: "Cash" },
+                  { value: "FINANCE", label: "Finance" },
+                ]}
+                current={lead.purchaseType}
+                icon={CircleDollarSign}
               />
             </div>
-          )}
-        </Section>
+            {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
+              <div className="mt-3 flex gap-3">
+                <ToggleChip
+                  label="Exchange"
+                  active={form.exchangeFlag ?? false}
+                  onChange={(v) => set("exchangeFlag", v)}
+                />
+              </div>
+            )}
+          </Section>
+        )}
 
         {/* Assignment */}
         <Section icon={UserIcon} title="Assignment" subtitle="Who is handling this lead">
           <SelectField
             label="Assigned To"
-            value={form.assignedTo}
-            onChange={(v) => set("assignedTo", v)}
-            options={(users ?? []).map((u: any) => ({ value: String(u.id), label: u.fullName }))}
-            current={lead.assignedTo?.fullName}
+            value={form.executiveName}
+            onChange={(v) => set("executiveName", v)}
+            options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))}
+            current={lead.executiveName || lead.assignedTo?.fullName}
           />
         </Section>
 
@@ -405,5 +456,27 @@ function ToggleChip({
       </span>
       {label}
     </button>
+  );
+}
+
+function InputField({
+  label, value, onChange, icon, ...props
+}: {
+  label: string; value: string; onChange: (v: string) => void; icon?: any; [k: string]: any;
+}) {
+  const Icon = icon;
+  return (
+    <div>
+      <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+        {Icon && <Icon size={12} />}
+        {label}
+      </label>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+        {...props}
+      />
+    </div>
   );
 }

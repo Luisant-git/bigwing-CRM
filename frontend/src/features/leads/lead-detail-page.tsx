@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useUsers } from "@/lib/hooks";
 import { InterestBadge } from "@/components/interest-badge";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal, Timeline, Breadcrumb, Tooltip, ConfirmModal, type TimelineEvent } from "@/components/ui";
@@ -202,23 +202,33 @@ export default function LeadDetailPage() {
                 <span
                   className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${STAGE_COLORS[lead.stage] ?? ""}`}
                 >
-                  {lead.stage?.replace(/_/g, " ")}
+                  {STAGE_LABELS[lead.stage] ?? lead.stage?.replace(/_/g, " ")}
                 </span>
               </Field>
-              <Field label="Interest">
-                <InterestBadge level={lead.interestLevel} />
-              </Field>
+              {lead.channel === "SERVICE" ? (
+                <>
+                  <Field label="Service Type">{lead.typeOfService || "—"}</Field>
+                  <Field label="Expected Date">{formatDate(lead.expectedServiceDate)}</Field>
+                  <Field label="Pick-up & Drop">{lead.pickupDropFlag ? "Yes" : "No"}</Field>
+                </>
+              ) : (
+                <>
+                  <Field label="Interest">
+                    <InterestBadge level={lead.interestLevel} />
+                  </Field>
+                  <Field label="Purchase Type">{lead.purchaseType ?? "—"}</Field>
+                  <Field label="Exchange">{lead.exchangeFlag ? "Yes" : "No"}</Field>
+                  <Field label="Test Ride">
+                    {lead.testRideFlag ? "Yes" : "No"}
+                  </Field>
+                </>
+              )}
               <Field label="Channel">{lead.channel}</Field>
               <Field label="Source">{lead.source}</Field>
               <Field label="Enquiry Type">{lead.enquiryType}</Field>
-              <Field label="Purchase Type">{lead.purchaseType ?? "—"}</Field>
               <Field label="Model">{lead.model ?? "—"}</Field>
               <Field label="Variant">{lead.variant ?? "—"}</Field>
               <Field label="Colour">{lead.colour ?? "—"}</Field>
-              <Field label="Exchange">{lead.exchangeFlag ? "Yes" : "No"}</Field>
-              <Field label="Test Ride">
-                {lead.testRideFlag ? "Yes" : "No"}
-              </Field>
               <Field label="Enquiry Date">{formatDate(lead.enquiryDate)}</Field>
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
@@ -393,8 +403,8 @@ export default function LeadDetailPage() {
           title="Assign Executive"
         >
           <AssignForm
-            currentId={lead.assignedTo?.id}
-            onSubmit={(d) => assignMut.mutate(d)}
+            currentName={lead.executiveName || lead.assignedTo?.fullName}
+            onSubmit={(d) => assignMut.mutate(d as any)}
             loading={assignMut.isPending}
           />
         </Modal>
@@ -404,16 +414,16 @@ export default function LeadDetailPage() {
 }
 
 function AssignForm({
-  currentId,
+  currentName,
   onSubmit,
   loading,
 }: {
-  currentId?: number;
-  onSubmit: (d: { assignedTo: number }) => void;
+  currentName?: string;
+  onSubmit: (d: { assignedTo: string | number }) => void;
   loading: boolean;
 }) {
-  const { data: users, isLoading } = useUsers();
-  const [selectedId, setSelectedId] = useState<string>(currentId ? String(currentId) : "");
+  const { data: executives, isLoading } = useLookup("sales-executives");
+  const [selectedValue, setSelectedValue] = useState<string>(currentName ?? "");
 
   if (isLoading) return <div className="py-4 text-center text-sm text-gray-500">Loading executives...</div>;
 
@@ -421,22 +431,22 @@ function AssignForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (selectedId) onSubmit({ assignedTo: Number(selectedId) });
+        if (selectedValue) onSubmit({ assignedTo: selectedValue });
       }}
       className="space-y-4"
     >
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700">Select Executive</label>
         <select
-          value={selectedId}
-          onChange={(e) => setSelectedId(e.target.value)}
+          value={selectedValue}
+          onChange={(e) => setSelectedValue(e.target.value)}
           required
           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
         >
           <option value="">Select executive...</option>
-          {(users ?? []).map((u: any) => (
-            <option key={u.id} value={u.id}>
-              {u.fullName} ({u.roles?.join(", ")})
+          {(executives ?? []).map((ex: any) => (
+            <option key={ex.id} value={ex.name}>
+              {ex.name} {ex.mobile ? `(${ex.mobile})` : ""}
             </option>
           ))}
         </select>
@@ -444,7 +454,7 @@ function AssignForm({
       <div className="flex justify-end gap-2">
         <button
           type="submit"
-          disabled={!selectedId || loading || Number(selectedId) === currentId}
+          disabled={!selectedValue || loading || selectedValue === currentName}
           className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-semibold text-white shadow-md hover:bg-[#245f96] disabled:opacity-50"
         >
           {loading ? "Assigning..." : "Confirm Assignment"}
@@ -615,7 +625,7 @@ function Modal({
 }
 
 const STAGES = [
-  "NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED",
+  "NEW", "CONTACTED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED",
   "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED",
   "DELIVERED_CLOSED", "LOST",
 ];
@@ -649,9 +659,9 @@ function StageForm({
           className="w-full rounded-lg border px-3 py-2 text-sm"
         >
           <option value="">Select stage...</option>
-          {STAGES.filter((s) => s !== current).map((s) => (
+          {STAGES.filter(s => s !== current).map((s) => (
             <option key={s} value={s}>
-              {s.replace(/_/g, " ")}
+              {STAGE_LABELS[s] ?? s.replace(/_/g, " ")}
             </option>
           ))}
         </select>

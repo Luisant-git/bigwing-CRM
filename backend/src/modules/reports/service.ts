@@ -1,4 +1,5 @@
 import { prisma } from "@bigwing/db";
+import { ownDataFilter } from "../leads/service.js";
 
 interface DateFilter {
   dateFrom?: string;
@@ -20,8 +21,8 @@ const OPEN_STAGES = { notIn: ["DELIVERED_CLOSED", "LOST"] };
 export class ReportService {
   // ─── Sales Dashboard KPIs ─────────────────────────────────────
 
-  async dashboard(f: DateFilter) {
-    const base = { isDeleted: false, ...dateWhere(f) };
+  async dashboard(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(todayStart.getTime() + 86400000);
@@ -92,8 +93,8 @@ export class ReportService {
 
   // ─── Funnel (stage-wise counts) ───────────────────────────────
 
-  async funnel(f: DateFilter) {
-    const base = { isDeleted: false, ...dateWhere(f) };
+  async funnel(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
 
     const groups = await prisma.lead.groupBy({
       by: ["stage"],
@@ -124,8 +125,8 @@ export class ReportService {
 
   // ─── Executive Performance ────────────────────────────────────
 
-  async executive(f: DateFilter) {
-    const base = { isDeleted: false, ...dateWhere(f) };
+  async executive(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
 
     // Get all assigned users' lead stats
     const groups = await prisma.lead.groupBy({
@@ -178,8 +179,8 @@ export class ReportService {
 
   // ─── Source Performance ───────────────────────────────────────
 
-  async source(f: DateFilter) {
-    const base = { isDeleted: false, ...dateWhere(f) };
+  async source(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
 
     const groups = await prisma.lead.groupBy({
       by: ["sourceId", "stage"],
@@ -237,8 +238,8 @@ export class ReportService {
 
   // ─── Model Mix ────────────────────────────────────────────────
 
-  async modelMix(f: DateFilter) {
-    const base = { isDeleted: false, modelId: { not: null }, ...dateWhere(f) };
+  async modelMix(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, modelId: { not: null }, ...dateWhere(f), ...ownDataFilter(user) };
 
     const groups = await prisma.lead.groupBy({
       by: ["modelId", "stage"],
@@ -290,11 +291,12 @@ export class ReportService {
 
   // ─── Referred Branch Count ────────────────────────────────────
 
-  async referredBranch(f: DateFilter) {
+  async referredBranch(f: DateFilter, user?: any) {
     const base = {
       isDeleted: false,
       referredFromBranch: { not: null },
       ...dateWhere(f),
+      ...ownDataFilter(user),
     };
 
     const groups = await prisma.lead.groupBy({
@@ -313,12 +315,13 @@ export class ReportService {
 
   // ─── Lost Reason Analysis ────────────────────────────────────
 
-  async lostReasons(f: DateFilter) {
+  async lostReasons(f: DateFilter, user?: any) {
     const base = {
       isDeleted: false,
       stage: "LOST",
       closureReasonId: { not: null },
       ...dateWhere(f),
+      ...ownDataFilter(user),
     };
 
     const groups = await prisma.lead.groupBy({
@@ -345,8 +348,8 @@ export class ReportService {
 
   // ─── Tele-caller Dashboard (source × stage matrix) ───────────
 
-  async telecallerDashboard(f: DateFilter) {
-    const base = { isDeleted: false, channel: "TELE", ...dateWhere(f) };
+  async telecallerDashboard(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, channel: "TELE", ...dateWhere(f), ...ownDataFilter(user) };
 
     const groups = await prisma.lead.groupBy({
       by: ["sourceId", "stage"],

@@ -76,14 +76,14 @@ router.get(
 
 router.patch(
   "/:id",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
   validate(updateLeadSchema),
   (req, res, next) => leadController.update(req, res, next)
 );
 
 router.post(
   "/:id/stage",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
   validate(moveStageSchema),
   (req, res, next) => leadController.moveStage(req, res, next)
 );

@@ -246,6 +246,25 @@ async function main() {
   }
   console.log(`  ✅ ${devUsers.length} dev users seeded`);
 
+  // ─── Requested Telecaller User ──────────────────────────────────
+  const reqTeleEmail = "telecaller@example.com";
+  const reqTelePassword = await bcrypt.hash("tele@123", 12);
+  const teleRole = await prisma.role.findUnique({ where: { name: "TELE_CALLER" } });
+  if (teleRole) {
+    await prisma.user.upsert({
+      where: { email: reqTeleEmail },
+      update: {},
+      create: {
+        email: reqTeleEmail,
+        password: reqTelePassword,
+        fullName: "Tele",
+        isActive: true,
+        userRoles: { create: { roleId: teleRole.id } },
+      },
+    });
+    console.log(`  ✅ Specific Telecaller user seeded (${reqTeleEmail})`);
+  }
+
   console.log("\n🎉 Seeding complete!");
 }
 

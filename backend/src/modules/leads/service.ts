@@ -6,12 +6,19 @@ import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
 
 // Roles that can see all leads
-const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER", "TELE_CALLER"];
+export const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"];
 
-function ownDataFilter(user?: any): any {
+export function ownDataFilter(user?: any): any {
   if (!user) return {};
-  const canSeeAll = user.roles?.some((r: string) => ALL_DATA_ROLES.includes(r));
+  const roles = user.roles || [];
+  
+  const canSeeAll = roles.some((r: string) => ALL_DATA_ROLES.includes(r));
   if (canSeeAll) return {};
+
+  if (roles.includes("TELE_CALLER")) {
+    // Telecallers only see leads they personally created
+    return { createdBy: BigInt(user.userId) };
+  }
   
   // Restricted roles (e.g. SALES_EXECUTIVE) see leads assigned to them 
   // OR leads that are currently unassigned (so they can pick them up).
@@ -82,6 +89,7 @@ export class LeadService {
       ...(data.referredFromBranch && {
         referredFromBranch: data.referredFromBranch,
       }),
+      ...(data.executiveName && { executiveName: data.executiveName }),
       // Service enquiry attributes
       ...(data.typeOfService && { typeOfService: data.typeOfService }),
       pickupDropFlag: data.pickupDropFlag ?? false,
@@ -223,6 +231,7 @@ export class LeadService {
       ...(data.referredFromBranch !== undefined && {
         referredFromBranch: data.referredFromBranch,
       }),
+      ...(data.executiveName !== undefined && { executiveName: data.executiveName }),
       ...(data.typeOfService !== undefined && {
         typeOfService: data.typeOfService,
       }),
@@ -320,11 +329,19 @@ export class LeadService {
       throw new AppError(404, "LEAD_NOT_FOUND", "Lead not found");
     }
 
-    const lead = await leadRepository.update(id, {
-      assignedUser: { connect: { id: BigInt(assignedTo) } },
+    const updateData: any = {
       updatedBy,
       rowVersion: { increment: 1 },
-    });
+    };
+
+    if (typeof assignedTo === "number") {
+      updateData.assignedUser = { connect: { id: BigInt(assignedTo) } };
+    } else if (typeof assignedTo === "string") {
+      updateData.executiveName = assignedTo;
+      updateData.assignedTo = null; // Clear system user if assigning to executive by name
+    }
+
+    const lead = await leadRepository.update(id, updateData);
 
     auditService.log({ userId: updatedBy, entityType: "lead", entityId: id, action: "UPDATE", changes: { assignedTo } });
 

@@ -3,7 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ClipboardList, Bike, User as UserIcon, Target, FileText,
-  Save, X, Phone, Mail, MapPin, Sparkles, CheckCircle2, Plus,
+  Save, X, Phone, Mail, MapPin, Sparkles, CheckCircle2, Plus, Calendar,
+  Wrench,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
@@ -17,18 +18,24 @@ export default function LeadFormPage() {
   const { data: types } = useLookup("enquiry-types");
   const { data: models } = useLookup("vehicle-models");
   const { data: colours } = useLookup("vehicle-colours");
-  const { data: users } = useUsers();
+  const { data: executives } = useLookup("sales-executives");
 
   const [selectedModel, setSelectedModel] = useState("");
   const { data: variants } = useLookup("vehicle-variants", selectedModel ? { modelId: selectedModel } : undefined);
 
+  const [enquiryFor, setEnquiryFor] = useState<"SALES" | "SERVICE">("SALES");
   const [form, setForm] = useState({
     firstName: "", lastName: "", mobile: "",
     channel: "WALKIN", sourceId: "", enquiryTypeId: "", modelId: "",
-    variantId: "", colourId: "", assignedTo: "", interestLevel: "",
+    variantId: "", colourId: "", executiveName: "", interestLevel: "",
     purchaseType: "", exchangeFlag: false,
     enquiryDate: new Date().toISOString().split("T")[0],
     remark: "",
+    // Service fields
+    typeOfService: "",
+    expectedServiceDate: "",
+    pickupDropFlag: false,
+    location: "",
   });
 
   const set = (field: string, value: any) => setForm((f) => ({ ...f, [field]: value }));
@@ -40,26 +47,50 @@ export default function LeadFormPage() {
       toast.success("Lead created successfully");
       navigate({ to: "/leads/$id", params: { id: String(res.data.data.id) } });
     },
-    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
+    onError: (err: any) => {
+      const details = err.response?.data?.error?.details;
+      if (details && Array.isArray(details) && details.length > 0) {
+        toast.error(`${details[0].message} (${details[0].field})`);
+      } else {
+        toast.error(err.response?.data?.error?.message || "Failed");
+      }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Basic client-side validation
+    const mobileRegex = /^[6-9]\d{9}$/;
+    if (!mobileRegex.test(form.mobile)) {
+      toast.error("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+
     mut.mutate({
-      customer: { firstName: form.firstName, lastName: form.lastName || undefined, mobile: form.mobile },
-      channel: form.channel,
+      customer: { 
+        firstName: form.firstName, 
+        lastName: form.lastName || undefined, 
+        mobile: form.mobile,
+        location: form.location || undefined,
+      },
+      channel: enquiryFor === "SERVICE" ? "SERVICE" : form.channel,
       sourceId: Number(form.sourceId),
       enquiryTypeId: Number(form.enquiryTypeId),
       modelId: form.modelId ? Number(form.modelId) : undefined,
       variantId: form.variantId ? Number(form.variantId) : undefined,
       colourId: form.colourId ? Number(form.colourId) : undefined,
-      assignedTo: form.assignedTo ? Number(form.assignedTo) : undefined,
+      executiveName: form.executiveName || undefined,
       interestLevel: form.interestLevel || undefined,
       purchaseType: form.purchaseType || undefined,
       exchangeFlag: form.exchangeFlag,
       testRideFlag: false,
       enquiryDate: form.enquiryDate,
       remark: form.remark || undefined,
+      // Service fields
+      typeOfService: form.typeOfService || undefined,
+      expectedServiceDate: form.expectedServiceDate || undefined,
+      pickupDropFlag: form.pickupDropFlag,
     });
   };
 
@@ -99,39 +130,72 @@ export default function LeadFormPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Enquiry For Selection */}
+        <div className="overflow-hidden rounded-2xl bg-white p-1 shadow-sm ring-1 ring-black/5">
+          <div className="flex">
+            <button
+              type="button"
+              onClick={() => setEnquiryFor("SALES")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-4 text-sm font-bold transition-all ${
+                enquiryFor === "SALES"
+                  ? "bg-[#2E75B6] text-white shadow-lg"
+                  : "text-gray-500 hover:bg-gray-50"
+              }`}
+            >
+              <Bike size={18} />
+              SALES ENQUIRY
+            </button>
+            <button
+              type="button"
+              onClick={() => setEnquiryFor("SERVICE")}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-4 text-sm font-bold transition-all ${
+                enquiryFor === "SERVICE"
+                  ? "bg-[#2E75B6] text-white shadow-lg"
+                  : "text-gray-500 hover:bg-gray-50"
+              }`}
+            >
+              <Wrench size={18} />
+              SERVICE ENQUIRY
+            </button>
+          </div>
+        </div>
+
         {/* Customer Info */}
         <Section icon={UserIcon} title="Customer Information" subtitle="Who is the enquiry for" required>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <InputField label="First Name *" icon={UserIcon} value={form.firstName} onChange={(v) => set("firstName", v)} required placeholder="Suresh" />
             <InputField label="Last Name" value={form.lastName} onChange={(v) => set("lastName", v)} placeholder="Kumar" />
             <InputField label="Mobile *" icon={Phone} value={form.mobile} onChange={(v) => set("mobile", v)} required placeholder="10-digit" />
+            <InputField label="Location" icon={MapPin} value={form.location} onChange={(v) => set("location", v)} placeholder="HSR Layout" />
           </div>
         </Section>
 
-        {/* Enquiry Details */}
-        <Section icon={FileText} title="Enquiry Details" subtitle="Where and when" required>
+        {/* Enquiry Details (Common) */}
+        <Section icon={FileText} title="Enquiry Details" subtitle="General enquiry info" required>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Channel *
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {CHANNELS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => set("channel", c.value)}
-                    className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
-                      form.channel === c.value
-                        ? "bg-[#2E75B6] text-white shadow-md"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
+            {enquiryFor === "SALES" && (
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  Channel *
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {CHANNELS.filter(c => c.value !== "SERVICE").map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => set("channel", c.value)}
+                      className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
+                        form.channel === c.value
+                          ? "bg-[#2E75B6] text-white shadow-md"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
             <InputField label="Enquiry Date *" icon={Sparkles} value={form.enquiryDate} onChange={(v) => set("enquiryDate", v)} type="date" required />
             <SelectField
               label="Source *"
@@ -149,6 +213,29 @@ export default function LeadFormPage() {
             />
           </div>
         </Section>
+
+        {enquiryFor === "SERVICE" && (
+          <Section icon={Bike} title="Service Details" subtitle="Specifics for the service visit">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <InputField 
+                label="Expected Service Date" 
+                icon={Calendar} 
+                value={form.expectedServiceDate} 
+                onChange={(v) => set("expectedServiceDate", v)} 
+                type="date" 
+              />
+              <InputField 
+                label="Type Of Service" 
+                value={form.typeOfService} 
+                onChange={(v) => set("typeOfService", v)} 
+                placeholder="e.g. Paid Service, Running Repair" 
+              />
+              <div className="flex items-end pb-1">
+                <ToggleChip label="Pick-up and Drop" active={form.pickupDropFlag} onChange={(v) => set("pickupDropFlag", v)} />
+              </div>
+            </div>
+          </Section>
+        )}
 
         {/* Vehicle Interest */}
         <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
@@ -175,55 +262,57 @@ export default function LeadFormPage() {
           </div>
         </Section>
 
-        {/* Interest & Purchase */}
-        <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Interest Level
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: "HOT", label: "🔥 Hot", color: "#EF4444" },
-                  { value: "WARM", label: "🌤️ Warm", color: "#F59E0B" },
-                  { value: "COLD", label: "❄️ Cold", color: "#64748B" },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => set("interestLevel", opt.value)}
-                    className={`rounded-lg border px-3 py-2 text-[12px] font-bold transition-all ${
-                      form.interestLevel === opt.value
-                        ? "text-white shadow-md"
-                        : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
-                    }`}
-                    style={form.interestLevel === opt.value ? { backgroundColor: opt.color, borderColor: opt.color } : {}}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+        {/* Interest & Purchase (Sales Only) */}
+        {enquiryFor === "SALES" && (
+          <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  Interest Level
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: "HOT", label: "🔥 Hot", color: "#EF4444" },
+                    { value: "WARM", label: "🌤️ Warm", color: "#F59E0B" },
+                    { value: "COLD", label: "❄️ Cold", color: "#64748B" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => set("interestLevel", opt.value)}
+                      className={`rounded-lg border px-3 py-2 text-[12px] font-bold transition-all ${
+                        form.interestLevel === opt.value
+                          ? "text-white shadow-md"
+                          : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                      }`}
+                      style={form.interestLevel === opt.value ? { backgroundColor: opt.color, borderColor: opt.color } : {}}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
+              <SelectField
+                label="Purchase Type"
+                value={form.purchaseType}
+                onChange={(v) => {
+                  set("purchaseType", v);
+                  // Exchange is only meaningful alongside Cash/Finance; reset when cleared
+                  if (!v) set("exchangeFlag", false);
+                }}
+                options={[
+                  { value: "CASH", label: "Cash" },
+                  { value: "FINANCE", label: "Finance" },
+                ]}
+              />
             </div>
-            <SelectField
-              label="Purchase Type"
-              value={form.purchaseType}
-              onChange={(v) => {
-                set("purchaseType", v);
-                // Exchange is only meaningful alongside Cash/Finance; reset when cleared
-                if (!v) set("exchangeFlag", false);
-              }}
-              options={[
-                { value: "CASH", label: "Cash" },
-                { value: "FINANCE", label: "Finance" },
-              ]}
-            />
-          </div>
-          {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
-            <div className="mt-3 flex gap-3">
-              <ToggleChip label="Exchange" active={form.exchangeFlag} onChange={(v) => set("exchangeFlag", v)} />
-            </div>
-          )}
-        </Section>
+            {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
+              <div className="mt-3 flex gap-3">
+                <ToggleChip label="Exchange" active={form.exchangeFlag} onChange={(v) => set("exchangeFlag", v)} />
+              </div>
+            )}
+          </Section>
+        )}
 
         {/* Notes */}
         <Section icon={Sparkles} title="Notes & Remarks">
@@ -249,9 +338,9 @@ export default function LeadFormPage() {
         <Section icon={UserIcon} title="Assignment">
           <SelectField
             label="Assigned To"
-            value={form.assignedTo}
-            onChange={(v) => set("assignedTo", v)}
-            options={(users ?? []).map((u: any) => ({ value: String(u.id), label: u.fullName }))}
+            value={form.executiveName}
+            onChange={(v) => set("executiveName", v)}
+            options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))}
           />
         </Section>
       </form>

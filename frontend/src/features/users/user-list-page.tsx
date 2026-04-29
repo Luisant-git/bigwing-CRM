@@ -7,7 +7,17 @@ import { formatDate } from "@/lib/hooks";
 import { Avatar, Badge, Breadcrumb, FlyingModal } from "@/components/ui";
 import { DataTable, SummaryCard, Pagination, type Column } from "@/components/data-table";
 
+import { useAuthStore } from "@/stores/auth";
+import { Navigate } from "@tanstack/react-router";
+
 export default function UserListPage() {
+  const user = useAuthStore((s) => s.user);
+  const isTele = user?.roles?.includes("TELE_CALLER");
+
+  if (isTele) {
+    return <Navigate to="/" />;
+  }
+
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
