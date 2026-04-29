@@ -60,6 +60,7 @@ const leadsRoute = createRoute({
   component: LeadListPage,
   validateSearch: (search: Record<string, unknown>) => {
     return {
+      ...search,
       tab: (search.tab as string) || "all",
     };
   },

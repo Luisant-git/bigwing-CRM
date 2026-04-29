@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { InterestBadge } from "@/components/interest-badge";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal, Timeline, Breadcrumb, Tooltip, ConfirmModal, type TimelineEvent } from "@/components/ui";
@@ -68,7 +68,7 @@ export default function LeadDetailPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Lead deleted");
-      navigate({ to: "/leads" });
+      navigate({ to: "/leads", search: { tab: "all" } });
     },
     onError: (err: any) =>
       toast.error(err.response?.data?.error?.message || "Delete failed"),
@@ -125,13 +125,13 @@ export default function LeadDetailPage() {
     <div className="mx-auto max-w-5xl">
       <Breadcrumb items={[
         { label: "Home", to: "/" },
-        { label: "Leads", to: "/leads", icon: ClipboardList },
+        { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
         { label: lead.enquiryNo },
       ]} />
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/leads" className="rounded-lg p-1.5 hover:bg-gray-200">
+          <Link to="/leads" search={{ tab: "all" }} className="rounded-lg p-1.5 hover:bg-gray-200">
             <ArrowLeft size={18} />
           </Link>
           <div>

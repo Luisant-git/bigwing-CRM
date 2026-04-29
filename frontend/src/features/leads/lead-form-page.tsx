@@ -108,14 +108,14 @@ export default function LeadFormPage() {
     <div className="mx-auto max-w-4xl pb-24">
       <Breadcrumb items={[
         { label: "Home", to: "/" },
-        { label: "Leads", to: "/leads", icon: ClipboardList },
+        { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
         { label: "New Lead", icon: Plus },
       ]} />
 
       {/* Header card */}
       <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1F3864] via-[#2E4974] to-[#2E75B6] p-6 text-white shadow-lg">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate({ to: "/leads" })} className="rounded-lg bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors">
+          <button onClick={() => navigate({ to: "/leads", search: { tab: "all" } })} className="rounded-lg bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors">
             <ArrowLeft size={18} />
           </button>
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
@@ -351,7 +351,7 @@ export default function LeadFormPage() {
           <p className="text-[12px] text-gray-500">Fill in the details to create a new lead</p>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate({ to: "/leads" })}
+              onClick={() => navigate({ to: "/leads", search: { tab: "all" } })}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
             >
               <X size={14} /> Cancel

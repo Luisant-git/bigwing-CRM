@@ -169,25 +169,25 @@ export default function LeadListPage() {
         key: "interestLevel",
         label: "Interest",
         sortable: true,
-        render: (l) => <InterestBadge level={l.interestLevel} />,
-        sortValue: (l) => ({ HOT: 0, WARM: 1, COLD: 2 }[l.interestLevel as string] ?? 3),
+        render: (l: any) => <InterestBadge level={l.interestLevel} />,
+        sortValue: (l: any) => ({ HOT: 0, WARM: 1, COLD: 2 }[l.interestLevel as string] ?? 3),
       }
     ]),
     {
       key: "stage",
       label: "Stage",
       sortable: true,
-      render: (l) => (
+      render: (l: any) => (
         <span className={`inline-block rounded px-2.5 py-0.5 text-[11px] font-semibold transition-all hover:brightness-105 hover:scale-105 ${STAGE_COLORS[l.stage] ?? "bg-gray-100"}`}>
           {STAGE_LABELS[l.stage] ?? l.stage.replace(/_/g, " ")}
         </span>
       ),
-      sortValue: (l) => l.stage,
+      sortValue: (l: any) => l.stage,
     },
     {
       key: "assignedTo",
       label: "Assigned To",
-      render: (l) => {
+      render: (l: any) => {
         const name = l.assignedTo?.fullName ?? l.executiveName;
         if (!name) return <span className="text-gray-300 italic text-[11px] whitespace-nowrap">Unassigned</span>;
         return (
@@ -204,14 +204,14 @@ export default function LeadListPage() {
       key: "enquiryDate",
       label: "Enquiry Date",
       sortable: true,
-      render: (l) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
-      sortValue: (l) => l.enquiryDate,
+      render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
+      sortValue: (l: any) => l.enquiryDate,
     },
   ];
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Leads", icon: ClipboardList }]} />
+      <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }]} />
 
       {/* Header */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

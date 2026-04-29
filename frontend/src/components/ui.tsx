@@ -3,6 +3,7 @@ import {
   Info, AlertTriangle, CheckCircle2, XCircle, X, ChevronRight,
   Home, AlertCircle,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 // ─────────────────────────────────────────────────────────────
 // Alert — line alert with icon
@@ -86,7 +87,7 @@ export function Badge({
 export function Breadcrumb({
   items,
 }: {
-  items: { label: string; to?: string; icon?: any }[];
+  items: { label: string; to?: string; search?: any; icon?: any }[];
 }) {
   return (
     <nav className="mb-4 flex items-center gap-1.5 text-[13px] text-gray-500">
@@ -96,10 +97,10 @@ export function Breadcrumb({
           <div key={i} className="flex items-center gap-1.5">
             {i > 0 && <ChevronRight size={12} className="text-gray-300" />}
             {item.to ? (
-              <a href={item.to} className="flex items-center gap-1 hover:text-[#2E75B6]">
+              <Link to={item.to} search={item.search} className="flex items-center gap-1 hover:text-[#2E75B6]">
                 {Icon && <Icon size={13} />}
                 {item.label}
-              </a>
+              </Link>
             ) : (
               <span className="flex items-center gap-1 font-medium text-[#1F3864]">
                 {Icon && <Icon size={13} />}

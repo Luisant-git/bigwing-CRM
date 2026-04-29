@@ -25,7 +25,7 @@ import { GlobalSearch } from "@/components/global-search";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/leads", label: "Leads", icon: ClipboardList },
+  { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },
   { to: "/customers", label: "Customers", icon: UserCircle },
   { to: "/reports", label: "Reports", icon: BarChart3 },
@@ -112,6 +112,7 @@ export default function AppLayout() {
             <Tooltip key={item.to} content={item.label} side="right">
               <Link
                 to={item.to}
+                search={(item as any).search}
                 onClick={() => setMobileOpen(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-[rgba(46,117,182,0.15)] hover:text-white [&.active]:bg-[rgba(232,121,47,0.15)] [&.active]:text-[#E8792F]"
               >
@@ -122,6 +123,7 @@ export default function AppLayout() {
             <Link
               key={item.to}
               to={item.to}
+              search={(item as any).search}
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/60 transition-colors hover:bg-[rgba(46,117,182,0.15)] hover:text-white [&.active]:border-l-[3px] [&.active]:border-[#E8792F] [&.active]:bg-[rgba(232,121,47,0.15)] [&.active]:text-[#E8792F] [&.active]:font-semibold"
             >

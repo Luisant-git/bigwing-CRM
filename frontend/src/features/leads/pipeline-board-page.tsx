@@ -181,7 +181,7 @@ export default function PipelineBoardPage() {
                     onClick={() =>
                       navigate({
                         to: "/leads",
-                        search: { stage: col.stage },
+                        search: { stage: col.stage, tab: "all" },
                       } as any)
                     }
                     className="w-full rounded-md border border-gray-300 bg-white py-2 text-[11px] font-medium text-gray-500 hover:bg-gray-50 hover:text-[#2E75B6]"
