@@ -6,28 +6,38 @@ import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
 
 // Roles that can see all leads
-export const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"];
+export const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 export function ownDataFilter(user?: any): any {
-  if (!user) return {};
-  const roles = user.roles || [];
+  if (!user) return { id: -1 }; // Force no results if no user
+  
+  const roles = (user.roles || []).map((r: string) => r.toUpperCase());
   
   const canSeeAll = roles.some((r: string) => ALL_DATA_ROLES.includes(r));
   if (canSeeAll) return {};
 
-  if (roles.includes("TELE_CALLER")) {
-    // Telecallers only see leads they personally created
-    return { createdBy: BigInt(user.userId) };
+  // For restricted roles (MANAGER, TELE_CALLER, SALES_EXECUTIVE):
+  // They should see leads that:
+  // 1. Are assigned to them
+  // 2. OR were created by them
+  // 3. OR are unassigned (only if they are allowed to pick up new leads)
+  
+  // If the user wants strictly individual data (only assigned or created by them):
+  const restrictedRoles = ["MANAGER", "TELE_CALLER", "SALES_EXECUTIVE"];
+  const isRestricted = roles.some(r => restrictedRoles.includes(r));
+
+  if (isRestricted) {
+    return {
+      OR: [
+        { createdBy: BigInt(user.userId) },
+        { assignedTo: BigInt(user.userId) },
+        { assignedTo: null } // Allow seeing unassigned leads to pick them up
+      ]
+    };
   }
   
-  // Restricted roles (e.g. SALES_EXECUTIVE) see leads assigned to them 
-  // OR leads that are currently unassigned (so they can pick them up).
-  return {
-    OR: [
-      { assignedTo: BigInt(user.userId) },
-      { assignedTo: null }
-    ]
-  };
+  // Default fallback: only assigned to them
+  return { assignedTo: BigInt(user.userId) };
 }
 
 export class LeadService {
@@ -123,37 +133,31 @@ export class LeadService {
     } = filters;
 
     const where: any = {
-      isDeleted: false,
-      ...ownDataFilter(user),
-      ...(stage && { stage }),
-      ...(channel && { channel }),
-      ...(interestLevel && { interestLevel }),
-      ...(assignedTo && { assignedTo: BigInt(assignedTo) }),
-      ...(sourceId && { sourceId: BigInt(sourceId) }),
-      ...(modelId && { modelId: BigInt(modelId) }),
-      ...(referredFromBranch && { referredFromBranch }),
-      ...((dateFrom || dateTo) && {
-        enquiryDate: {
-          ...(dateFrom && { gte: new Date(dateFrom) }),
-          ...(dateTo && { lte: new Date(dateTo) }),
-        },
-      }),
-      ...(q && {
-        OR: [
-          { enquiryNo: { contains: q, mode: "insensitive" } },
-          {
-            customer: {
-              firstName: { contains: q, mode: "insensitive" },
-            },
+      AND: [
+        { isDeleted: false },
+        ownDataFilter(user),
+        ...(stage ? [{ stage }] : []),
+        ...(channel ? [{ channel }] : []),
+        ...(interestLevel ? [{ interestLevel }] : []),
+        ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+        ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
+        ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
+        ...(referredFromBranch ? [{ referredFromBranch }] : []),
+        ...((dateFrom || dateTo) ? [{
+          enquiryDate: {
+            ...(dateFrom && { gte: new Date(dateFrom) }),
+            ...(dateTo && { lte: new Date(dateTo) }),
           },
-          {
-            customer: {
-              lastName: { contains: q, mode: "insensitive" },
-            },
-          },
-          { customer: { mobile: { contains: q } } },
-        ],
-      }),
+        }] : []),
+        ...(q ? [{
+          OR: [
+            { enquiryNo: { contains: q, mode: "insensitive" } },
+            { customer: { firstName: { contains: q, mode: "insensitive" } } },
+            { customer: { lastName: { contains: q, mode: "insensitive" } } },
+            { customer: { mobile: { contains: q } } },
+          ],
+        }] : []),
+      ]
     };
 
     const [leads, total] = await Promise.all([
@@ -364,24 +368,28 @@ export class LeadService {
     const { page, pageSize, assignedTo } = filters;
 
     const where: any = {
-      isDeleted: false,
-      stage: { notIn: ["DELIVERED_CLOSED", "LOST"] },
-      ...ownDataFilter(user),
-      ...(assignedTo && { assignedTo: BigInt(assignedTo) }),
+      AND: [
+        { isDeleted: false },
+        { stage: { notIn: ["DELIVERED_CLOSED", "LOST"] } },
+        ownDataFilter(user),
+        ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+      ]
     };
+
+    const conditions = where.AND as any[];
 
     switch (view) {
       case "today":
-        where.nextFollowupAt = { gte: todayStart, lt: todayEnd };
+        conditions.push({ nextFollowupAt: { gte: todayStart, lt: todayEnd } });
         break;
       case "overdue":
-        where.nextFollowupAt = { lt: todayStart };
+        conditions.push({ nextFollowupAt: { lt: todayStart } });
         break;
       case "upcoming":
-        where.nextFollowupAt = { gte: todayEnd };
+        conditions.push({ nextFollowupAt: { gte: todayEnd } });
         break;
       case "no-followup":
-        where.nextFollowupAt = null;
+        conditions.push({ nextFollowupAt: null });
         break;
     }
 
