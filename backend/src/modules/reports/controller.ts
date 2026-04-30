@@ -64,6 +64,20 @@ export class ReportController {
       res.json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async telecallerDetailedDashboard(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await reportService.telecallerDetailedDashboard(dateFilter(req), (req as any).user);
+      res.json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async salesExecutiveDetailedDashboard(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await reportService.salesExecutiveDetailedDashboard(dateFilter(req), (req as any).user);
+      res.json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 }
 
 export const reportController = new ReportController();

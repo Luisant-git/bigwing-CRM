@@ -57,4 +57,16 @@ router.get(
   (req, res, next) => reportController.telecallerDashboard(req, res, next)
 );
 
+router.get(
+  "/telecaller-detailed",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER", "VIEWER"]),
+  (req, res, next) => reportController.telecallerDetailedDashboard(req, res, next)
+);
+
+router.get(
+  "/sales-executive-detailed",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "VIEWER"]),
+  (req, res, next) => reportController.salesExecutiveDetailedDashboard(req, res, next)
+);
+
 export { router as reportRoutes };

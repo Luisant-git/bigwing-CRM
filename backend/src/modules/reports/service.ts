@@ -385,6 +385,209 @@ export class ReportService {
 
     return [...matrix.values()].sort((a, b) => b.total - a.total);
   }
+
+  async telecallerDetailedDashboard(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+
+    const [
+      sources,
+      models,
+      deliveredBySourceGroups,
+      stageGroups,
+      interestGroups,
+      closingGroups,
+      dailySourceGroups,
+      dailyModelGroups,
+    ] = await Promise.all([
+      prisma.enquirySource.findMany({ select: { id: true, name: true }, orderBy: { displayOrder: "asc" } }),
+      prisma.vehicleModel.findMany({ select: { id: true, name: true }, orderBy: { displayOrder: "asc" } }),
+      
+      // 1. Delivered & Closed by Source
+      prisma.lead.groupBy({
+        by: ["sourceId"],
+        where: { ...base, stage: "DELIVERED_CLOSED" },
+        _count: { id: true },
+      }),
+
+      // 2. Enquiry Stage Counts
+      prisma.lead.groupBy({
+        by: ["stage"],
+        where: base,
+        _count: { id: true },
+      }),
+
+      // 4. Interest Level Counts
+      prisma.lead.groupBy({
+        by: ["interestLevel"],
+        where: base,
+        _count: { id: true },
+      }),
+
+      // 5. Enquiry Closing Stage Counts (Booked stage + LOST reasons)
+      prisma.lead.groupBy({
+        by: ["stage", "closureReasonId"],
+        where: base,
+        _count: { id: true },
+      }),
+
+      // 3. Daily Source Breakdown
+      prisma.lead.groupBy({
+        by: ["enquiryDate", "sourceId"],
+        where: base,
+        _count: { id: true },
+      }),
+
+      // 6. Daily Model Breakdown
+      prisma.lead.groupBy({
+        by: ["enquiryDate", "modelId"],
+        where: base,
+        _count: { id: true },
+      }),
+    ]);
+
+    // Load closure reasons for mapping
+    const reasonIds = [...new Set(closingGroups.map(g => g.closureReasonId).filter(Boolean) as bigint[])];
+    const closureReasons = await prisma.closureReason.findMany({
+      where: { id: { in: reasonIds } },
+      select: { id: true, name: true }
+    });
+    const reasonMap = new Map(closureReasons.map(r => [String(r.id), r.name]));
+
+    return {
+      sources: sources.map(s => ({ id: Number(s.id), name: s.name })),
+      models: models.map(m => ({ id: Number(m.id), name: m.name })),
+      deliveredBySource: deliveredBySourceGroups.map(g => ({ sourceId: Number(g.sourceId), count: g._count.id })),
+      stages: stageGroups.map(g => ({ stage: g.stage, count: g._count.id })),
+      interestLevels: interestGroups.map(g => ({ level: g.interestLevel, count: g._count.id })),
+      closingStages: closingGroups.map(g => ({
+        stage: g.stage,
+        reasonId: g.closureReasonId ? Number(g.closureReasonId) : null,
+        reason: g.closureReasonId ? reasonMap.get(String(g.closureReasonId)) : null,
+        count: g._count.id
+      })),
+      dailySource: dailySourceGroups.map(g => ({
+        date: g.enquiryDate,
+        sourceId: Number(g.sourceId),
+        count: g._count.id
+      })),
+      dailyModel: dailyModelGroups.map(g => ({
+        date: g.enquiryDate,
+        modelId: g.modelId ? Number(g.modelId) : null,
+        count: g._count.id
+      })),
+      kpi: await this.dashboard(f, user)
+    };
+  }
+
+  // ─── Sales Executive Detailed Dashboard ────────────────────────
+  async salesExecutiveDetailedDashboard(f: DateFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 86400000);
+
+    const [
+      kpi,
+      efficiencyGroups,
+      executiveGroups,
+      monthlyGroups,
+      users
+    ] = await Promise.all([
+      // 1. Core KPIs
+      this.dashboard(f, user),
+
+      // 2. Efficiency Matrix (Follow-up Stage Wise)
+      prisma.leadFollowup.groupBy({
+        by: ["seqNo"],
+        where: { lead: base, seqNo: { lte: 5, gte: 1 } },
+        _count: { leadId: true },
+        _sum: { seqNo: true },
+      }),
+
+      // 3. Executive Performance (Today, Overdue, Upcoming, etc.)
+      prisma.lead.groupBy({
+        by: ["assignedTo", "stage", "nextFollowupAt"],
+        where: { ...base, assignedTo: { not: null } },
+        _count: { id: true },
+      }),
+
+      // 4. Monthly Trend
+      prisma.lead.groupBy({
+        by: ["enquiryDate", "stage"],
+        where: base,
+        _count: { id: true },
+      }),
+
+      // 5. User names for mapping
+      prisma.user.findMany({
+        where: { userRoles: { some: { role: { name: 'SALES_EXECUTIVE' } } } },
+        select: { id: true, fullName: true }
+      })
+    ]);
+
+    // Process Efficiency Matrix
+    const efficiency = [1, 2, 3, 4, 5].map(stage => {
+      const g = efficiencyGroups.find(eg => eg.seqNo === stage);
+      const enquiryCount = g?._count.leadId || 0;
+      return {
+        stage: `Stage ${stage}`,
+        enquiryCount,
+        followupCount: enquiryCount * stage, // Simplification based on seqNo
+        avgFollowups: stage,
+        convRate: 0 // Will be calculated if needed
+      };
+    });
+
+    // Process Executive Performance
+    const execMap = new Map<string, any>();
+    for (const g of executiveGroups) {
+      const eid = String(g.assignedTo);
+      if (!execMap.has(eid)) {
+        execMap.set(eid, { 
+          id: Number(eid),
+          name: users.find(u => String(u.id) === eid)?.fullName || "Unknown",
+          today: 0, overdue: 0, upcoming: 0, noFollowup: 0, totalActive: 0, total: 0 
+        });
+      }
+      const e = execMap.get(eid);
+      e.total += g._count.id;
+      
+      const isClosed = ["DELIVERED_CLOSED", "LOST"].includes(g.stage);
+      if (!isClosed) {
+        e.totalActive += g._count.id;
+        if (!g.nextFollowupAt) e.noFollowup += g._count.id;
+        else if (g.nextFollowupAt < todayStart) e.overdue += g._count.id;
+        else if (g.nextFollowupAt < todayEnd) e.today += g._count.id;
+        else e.upcoming += g._count.id;
+      }
+    }
+
+    // Process Monthly Trend
+    const monthMap = new Map<string, any>();
+    for (const g of monthlyGroups) {
+      const date = g.enquiryDate;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, { month: monthKey, enquiries: 0, quotation: 0, booking: 0, invoiced: 0, lost: 0 });
+      }
+      const m = monthMap.get(monthKey);
+      m.enquiries += g._count.id;
+      if (g.stage === "QUOTATION_SHARED") m.quotation += g._count.id;
+      if (g.stage === "BOOKED") m.booking += g._count.id;
+      if (g.stage === "INVOICED") m.invoiced += g._count.id;
+      if (g.stage === "LOST") m.lost += g._count.id;
+    }
+
+    return {
+      kpi: {
+        ...kpi,
+        totalData: kpi.totalEnquiries // Placeholder for "Total Data in Sheet"
+      },
+      efficiency,
+      executives: [...execMap.values()],
+      trends: [...monthMap.values()].sort((a, b) => a.month.localeCompare(b.month))
+    };
+  }
 }
 
 export const reportService = new ReportService();

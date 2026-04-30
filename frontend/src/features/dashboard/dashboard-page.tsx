@@ -10,29 +10,68 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
+import { useAuthStore } from "@/stores/auth";
+import TelecallerDashboard from "./telecaller-dashboard";
+import SalesExecutiveDashboard from "./sales-executive-dashboard";
+import { useState } from "react";
 
 const PIE_COLORS = ["#2E75B6", "#27AE60", "#F2994A", "#EB5757", "#9B59B6", "#2D9CDB", "#E8792F", "#6C757D"];
 
 export default function DashboardPage() {
+  const user = useAuthStore((s) => s.user);
+  const isTelecaller = user?.roles.includes("TELE_CALLER");
+  const isAdmin = user?.roles.includes("ADMIN") || user?.roles.includes("SUPER_ADMIN") || user?.roles.includes("MANAGER");
+  
+  const [view, setView] = useState<"general" | "sales">("general");
+
   const { data: kpi, isLoading: kpiLoading } = useQuery({
     queryKey: ["reports", "dashboard"],
     queryFn: () => api.get("/reports/dashboard").then((r) => r.data.data),
+    enabled: !isTelecaller && view === "general",
   });
 
   const { data: funnel } = useQuery({
     queryKey: ["reports", "funnel"],
     queryFn: () => api.get("/reports/funnel").then((r) => r.data.data),
+    enabled: !isTelecaller && view === "general",
   });
 
   const { data: source } = useQuery({
     queryKey: ["reports", "source"],
     queryFn: () => api.get("/reports/source").then((r) => r.data.data),
+    enabled: !isTelecaller && view === "general",
   });
 
   const { data: executive } = useQuery({
     queryKey: ["reports", "executive"],
     queryFn: () => api.get("/reports/executive").then((r) => r.data.data),
+    enabled: !isTelecaller && view === "general",
   });
+
+  if (isTelecaller) {
+    return <TelecallerDashboard />;
+  }
+
+  if (view === "sales" && isAdmin) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-start border-b border-gray-200">
+          <button 
+            onClick={() => setView("general")}
+            className="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700"
+          >
+            General Overview
+          </button>
+          <button 
+            className="px-6 py-3 text-sm font-bold text-[#2E75B6] border-b-2 border-[#2E75B6]"
+          >
+            Sales Performance
+          </button>
+        </div>
+        <SalesExecutiveDashboard />
+      </div>
+    );
+  }
 
   if (kpiLoading) return <PageLoader message="Loading dashboard..." />;
 
@@ -60,7 +99,25 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold text-[#1F3864]">Dashboard</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-[#1F3864]">Dashboard</h1>
+        {isAdmin && (
+          <div className="flex rounded-lg bg-gray-100 p-1">
+            <button
+              onClick={() => setView("general")}
+              className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setView("sales")}
+              className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+            >
+              Sales Performance
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* KPI cards with icons + accent bars */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

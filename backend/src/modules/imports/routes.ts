@@ -35,7 +35,7 @@ router.use(authMiddleware);
 
 router.post(
   "/upload",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
   upload.single("file"),
   (req, res, next) => importController.upload(req, res, next)
 );
@@ -43,7 +43,7 @@ router.post(
 // GET /:id — fetch batch status (for progress polling)
 router.get(
   "/:id",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
   async (req, res, next) => {
     try {
       const { importRepository } = await import("./repository.js");
@@ -75,19 +75,19 @@ router.get(
 
 router.post(
   "/:id/preview",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
   (req, res, next) => importController.preview(req, res, next)
 );
 
 router.post(
   "/:id/commit",
-  rbac(["SUPER_ADMIN", "ADMIN"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "TELE_CALLER"]),
   (req, res, next) => importController.commit(req, res, next)
 );
 
 router.get(
   "/:id/errors.xlsx",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER"]),
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
   (req, res, next) => importController.downloadErrors(req, res, next)
 );
 
