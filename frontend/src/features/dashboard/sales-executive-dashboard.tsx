@@ -67,7 +67,7 @@ export default function SalesExecutiveDashboard() {
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-bold text-[#1F3864] uppercase tracking-wider">Follow-up Efficiency Matrix</h3>
-            <Badge variant="outline" className="text-[10px]">STAGE 1 - 5</Badge>
+            <Badge variant="primary" className="text-[10px] bg-transparent border border-blue-200 text-blue-600">STAGE 1 - 5</Badge>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -116,7 +116,7 @@ export default function SalesExecutiveDashboard() {
                     { label: "F5", desc: "30 Days" }
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between group">
-                      <Badge variant="outline" className="w-8 justify-center font-bold border-blue-100 text-blue-600 bg-blue-50/30">{item.label}</Badge>
+                      <Badge variant="primary" className="w-8 justify-center font-bold border border-blue-100 text-blue-600 bg-blue-50/30">{item.label}</Badge>
                       <span className="text-xs font-semibold text-[#1F3864]">{item.desc}</span>
                     </div>
                   ))}
