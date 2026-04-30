@@ -21,12 +21,12 @@ const upload = multer({
   storage,
   limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
   fileFilter: (_req, file, cb) => {
-    const allowed = [".xlsx", ".xls", ".csv"];
+    const allowed = [".xlsx", ".xls", ".csv", ".xml"];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowed.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error("Only .xlsx, .xls, and .csv files are accepted"));
+      cb(new Error("Only .xlsx, .xls, .csv, and .xml files are accepted"));
     }
   },
 });

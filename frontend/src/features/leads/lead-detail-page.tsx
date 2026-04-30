@@ -269,7 +269,10 @@ export default function LeadDetailPage() {
           </div>
 
           {/* Follow-ups */}
-          <FollowupsSection followups={lead.followups ?? []} />
+          <FollowupsSection 
+            followups={lead.followups ?? []} 
+            assignedName={lead.assignedTo?.fullName ?? lead.executiveName} 
+          />
 
           {/* Pipeline Documents */}
           <PipelineSection leadId={id!} />
@@ -492,7 +495,13 @@ function HiriseStatusCard({ dmsEnquiryNo }: { dmsEnquiryNo?: string | null }) {
 // chronologically (oldest first) so reviewers can read the conversation in order.
 // Remark prefix like "[1-1VWMAFFS] ..." is the Hirise DMS Follow Up Id preserved
 // from import; we render it as a small badge so the free-text stays clean.
-function FollowupsSection({ followups }: { followups: any[] }) {
+function FollowupsSection({
+  followups,
+  assignedName,
+}: {
+  followups: any[];
+  assignedName?: string | null;
+}) {
   const sorted = [...followups].sort(
     (a, b) =>
       new Date(a.followupDate).getTime() - new Date(b.followupDate).getTime()
@@ -559,7 +568,7 @@ function FollowupsSection({ followups }: { followups: any[] }) {
                   <p className="mt-1.5 text-gray-700">{remark}</p>
                 )}
                 <p className="mt-1.5 text-[11px] text-gray-400">
-                  {f.createdBy?.fullName ? `by ${f.createdBy.fullName}` : "—"}
+                  {`by ${assignedName ?? f.createdBy?.fullName ?? "—"}`}
                   {f.nextActionAt && (
                     <>
                       {" · "}Next action {formatDateTime(f.nextActionAt)}

@@ -149,9 +149,22 @@ export class ImportService {
     // is run daily and operators routinely import the latest dump. Row-level dedupe by
     // enquiryNo (see importRow) guarantees we won't create duplicate leads.
     const fileHash = createHash("sha256").update(fileBuffer).digest("hex");
+    
+    let sheets: string[] = [];
+    const fileContent = fileBuffer.toString("utf-8");
+    const isAnalysisRowset = fileContent.includes("xml-analysis:rowset");
 
-    const workbook = XLSX.read(fileBuffer, { type: "buffer" });
-    const sheets = workbook.SheetNames;
+    if (isAnalysisRowset) {
+      sheets = ["Analysis Rowset"];
+    } else {
+      try {
+        const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+        sheets = workbook.SheetNames;
+      } catch (err) {
+        console.error("[Import] Upload read failed:", err);
+        throw new AppError(400, "INVALID_FILE", "Could not read file. Ensure it is a valid Excel, CSV or XML spreadsheet.");
+      }
+    }
 
     const batch = await importRepository.createBatch({
       fileName,
@@ -341,36 +354,65 @@ export class ImportService {
 
   private parseFile(filePath: string, sheetName?: string): ParsedRow[] {
     const fileBuffer = readFileSync(filePath);
-    const workbook = XLSX.read(fileBuffer, { type: "buffer", cellDates: true });
+    const fileContent = fileBuffer.toString("utf-8");
+    const isAnalysisRowset = fileContent.includes("xml-analysis:rowset");
 
-    const sheet =
-      workbook.Sheets[sheetName ?? workbook.SheetNames[0]];
-    if (!sheet) throw new AppError(400, "SHEET_NOT_FOUND", "Sheet not found");
-
-    // Read as 2D array so we can scan for the real header row
-    const aoa: any[][] = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      defval: null,
-      blankrows: false,
-    });
-    if (aoa.length === 0) return [];
-
-    // Auto-detect header row: scan first 5 rows for known column labels
-    const HEADER_MARKERS = [
-      "customer name", "mobile number", "mobile no", "enquiry number",
-      "enquiry date", "enquiry created date", "model interested", "model name",
-      "customer first name",
-    ];
-
+    let aoa: any[][] = [];
     let headerRowIdx = 0;
-    for (let i = 0; i < Math.min(5, aoa.length); i++) {
-      const row = aoa[i];
-      if (!row) continue;
-      const cellStrs = row.map((c) => String(c ?? "").toLowerCase().trim());
-      const matchCount = HEADER_MARKERS.filter((m) => cellStrs.some((c) => c.includes(m))).length;
-      if (matchCount >= 2) {
-        headerRowIdx = i;
-        break;
+
+    if (isAnalysisRowset) {
+      const { headers, rows } = this.parseAnalysisRowset(fileContent);
+      aoa = [headers, ...rows];
+      headerRowIdx = 0;
+    } else {
+      let workbook;
+      try {
+        workbook = XLSX.read(fileBuffer, { type: "buffer", cellDates: true });
+      } catch (err) {
+        console.error("[Import] Parsing failed:", err);
+        throw new AppError(
+          400,
+          "INVALID_FILE",
+          "Could not parse file. Ensure it is a valid Excel, CSV or XML spreadsheet."
+        );
+      }
+
+      const sheet = workbook.Sheets[sheetName ?? workbook.SheetNames[0]];
+      if (!sheet) throw new AppError(400, "SHEET_NOT_FOUND", "Sheet not found");
+
+      // Read as 2D array so we can scan for the real header row
+      aoa = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: null,
+        blankrows: false,
+      });
+
+      if (aoa.length === 0) return [];
+
+      // Auto-detect header row: scan first 5 rows for known column labels
+      const HEADER_MARKERS = [
+        "customer name",
+        "mobile number",
+        "mobile no",
+        "enquiry number",
+        "enquiry date",
+        "enquiry created date",
+        "model interested",
+        "model name",
+        "customer first name",
+      ];
+
+      for (let i = 0; i < Math.min(5, aoa.length); i++) {
+        const row = aoa[i];
+        if (!row) continue;
+        const cellStrs = row.map((c) => String(c ?? "").toLowerCase().trim());
+        const matchCount = HEADER_MARKERS.filter((m) =>
+          cellStrs.some((c) => c.includes(m))
+        ).length;
+        if (matchCount >= 2) {
+          headerRowIdx = i;
+          break;
+        }
       }
     }
 
@@ -917,6 +959,59 @@ export class ImportService {
         data: { nextFollowupAt: mapped.nextFollowupAt },
       });
     }
+  }
+
+  private parseAnalysisRowset(xmlString: string) {
+    const headerMap: Record<string, string> = {};
+    // Extract schema: <xsd:element name="C0" ... saw-sql:columnHeading="Network Type" ... />
+    const schemaRegex = /<xsd:element[^>]+?name="(C\d+)"[^>]+?saw-sql:columnHeading="([^"]+)"/g;
+    let match;
+    while ((match = schemaRegex.exec(xmlString)) !== null) {
+      headerMap[match[1]] = this.decodeXmlEntities(match[2]);
+    }
+
+    // Determine the max column index from headers
+    const colIndices = Object.keys(headerMap).map((c) => parseInt(c.substring(1)));
+    const maxCol = colIndices.length > 0 ? Math.max(...colIndices) : -1;
+
+    const headers: string[] = [];
+    for (let i = 0; i <= maxCol; i++) {
+      headers[i] = headerMap[`C${i}`] || `Column ${i}`;
+    }
+
+    const rows: any[][] = [];
+    // Extract data rows: <R><C0>...</C0><C1>...</C1>...</R>
+    const rowRegex = /<R>(.*?)<\/R>/gs;
+    const colRegex = /<(C\d+)>(.*?)<\/\1>/g;
+
+    let rowMatch;
+    while ((rowMatch = rowRegex.exec(xmlString)) !== null) {
+      const rowContent = rowMatch[1];
+      const rowData: any[] = new Array(maxCol + 1).fill(null);
+      let colMatch;
+      while ((colMatch = colRegex.exec(rowContent)) !== null) {
+        const colTag = colMatch[1];
+        const colValue = colMatch[2];
+        const idx = parseInt(colTag.substring(1));
+        if (idx <= maxCol) {
+          rowData[idx] = this.decodeXmlEntities(colValue);
+        }
+      }
+      rows.push(rowData);
+    }
+
+    return { headers, rows };
+  }
+
+  private decodeXmlEntities(text: string): string {
+    return text
+      .replace(/&quot;/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&apos;/g, "'")
+      .replace(/&#39;/g, "'")
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
   }
 }
 

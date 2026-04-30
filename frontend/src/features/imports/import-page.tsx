@@ -90,6 +90,10 @@ export default function ImportPage() {
       setPreview(res.data.data);
       setStep("preview");
     },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error?.message || "Failed to preview file");
+      setStep("upload");
+    },
   });
 
   const commitMut = useMutation({
@@ -193,14 +197,14 @@ export default function ImportPage() {
         <div className="flex flex-col items-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-12 transition-colors hover:border-[#2E75B6]">
           <Upload size={48} className="mb-4 text-gray-300" />
           <p className="mb-2 text-lg font-semibold text-[#1F3864]">
-            Upload Excel or CSV file
+            Upload Excel, CSV or XML file
           </p>
           <p className="mb-6 text-sm text-gray-400">
-            Supports .xlsx, .xls, .csv — maximum 25 MB
+            Supports .xlsx, .xls, .csv, .xml — maximum 25 MB
           </p>
           <label className="cursor-pointer rounded-lg bg-[#2E75B6] px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#245f96] hover:shadow-lg transition-all">
             {uploadMut.isPending ? "Uploading..." : "Choose File"}
-            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" disabled={uploadMut.isPending} />
+            <input type="file" accept=".xlsx,.xls,.csv,.xml" onChange={handleFile} className="hidden" disabled={uploadMut.isPending} />
           </label>
 
           {uploadMut.isPending && (
