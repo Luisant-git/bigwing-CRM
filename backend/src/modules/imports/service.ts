@@ -246,12 +246,30 @@ export class ImportService {
       error: string;
     }[] = [];
 
-    // Process in batches of 500 for memory safety and progress reporting
+    // Used for batch enquiry number generation
+    let lastSeq = -1;
+    let currentPrefix = "";
+
+    // Process in batches of 500 for memory safety and performance
     for (let batchStart = 0; batchStart < parsed.length; batchStart += BATCH_SIZE) {
       const slice = parsed.slice(batchStart, batchStart + BATCH_SIZE);
 
+      // Pre-fetch existing records for this batch to minimize individual lookups
+      const mobiles = slice.map(r => r.mapped.mobile).filter(Boolean);
+      const enquiryNos = slice.map(r => r.mapped.enquiryNo).filter(Boolean);
+
+      const [existingCustomers, existingLeads] = await Promise.all([
+        prisma.customer.findMany({ where: { mobile: { in: mobiles } } }),
+        prisma.lead.findMany({ where: { enquiryNo: { in: enquiryNos } } })
+      ]);
+
+      const customerCache = new Map<string, any>(existingCustomers.map(c => [c.mobile, c]));
+      const leadCache = new Map<string, any>(existingLeads.map(l => [l.enquiryNo!, l]));
+
+      // Process batch rows sequentially for resilience (so one failure doesn't kill the batch)
+      // but lookups are already optimized above.
       for (const row of slice) {
-        // Skip rows with critical validation errors (missing mobile/date)
+        // Skip rows with critical validation errors
         if (row.errors.length > 0) {
           errorRows++;
           for (const err of row.errors) {
@@ -266,19 +284,40 @@ export class ImportService {
           continue;
         }
 
-        // Apply channel override (TELE / SOCIAL / DIGITAL / SERVICE for tele-enquiry sheets)
         if (channelOverride) row.mapped.__channelOverride = channelOverride;
 
         try {
           const result = await this.importRow(
             row.mapped,
             batch.createdBy,
-            sourceMap,
-            typeMap,
-            modelMap,
-            variantMap,
-            colourMap,
-            userMap
+            prisma, // Use global prisma for resilience
+            { customerCache, leadCache },
+            {
+              sourceMap,
+              typeMap,
+              modelMap,
+              variantMap,
+              colourMap,
+              userMap,
+              // Helper to get next enquiry no without a query per row
+              getNextEnquiryNo: async (t: any, date: Date) => {
+                const now = date || new Date();
+                const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
+                const prefix = `BW-${yearMonth}-`;
+                
+                if (prefix !== currentPrefix) {
+                  currentPrefix = prefix;
+                  const last = await t.lead.findFirst({
+                    where: { enquiryNo: { startsWith: prefix } },
+                    orderBy: { enquiryNo: "desc" },
+                    select: { enquiryNo: true },
+                  });
+                  lastSeq = last ? parseInt(last.enquiryNo.split("-").pop()!, 10) : 0;
+                }
+                lastSeq++;
+                return `${prefix}${String(lastSeq).padStart(5, "0")}`;
+              }
+            }
           );
           if (result === "skipped") {
             skippedRows++;
@@ -295,10 +334,11 @@ export class ImportService {
         }
       }
 
-      // Flush errors and update progress per batch
+      // Flush errors per batch using global prisma
       if (rowErrors.length >= 100) {
         await importRepository.createRowErrors(rowErrors.splice(0, rowErrors.length));
       }
+
       await importRepository.updateBatch(batchId, {
         totalRows: parsed.length,
         successRows,
@@ -593,18 +633,29 @@ export class ImportService {
   private async importRow(
     mapped: Record<string, any>,
     createdBy: bigint,
-    sourceMap: Map<string, bigint>,
-    typeMap: Map<string, bigint>,
-    modelMap: Map<string, bigint>,
-    variantMap: Map<string, { id: bigint; modelId: bigint }>,
-    colourMap: Map<string, bigint>,
-    userMap: Map<string, bigint>
+    tx: any,
+    cache: {
+      customerCache: Map<string, any>;
+      leadCache: Map<string, any>;
+    },
+    lookups: {
+      sourceMap: Map<string, bigint>;
+      typeMap: Map<string, bigint>;
+      modelMap: Map<string, bigint>;
+      variantMap: Map<string, { id: bigint; modelId: bigint }>;
+      colourMap: Map<string, bigint>;
+      userMap: Map<string, bigint>;
+      getNextEnquiryNo: (tx: any, date: Date) => Promise<string>;
+    }
   ) {
+    const { sourceMap, typeMap, modelMap, variantMap, colourMap, userMap, getNextEnquiryNo } = lookups;
+    const { customerCache, leadCache } = cache;
+
     // Resolve customer (upsert by mobile)
-    let customer = await importRepository.findCustomerByMobile(mapped.mobile);
+    let customer = customerCache.get(mapped.mobile);
     if (customer) {
       // Update customer info if it changed in Excel
-      await prisma.customer.update({
+      customer = await tx.customer.update({
         where: { id: customer.id },
         data: {
           firstName: mapped.firstName ?? customer.firstName,
@@ -621,7 +672,7 @@ export class ImportService {
         },
       });
     } else {
-      customer = await prisma.customer.create({
+      customer = await tx.customer.create({
         data: {
           firstName: mapped.firstName || "UNKNOWN",
           lastName: mapped.lastName,
@@ -637,52 +688,45 @@ export class ImportService {
           createdBy,
         },
       });
+      customerCache.set(mapped.mobile, customer);
     }
 
     // Resolve lookups
-    // Source — auto-create missing sources on the fly (per design doc 7.4)
     let sourceId = mapped.source
       ? sourceMap.get(mapped.source.toLowerCase()) ?? null
       : null;
 
     if (mapped.source && !sourceId) {
-      // Auto-create new source (active so it can be seen)
-      const newSource = await prisma.enquirySource.create({
+      const newSource = await tx.enquirySource.create({
         data: { name: mapped.source, displayOrder: 999, isActive: true },
       });
       sourceId = newSource.id;
       sourceMap.set(mapped.source.toLowerCase(), sourceId);
     }
 
-    if (!sourceId) {
-      sourceId = sourceMap.get("other");
-    }
-    if (!sourceId) {
-      throw new Error(`No source available for: ${mapped.source}`);
-    }
+    if (!sourceId) sourceId = sourceMap.get("other") || null;
+    if (!sourceId) throw new Error(`No source available for: ${mapped.source}`);
+
     let enquiryTypeId = mapped.enquiryType
       ? typeMap.get(mapped.enquiryType.toLowerCase()) ?? null
       : null;
 
     if (mapped.enquiryType && !enquiryTypeId) {
-      // Auto-create new enquiry type if it doesn't exist
-      const newType = await prisma.enquiryTypeLookup.create({
+      const newType = await tx.enquiryTypeLookup.create({
         data: { name: mapped.enquiryType, displayOrder: 999, isActive: true },
       });
       enquiryTypeId = newType.id;
       typeMap.set(mapped.enquiryType.toLowerCase(), enquiryTypeId);
     }
 
-    if (!enquiryTypeId) {
-      enquiryTypeId = typeMap.get("new")!;
-    }
+    if (!enquiryTypeId) enquiryTypeId = typeMap.get("new")!;
+
     let modelId = mapped.modelName
       ? modelMap.get(mapped.modelName.toLowerCase()) ?? null
       : null;
 
     if (mapped.modelName && !modelId) {
-      // Auto-create new model if it doesn't exist
-      const newModel = await prisma.vehicleModel.create({
+      const newModel = await tx.vehicleModel.create({
         data: { name: mapped.modelName, displayOrder: 999, isActive: true },
       });
       modelId = newModel.id;
@@ -694,23 +738,20 @@ export class ImportService {
       : null;
 
     if (mapped.colourName && !colourId) {
-      // Auto-create new colour if it doesn't exist
-      const newColour = await prisma.vehicleColour.create({
+      const newColour = await tx.vehicleColour.create({
         data: { name: mapped.colourName, displayOrder: 999, isActive: true },
       });
       colourId = newColour.id;
       colourMap.set(mapped.colourName.toLowerCase(), colourId);
     }
 
-    // Resolve variant (needs model context)
     let variantId: bigint | null = null;
     if (modelId && mapped.variantName) {
       const key = `${modelId}:${mapped.variantName.toLowerCase().trim()}`;
       variantId = variantMap.get(key)?.id ?? null;
 
       if (!variantId) {
-        // Auto-create new variant if it doesn't exist
-        const newVariant = await prisma.vehicleVariant.create({
+        const newVariant = await tx.vehicleVariant.create({
           data: { name: mapped.variantName, modelId, displayOrder: 999, isActive: true },
         });
         variantId = newVariant.id;
@@ -722,72 +763,36 @@ export class ImportService {
     let assignedTo: bigint | null = null;
     if (mapped.executive) {
       const execName = String(mapped.executive).toLowerCase().replace(/\.+$/, "").trim();
-      // 1. Try exact match
       assignedTo = userMap.get(execName) ?? null;
-      
-      // 2. Fallback to very flexible matching
       if (!assignedTo) {
         for (const [fullName, id] of userMap.entries()) {
           if (fullName.includes(execName) || execName.includes(fullName)) {
             assignedTo = id;
-            console.log(`[Import Exec] Matched "${mapped.executive}" to CRM user "${fullName}"`);
             break;
           }
         }
       }
-
-      if (!assignedTo) {
-        console.log(`[Import Exec] FAILED to match executive: "${mapped.executive}" (No user found with similar name)`);
-      }
     }
 
-    // Normalize Stage
-    const normalizeStage = (s: string | null | undefined): string => {
-      if (!s) return "NOT_CONTACTED";
-      const val = s.toUpperCase().trim();
-      if (val === "ENQUIRY") return "CONTACTED";
-      if (val === "NEW") return "NOT_CONTACTED";
-      if (val === "ENQUIRED") return "CONTACTED";
-      if (val === "ENQUIRY LOST") return "LOST";
-      if (val === "TEST RIDE DONE" || val === "TEST RIDE COMPLETED") return "TEST_RIDE_COMPLETED";
-      if (val === "TEST RIDE SCHEDULED") return "TEST_RIDE_SCHEDULED";
-      if (val === "QUOTATION SHARED") return "QUOTATION_SHARED";
-      // Add more mappings if needed
-      return val;
-    };
     const targetStage = normalizeStage(mapped.stage);
 
-    // Dedupe lead. When the Hirise Honda export is re-imported (daily habit) the same
-    // enquiryNo rows will appear again. The Hirise DMS emits one row per follow-up, so
-    // several rows can share an enquiryNo — treat the extra rows as additional follow-ups
-    // on the existing lead rather than dropping them (which was losing follow-up history).
+    // Dedupe lead
     let enquiryNo = mapped.enquiryNo;
     if (enquiryNo) {
-      const existing = await importRepository.findLeadByEnquiryNo(enquiryNo);
+      const existing = leadCache.get(enquiryNo);
       if (existing) {
-        // Smart update of the existing lead:
-        // 1. Pick the best Next Date (from main column or fallback 'real' column)
         let nextDate = mapped.nextFollowupAt ? new Date(mapped.nextFollowupAt) : null;
         if (!nextDate && mapped.realNextFollowup) {
-          // Extract date from format like "ENQ...|18-03-2026 00:00|..."
           const parts = String(mapped.realNextFollowup).split("|");
           const datePart = parts.find(p => p.match(/\d{1,2}[\-\/]\d{1,2}[\-\/]\d{2,4}/));
           if (datePart) nextDate = normalizeDate(datePart);
         }
 
         const lastDate = mapped.currentFollowupDate ? new Date(mapped.currentFollowupDate) : null;
-
-        // Force update if times are different (helps fix the 1-day timezone shift)
         const shouldUpdateNext = nextDate && (!existing.nextFollowupAt || nextDate.getTime() !== existing.nextFollowupAt.getTime());
         const shouldUpdateLast = lastDate && (!existing.lastFollowupAt || lastDate.getTime() !== existing.lastFollowupAt.getTime());
 
-        if (shouldUpdateNext || shouldUpdateLast) {
-           console.log(`[Import Update] Lead ${existing.enquiryNo}: 
-             Next: ${existing.nextFollowupAt?.toDateString()} -> ${nextDate?.toDateString()}, 
-             Current: ${existing.lastFollowupAt?.toDateString()} -> ${lastDate?.toDateString()}`);
-        }
-
-        await prisma.lead.update({
+        await tx.lead.update({
           where: { id: existing.id },
           data: {
             stage: targetStage,
@@ -809,32 +814,16 @@ export class ImportService {
             updatedAt: new Date(),
           },
         });
-        await this.appendImportedFollowup(existing.id, mapped, createdBy);
+        await this.appendImportedFollowup(existing.id, mapped, createdBy, tx);
         return "skipped" as const;
       }
     } else {
-      // Generate new enquiry number
-      const now = mapped.enquiryDate ?? new Date();
-      const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-      const prefix = `BW-${yearMonth}-`;
-      const last = await prisma.lead.findFirst({
-        where: { enquiryNo: { startsWith: prefix } },
-        orderBy: { enquiryNo: "desc" },
-        select: { enquiryNo: true },
-      });
-      let seq = 1;
-      if (last) seq = parseInt(last.enquiryNo.split("-").pop()!, 10) + 1;
-      enquiryNo = `${prefix}${String(seq).padStart(5, "0")}`;
+      enquiryNo = await getNextEnquiryNo(tx, mapped.enquiryDate);
     }
 
-    // Determine channel: explicit override > excel column > walkin (has enquiry_no) > default to TELE
-    const channel =
-      mapped.__channelOverride ||
-      mapped.channel ||
-      (mapped.enquiryNo ? "WALKIN" : "TELE");
+    const channel = mapped.__channelOverride || mapped.channel || (mapped.enquiryNo ? "WALKIN" : "TELE");
 
-    // Create lead
-    const lead = await prisma.lead.create({
+    const lead = await tx.lead.create({
       data: {
         enquiryNo,
         dmsEnquiryNo: mapped.enquiryNo?.startsWith("VEHENQ") ? mapped.enquiryNo : undefined,
@@ -857,28 +846,22 @@ export class ImportService {
         enquiryDate: mapped.enquiryDate || new Date(),
         remark: mapped.remark ?? mapped.closureRemark,
         referredFromBranch: mapped.referredFromBranch,
-        closedAt:
-          targetStage === "DELIVERED_CLOSED" || targetStage === "LOST"
-            ? new Date()
-            : undefined,
+        closedAt: targetStage === "DELIVERED_CLOSED" || targetStage === "LOST" ? new Date() : undefined,
         createdBy,
       },
     });
 
-    // Create initial follow-up from the Excel row (Hirise DMS exports one follow-up
-    // per row; later rows for the same enquiryNo are appended by appendImportedFollowup).
+    // Update cache so subsequent rows in same batch find this lead
+    leadCache.set(enquiryNo, lead);
+
     if (mapped.followupRemark || mapped.currentFollowupDate || mapped.followupId) {
-      const followupDate =
-        mapped.currentFollowupDate ?? mapped.enquiryDate ?? new Date();
-      await prisma.leadFollowup.create({
+      const followupDate = mapped.currentFollowupDate ?? mapped.enquiryDate ?? new Date();
+      await tx.leadFollowup.create({
         data: {
           leadId: lead.id,
           seqNo: 1,
           followupDate,
-          remark: this.buildFollowupRemark(
-            mapped.followupRemark,
-            mapped.followupId
-          ),
+          remark: this.buildFollowupRemark(mapped.followupRemark, mapped.followupId),
           createdBy,
         },
       });
@@ -905,7 +888,8 @@ export class ImportService {
   private async appendImportedFollowup(
     leadId: bigint,
     mapped: Record<string, any>,
-    createdBy: bigint
+    createdBy: bigint,
+    tx: any
   ) {
     const remark = this.buildFollowupRemark(
       mapped.followupRemark,
@@ -917,7 +901,7 @@ export class ImportService {
     // Nothing to record
     if (!remark && !followupDate) return;
 
-    const existing = await prisma.leadFollowup.findMany({
+    const existing = await tx.leadFollowup.findMany({
       where: { leadId },
       select: { seqNo: true, followupDate: true, remark: true },
       orderBy: { seqNo: "desc" },
@@ -927,7 +911,7 @@ export class ImportService {
     const followupIdTag = mapped.followupId
       ? `[${String(mapped.followupId).trim()}]`
       : null;
-    const alreadyExists = existing.some((f) => {
+    const alreadyExists = existing.some((f: any) => {
       if (followupIdTag && f.remark?.startsWith(followupIdTag)) return true;
       if (
         followupDate &&
@@ -943,7 +927,7 @@ export class ImportService {
 
     const nextSeqNo = (existing[0]?.seqNo ?? 0) + 1;
 
-    await prisma.leadFollowup.create({
+    await tx.leadFollowup.create({
       data: {
         leadId,
         seqNo: nextSeqNo,
@@ -954,7 +938,7 @@ export class ImportService {
     });
 
     if (mapped.nextFollowupAt) {
-      await prisma.lead.update({
+      await tx.lead.update({
         where: { id: leadId },
         data: { nextFollowupAt: mapped.nextFollowupAt },
       });

@@ -28,9 +28,11 @@ export class ImportRepository {
       column?: string;
       value?: string;
       error: string;
-    }[]
+    }[],
+    tx?: any
   ) {
     if (errors.length === 0) return;
+    const client = tx || prisma;
     // Truncate long strings to fit DB column limits (column=80, value=500, error=500)
     const truncate = (s: string | undefined, n: number) =>
       s ? (s.length > n ? s.slice(0, n) : s) : s;
@@ -40,7 +42,7 @@ export class ImportRepository {
       value: truncate(e.value, 495),
       error: truncate(e.error, 495) ?? "Unknown error",
     }));
-    await prisma.importRowError.createMany({ data: safe });
+    await client.importRowError.createMany({ data: safe });
   }
 
   async getRowErrors(batchId: bigint) {
