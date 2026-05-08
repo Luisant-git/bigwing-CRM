@@ -25,8 +25,8 @@ const PRIMARY_MODELS = [
 
 const STAGE_ORDER = ["NOT_CONTACTED", "CONTACTED", "NOT_REACHABLE", "BOOKED", "LOST", "DELIVERED_CLOSED"];
 const STAGE_LABELS: Record<string, string> = {
-  NOT_CONTACTED: "Not Contacted",
-  CONTACTED: "Contacted",
+  NOT_CONTACTED: "New",
+  CONTACTED: "Enquiry",
   NOT_REACHABLE: "Not Reachable",
   BOOKED: "Booked",
   LOST: "Lost",
