@@ -544,12 +544,27 @@ export class LeadService {
     const XLSX = await import("xlsx");
     const workbook = XLSX.utils.book_new();
     const data = formatted.map((l) => {
+      const stageMap: Record<string, string> = {
+        NEW: "NEW",
+        NOT_CONTACTED: "NEW",
+        ENQUIRED: "ENQUIRY",
+        CONTACTED: "ENQUIRY",
+        NOT_REACHABLE: "NOT REACHABLE",
+        TEST_RIDE_SCHEDULED: "TEST RIDE SCHEDULED",
+        TEST_RIDE_COMPLETED: "TEST RIDE COMPLETED",
+        QUOTATION_SHARED: "QUOTATION SHARED",
+        BOOKED: "BOOKED",
+        INVOICED: "INVOICED",
+        DELIVERED_CLOSED: "DELIVERED",
+        LOST: "LOST",
+      };
+
       const common = {
         "Enquiry No": l.enquiryNo,
         "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`,
         "Mobile": l.customer?.mobile,
         "Model": l.model,
-        "Stage": l.stage,
+        "Stage": stageMap[l.stage] || l.stage?.replace(/_/g, " "),
         "Interest": l.interestLevel,
         "Assigned To": l.assignedTo?.fullName || l.executiveName || "Unassigned",
       };
