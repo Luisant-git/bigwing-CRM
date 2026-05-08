@@ -121,6 +121,30 @@ export class LeadController {
       next(err);
     }
   }
+
+  async exportExcel(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { view, ...filters } = req.query;
+      const buffer = await leadService.exportExcel(
+        (view as string) || "all",
+        filters,
+        req.user
+      );
+
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      );
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="leads-export-${view || "all"}-${new Date().toISOString().split("T")[0]}.xlsx"`
+      );
+
+      res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const leadController = new LeadController();

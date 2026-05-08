@@ -17,12 +17,16 @@ import { pipelineRoutes } from "../pipeline/routes.js";
 
 const router = Router();
 
-// Schema for follow-up view queries (pagination + optional assignedTo)
-const followupViewQuerySchema = paginationSchema.extend({
-  assignedTo: z.coerce.number().int().positive().optional(),
-});
+// Schema for follow-up view queries (same as lead list)
+const followupViewQuerySchema = leadListQuerySchema;
 
 router.use(authMiddleware);
+
+router.get(
+  "/export-excel",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
+  (req, res, next) => leadController.exportExcel(req, res, next)
+);
 
 // ─── Follow-up views (before /:id to avoid route conflicts) ────
 router.get(

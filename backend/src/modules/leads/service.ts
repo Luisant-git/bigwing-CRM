@@ -151,7 +151,7 @@ export class LeadService {
         ...((dateFrom || dateTo) ? [{
           enquiryDate: {
             ...(dateFrom && { gte: new Date(dateFrom) }),
-            ...(dateTo && { lte: new Date(dateTo) }),
+            ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
           },
         }] : []),
         ...(q ? [{
@@ -370,14 +370,44 @@ export class LeadService {
     );
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-    const { page, pageSize, assignedTo } = filters;
+    const {
+      page,
+      pageSize,
+      stage,
+      channel,
+      interestLevel,
+      assignedTo,
+      sourceId,
+      modelId,
+      dateFrom,
+      dateTo,
+      q,
+    } = filters;
 
     const where: any = {
       AND: [
         { isDeleted: false },
-        { stage: { notIn: ["DELIVERED_CLOSED", "LOST"] } },
+        { stage: stage || { notIn: ["DELIVERED_CLOSED", "LOST"] } },
         ownDataFilter(user),
+        ...(channel ? [{ channel }] : []),
+        ...(interestLevel ? [{ interestLevel }] : []),
         ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+        ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
+        ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
+        ...((dateFrom || dateTo) ? [{
+          enquiryDate: {
+            ...(dateFrom && { gte: new Date(dateFrom) }),
+            ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
+          },
+        }] : []),
+        ...(q ? [{
+          OR: [
+            { enquiryNo: { contains: q, mode: "insensitive" } },
+            { customer: { firstName: { contains: q, mode: "insensitive" } } },
+            { customer: { lastName: { contains: q, mode: "insensitive" } } },
+            { customer: { mobile: { contains: q } } },
+          ],
+        }] : []),
       ]
     };
 
@@ -416,6 +446,174 @@ export class LeadService {
         totalPages: Math.ceil(total / pageSize),
       },
     };
+  }
+
+  async exportExcel(
+    view: string,
+    filters: any,
+    user?: any
+  ) {
+    let leads: any[] = [];
+    
+    if (view === "all") {
+      const {
+        stage,
+        channel,
+        interestLevel,
+        assignedTo,
+        sourceId,
+        modelId,
+        dateFrom,
+        dateTo,
+        referredFromBranch,
+        q,
+      } = filters;
+
+      const where: any = {
+        AND: [
+          { isDeleted: false },
+          ownDataFilter(user),
+          ...(stage ? [{ stage }] : []),
+          ...(channel ? [{ channel }] : []),
+          ...(interestLevel ? [{ interestLevel }] : []),
+          ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+          ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
+          ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
+          ...(referredFromBranch ? [{ referredFromBranch }] : []),
+          ...((dateFrom || dateTo) ? [{
+            enquiryDate: {
+              ...(dateFrom && { gte: new Date(dateFrom) }),
+              ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
+            },
+          }] : []),
+          ...(q ? [{
+            OR: [
+              { enquiryNo: { contains: q, mode: "insensitive" } },
+              { customer: { firstName: { contains: q, mode: "insensitive" } } },
+              { customer: { lastName: { contains: q, mode: "insensitive" } } },
+              { customer: { mobile: { contains: q } } },
+            ],
+          }] : []),
+        ]
+      };
+      leads = await leadRepository.findMany({ where });
+    } else {
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+
+      const { assignedTo, dateFrom, dateTo } = filters;
+
+      const where: any = {
+        AND: [
+          { isDeleted: false },
+          { stage: { notIn: ["DELIVERED_CLOSED", "LOST"] } },
+          ownDataFilter(user),
+          ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+          ...((dateFrom || dateTo) ? [{
+            enquiryDate: {
+              ...(dateFrom && { gte: new Date(dateFrom) }),
+              ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
+            },
+          }] : []),
+        ]
+      };
+
+      const conditions = where.AND as any[];
+
+      switch (view) {
+        case "today":
+          conditions.push({ nextFollowupAt: { gte: todayStart, lt: todayEnd } });
+          break;
+        case "overdue":
+          conditions.push({ nextFollowupAt: { lt: todayStart } });
+          break;
+        case "upcoming":
+          conditions.push({ nextFollowupAt: { gte: todayEnd } });
+          break;
+        case "no-followup":
+          conditions.push({ nextFollowupAt: null });
+          break;
+      }
+      leads = await leadRepository.findMany({ where });
+    }
+
+    const formatted = leads.map(this.formatLead);
+
+    // Create Excel
+    const XLSX = await import("xlsx");
+    const workbook = XLSX.utils.book_new();
+    const data = formatted.map((l) => {
+      const common = {
+        "Enquiry No": l.enquiryNo,
+        "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`,
+        "Mobile": l.customer?.mobile,
+        "Model": l.model,
+        "Stage": l.stage,
+        "Interest": l.interestLevel,
+        "Assigned To": l.assignedTo?.fullName || l.executiveName || "Unassigned",
+      };
+
+      if (view === "all") {
+        return {
+          ...common,
+          "Enquiry Date": l.enquiryDate ? new Date(l.enquiryDate).toLocaleDateString() : "",
+          "Channel": l.channel,
+          "Source": l.source,
+          "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
+          "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleDateString() : "None",
+          "Remarks": l.remark || "",
+        };
+      } else {
+        // Targeted format for follow-up views
+        return {
+          ...common,
+          "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleDateString() : "None",
+          "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
+          "Remarks": l.remark || "",
+        };
+      }
+    });
+
+    const sheet = XLSX.utils.json_to_sheet(data);
+    
+    // Set column widths based on view
+    let widths = [];
+    if (view === "all") {
+      widths = [
+        { wch: 15 }, // Enquiry No
+        { wch: 25 }, // Customer Name
+        { wch: 15 }, // Mobile
+        { wch: 15 }, // Model
+        { wch: 15 }, // Stage
+        { wch: 10 }, // Interest
+        { wch: 20 }, // Assigned To
+        { wch: 12 }, // Enquiry Date
+        { wch: 10 }, // Channel
+        { wch: 15 }, // Source
+        { wch: 15 }, // Next Follow-up
+        { wch: 15 }, // Last Follow-up
+        { wch: 30 }, // Remarks
+      ];
+    } else {
+      widths = [
+        { wch: 15 }, // Enquiry No
+        { wch: 25 }, // Customer Name
+        { wch: 15 }, // Mobile
+        { wch: 15 }, // Model
+        { wch: 15 }, // Stage
+        { wch: 10 }, // Interest
+        { wch: 20 }, // Assigned To
+        { wch: 15 }, // Last Follow-up
+        { wch: 15 }, // Next Follow-up
+        { wch: 40 }, // Remarks (Wider for focus)
+      ];
+    }
+    sheet["!cols"] = widths;
+
+    XLSX.utils.book_append_sheet(workbook, sheet, "Leads");
+
+    return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
   }
 
   async softDelete(id: bigint, deletedBy: bigint) {

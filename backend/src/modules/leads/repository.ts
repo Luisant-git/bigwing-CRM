@@ -11,11 +11,11 @@ const listIncludes = {
 } as const;
 
 export class LeadRepository {
-  async findMany(params: { where: any; skip: number; take: number }) {
+  async findMany(params: { where: any; skip?: number; take?: number }) {
     return prisma.lead.findMany({
       where: params.where,
-      skip: params.skip,
-      take: params.take,
+      ...(params.skip !== undefined && { skip: params.skip }),
+      ...(params.take !== undefined && { take: params.take }),
       orderBy: { createdAt: "desc" },
       include: listIncludes,
     });
