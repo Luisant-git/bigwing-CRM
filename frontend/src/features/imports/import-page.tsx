@@ -308,7 +308,13 @@ export default function ImportPage() {
             </div>
           </div>
 
-          <div className="flex justify-center gap-3">
+          <p className="mt-4 text-sm text-gray-600">
+            Download the error report to see missing or invalid details. Fields marked with 
+            <span className="font-bold text-[#EB5757]"> * </span> are required. 
+            Once fixed, you can re-upload the same file to complete the import.
+          </p>
+
+          <div className="mt-6 flex justify-center gap-3">
             {result.errorRows > 0 && (
               <button
                 type="button"

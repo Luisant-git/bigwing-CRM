@@ -1,6 +1,7 @@
 import { createHash } from "crypto";
 import { readFileSync } from "fs";
 import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { prisma } from "@bigwing/db";
 import { importRepository } from "./repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
@@ -376,18 +377,144 @@ export class ImportService {
     if (!batch) throw new AppError(404, "BATCH_NOT_FOUND", "Import batch not found");
 
     const errors = await importRepository.getRowErrors(batchId);
+    if (errors.length === 0) {
+      throw new AppError(400, "NO_ERRORS", "No errors found for this batch");
+    }
 
-    const workbook = XLSX.utils.book_new();
-    const data = errors.map((e) => ({
-      Row: e.rowNumber,
-      Column: e.column ?? "",
-      Value: e.value ?? "",
-      Error: e.error,
-    }));
-    const sheet = XLSX.utils.json_to_sheet(data);
-    XLSX.utils.book_append_sheet(workbook, sheet, "Errors");
+    // Group errors by row number
+    const errorMap = new Map<number, { column?: string; error: string }[]>();
+    errors.forEach((e) => {
+      const existing = errorMap.get(e.rowNumber) || [];
+      existing.push({ column: e.column ?? undefined, error: e.error });
+      errorMap.set(e.rowNumber, existing);
+    });
 
-    return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+    const filePath = `uploads/${batch.fileName}`;
+    let allRows: ParsedRow[] = [];
+    try {
+      allRows = this.parseFile(filePath);
+    } catch (err) {
+      console.error("[Import] Failed to re-parse file for error report:", err);
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Fix and Re-upload");
+
+    if (allRows.length > 0) {
+      const firstRow = allRows[0];
+      const originalHeaders = Object.keys(firstRow.raw);
+      
+      const requiredKeywords = ["mobile", "customer name", "first name", "enquiry date", "source", "model interested", "model name"];
+
+      // Setup columns with labels
+      const sheetHeaders = originalHeaders.map(h => {
+        let label = h;
+        if (requiredKeywords.some(kw => h.toLowerCase().includes(kw))) {
+          if (!label.includes("*")) label = `${h} *`;
+        }
+        return label;
+      });
+      const remarksHeader = "IMPORT_REMARKS (FIX THESE)";
+      const allHeaderLabels = [...sheetHeaders, remarksHeader];
+      
+      sheet.columns = allHeaderLabels.map((h) => ({
+        header: h,
+        key: h,
+        width: h === remarksHeader ? 50 : 20,
+      }));
+
+      // Filter rows that have errors
+      const errorRows = allRows.filter((r) => errorMap.has(r.rowNum));
+
+      errorRows.forEach((r) => {
+        const rowData: Record<string, any> = {};
+        originalHeaders.forEach((h, idx) => {
+          rowData[sheetHeaders[idx]] = r.raw[h];
+        });
+        
+        const rowErrors = errorMap.get(r.rowNum)!;
+        rowData[remarksHeader] = rowErrors
+          .map((re) => `${re.column ? re.column + ": " : ""}${re.error}`)
+          .join(" | ");
+
+        const row = sheet.addRow(rowData);
+
+        // Highlight cells with errors
+        rowErrors.forEach((re) => {
+          if (re.column) {
+            // Find column index (1-based for ExcelJS cell access)
+            const colIdx = sheetHeaders.findIndex(
+              (h) =>
+                h === re.column ||
+                h === `${re.column} *` ||
+                h.toLowerCase().includes(re.column!.toLowerCase())
+            );
+            if (colIdx !== -1) {
+              const cell = row.getCell(colIdx + 1);
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFFFC7CE" }, // Light red background
+              };
+              cell.font = {
+                color: { argb: "FF9C0006" }, // Dark red text
+              };
+            }
+          }
+        });
+
+        // Also highlight missing values in required columns
+        originalHeaders.forEach((h, idx) => {
+          const val = r.raw[h];
+          const isRequired = requiredKeywords.some((kw) => h.toLowerCase().includes(kw));
+          if (isRequired && (val === null || val === undefined || String(val).trim() === "")) {
+            const cell = row.getCell(idx + 1);
+            // Only fill if not already filled by error logic
+            if (!cell.fill || (cell.fill as any).pattern !== "solid") {
+              cell.fill = {
+                type: "pattern",
+                pattern: "solid",
+                fgColor: { argb: "FFFFC7CE" },
+              };
+            }
+          }
+        });
+
+        // Style the remarks column cell
+        const remarksCell = row.getCell(allHeaderLabels.length);
+        remarksCell.font = { color: { argb: "FF9C0006" }, italic: true };
+      });
+
+      // Style header row
+      const headerRow = sheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FF1F3864" } };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF2F2F2" },
+      };
+      headerRow.alignment = { horizontal: "center" };
+
+    } else {
+      // Fallback: only show Row, Column, Value, Error
+      sheet.columns = [
+        { header: "Row", key: "row", width: 10 },
+        { header: "Column", key: "col", width: 20 },
+        { header: "Value", key: "val", width: 20 },
+        { header: "Error", key: "err", width: 50 },
+      ];
+      errors.forEach((e) => {
+        sheet.addRow({
+          row: e.rowNumber,
+          col: e.column,
+          val: e.value,
+          err: e.error,
+        });
+      });
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer as Buffer;
   }
 
   // ─── File parsing ─────────────────────────────────────────────
