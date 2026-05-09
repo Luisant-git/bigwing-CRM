@@ -12,7 +12,7 @@ import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
 
-type Tab = "all" | "today" | "overdue" | "upcoming" | "no-followup";
+type Tab = "all" | "today" | "overdue" | "upcoming" | "no-followup" | "booked";
 type InterestFilter = "ALL" | "HOT" | "WARM" | "COLD";
 
 const TABS: { key: Tab; label: string; endpoint: string }[] = [
@@ -21,6 +21,7 @@ const TABS: { key: Tab; label: string; endpoint: string }[] = [
   { key: "overdue", label: "Overdue", endpoint: "/leads/overdue" },
   { key: "upcoming", label: "Upcoming", endpoint: "/leads/upcoming" },
   { key: "no-followup", label: "No Follow-up", endpoint: "/leads/no-followup" },
+  { key: "booked", label: "Booked", endpoint: "/leads/booked" },
 ];
 
 export default function LeadListPage() {
@@ -45,13 +46,18 @@ export default function LeadListPage() {
   const [channel, setChannel] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [modelId, setModelId] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
+  const [executiveName, setExecutiveName] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  // Reset page to 1 whenever any filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo]);
+
   const { data: sources } = useLookup("enquiry-sources");
   const { data: models } = useLookup("vehicle-models");
-  const { data: users } = useUsers();
+  const { data: executives } = useLookup("sales-executives");
 
   const activeTab = TABS.find((t) => t.key === tab)!;
 
@@ -64,7 +70,7 @@ export default function LeadListPage() {
   if (channel) params.channel = channel;
   if (sourceId) params.sourceId = sourceId;
   if (modelId) params.modelId = modelId;
-  if (assignedTo) params.assignedTo = assignedTo;
+  if (executiveName) params.executiveName = executiveName;
 
   const handleDownload = async () => {
     try {
@@ -105,7 +111,7 @@ export default function LeadListPage() {
   if (channel) countParams.channel = channel;
   if (sourceId) countParams.sourceId = sourceId;
   if (modelId) countParams.modelId = modelId;
-  if (assignedTo) countParams.assignedTo = assignedTo;
+  if (executiveName) countParams.executiveName = executiveName;
   const countQueries = useQueries({
     queries: ["HOT", "WARM", "COLD"].map((lvl) => ({
       queryKey: ["leads-count", tab, lvl, countParams],
@@ -122,10 +128,10 @@ export default function LeadListPage() {
     COLD: countQueries[2].data ?? 0,
   };
 
-  const hasActiveFilters = stage || channel || sourceId || modelId || assignedTo || dateFrom || dateTo;
+  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo;
   const clearFilters = () => {
     setStage(""); setChannel(""); setSourceId("");
-    setModelId(""); setAssignedTo(""); setDateFrom(""); setDateTo("");
+    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo("");
   };
 
   // ─── Column definitions ────────────────────────────────────
@@ -381,7 +387,7 @@ export default function LeadListPage() {
             <FilterSelect label="Channel" value={channel} onChange={setChannel} options={["WALKIN", "TELE", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"].map(c => ({ value: c, label: c }))} />
             <FilterSelect label="Source" value={sourceId} onChange={setSourceId} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
-            <FilterSelect label="Assigned To" value={assignedTo} onChange={setAssignedTo} options={(users ?? []).map((u: any) => ({ value: String(u.id), label: u.fullName }))} />
+            <FilterSelect label="Assigned To" value={executiveName} onChange={setExecutiveName} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
           </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} className="mt-3 flex items-center gap-1 text-xs font-medium text-[#2E75B6] hover:underline">

@@ -57,6 +57,13 @@ router.get(
   (req, res, next) => leadController.noFollowup(req, res, next)
 );
 
+router.get(
+  "/booked",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
+  validate(followupViewQuerySchema, "query"),
+  (req, res, next) => leadController.bookedLeads(req, res, next)
+);
+
 // ─── Lead CRUD ─────────────────────────────────────────────────
 router.get(
   "/",

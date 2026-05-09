@@ -16,7 +16,7 @@ function dateWhere(f: DateFilter) {
   };
 }
 
-const OPEN_STAGES = { notIn: ["DELIVERED_CLOSED", "LOST"] };
+const OPEN_STAGES = { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] };
 
 export class ReportService {
   // ─── Sales Dashboard KPIs ─────────────────────────────────────
@@ -552,7 +552,7 @@ export class ReportService {
       const e = execMap.get(eid);
       e.total += g._count.id;
       
-      const isClosed = ["DELIVERED_CLOSED", "LOST"].includes(g.stage);
+      const isClosed = ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].includes(g.stage);
       if (!isClosed) {
         e.totalActive += g._count.id;
         if (!g.nextFollowupAt) e.noFollowup += g._count.id;

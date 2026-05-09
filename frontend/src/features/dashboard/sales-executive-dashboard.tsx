@@ -9,9 +9,11 @@ import {
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Badge } from "@/components/ui";
 
 export default function SalesExecutiveDashboard() {
+  const navigate = useNavigate();
   const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
 
@@ -50,16 +52,17 @@ export default function SalesExecutiveDashboard() {
       </div>
 
       {/* KPI Cards Row - Matches Top Row of Excel */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-9">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-10">
         <KPICard label="Total Data" value={kpi?.totalData} icon={ClipboardList} color="#1F3864" />
-        <KPICard label="Enquiries" value={kpi?.totalEnquiries} icon={TrendingUp} color="#2E75B6" />
+        <KPICard label="Enquiries" value={kpi?.totalEnquiries} icon={TrendingUp} color="#2E75B6" onClick={() => navigate({ to: "/leads", search: { tab: "all" } })} />
+        <KPICard label="Booked" value={kpi?.booked} icon={TrendingUp} color="#6366F1" onClick={() => navigate({ to: "/leads", search: { tab: "booked" } })} />
         <KPICard label="Invoiced" value={kpi?.invoiced} icon={CheckCircle2} color="#27AE60" />
         <KPICard label="Lost" value={kpi?.lost} icon={XCircle} color="#EB5757" />
-        <KPICard label="Active" value={kpi?.active} icon={TrendingUp} color="#6366F1" />
-        <KPICard label="Today" value={kpi?.today} icon={Clock} color="#0891B2" />
-        <KPICard label="Overdue" value={kpi?.overdue} icon={AlertTriangle} color="#EB5757" />
-        <KPICard label="Upcoming" value={kpi?.upcoming} icon={CalendarClock} color="#F2994A" />
-        <KPICard label="No Followup" value={kpi?.noFollowup} icon={Ban} color="#D97706" />
+        <KPICard label="Active" value={kpi?.active} icon={TrendingUp} color="#3B82F6" />
+        <KPICard label="Today" value={kpi?.today} icon={Clock} color="#0891B2" onClick={() => navigate({ to: "/leads", search: { tab: "today" } })} />
+        <KPICard label="Overdue" value={kpi?.overdue} icon={AlertTriangle} color="#EB5757" onClick={() => navigate({ to: "/leads", search: { tab: "overdue" } })} />
+        <KPICard label="Upcoming" value={kpi?.upcoming} icon={CalendarClock} color="#F2994A" onClick={() => navigate({ to: "/leads", search: { tab: "upcoming" } })} />
+        <KPICard label="No Followup" value={kpi?.noFollowup} icon={Ban} color="#D97706" onClick={() => navigate({ to: "/leads", search: { tab: "no-followup" } })} />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -258,9 +261,12 @@ export default function SalesExecutiveDashboard() {
   );
 }
 
-function KPICard({ label, value, icon: Icon, color }: any) {
+function KPICard({ label, value, icon: Icon, color, onClick }: any) {
   return (
-    <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:shadow-md">
+    <div 
+      onClick={onClick}
+      className={`bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 active:scale-95" : "hover:shadow-md"}`}
+    >
       <div className="flex items-center justify-between mb-1">
         <div className="p-1.5 rounded-lg opacity-80" style={{ backgroundColor: `${color}15`, color }}>
           <Icon size={14} />

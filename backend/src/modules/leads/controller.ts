@@ -122,6 +122,19 @@ export class LeadController {
     }
   }
 
+  async bookedLeads(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await leadService.getFollowupView(
+        "booked",
+        req.query,
+        req.user
+      );
+      res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async exportExcel(req: Request, res: Response, next: NextFunction) {
     try {
       const { view, ...filters } = req.query;
