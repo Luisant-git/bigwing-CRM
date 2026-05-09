@@ -134,6 +134,7 @@ export class LeadService {
       dateFrom,
       dateTo,
       referredFromBranch,
+      executiveName,
       q,
     } = filters;
 
@@ -145,6 +146,7 @@ export class LeadService {
         ...(channel ? [{ channel }] : []),
         ...(interestLevel ? [{ interestLevel }] : []),
         ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+        ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
         ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
         ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
         ...(referredFromBranch ? [{ referredFromBranch }] : []),
@@ -358,7 +360,7 @@ export class LeadService {
   }
 
   async getFollowupView(
-    view: "today" | "overdue" | "upcoming" | "no-followup",
+    view: "today" | "overdue" | "upcoming" | "no-followup" | "booked",
     filters: any,
     user?: any
   ) {
@@ -377,8 +379,10 @@ export class LeadService {
       channel,
       interestLevel,
       assignedTo,
+      executiveName,
       sourceId,
       modelId,
+      referredFromBranch,
       dateFrom,
       dateTo,
       q,
@@ -387,13 +391,15 @@ export class LeadService {
     const where: any = {
       AND: [
         { isDeleted: false },
-        { stage: stage || { notIn: ["DELIVERED_CLOSED", "LOST"] } },
+        { stage: stage || (view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] }) },
         ownDataFilter(user),
         ...(channel ? [{ channel }] : []),
         ...(interestLevel ? [{ interestLevel }] : []),
         ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+        ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
         ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
         ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
+        ...(referredFromBranch ? [{ referredFromBranch }] : []),
         ...((dateFrom || dateTo) ? [{
           enquiryDate: {
             ...(dateFrom && { gte: new Date(dateFrom) }),
@@ -424,7 +430,8 @@ export class LeadService {
         conditions.push({ nextFollowupAt: { gte: todayEnd } });
         break;
       case "no-followup":
-        conditions.push({ nextFollowupAt: null });
+      case "booked":
+        // Stage filter handled above
         break;
     }
 
@@ -507,7 +514,7 @@ export class LeadService {
       const where: any = {
         AND: [
           { isDeleted: false },
-          { stage: { notIn: ["DELIVERED_CLOSED", "LOST"] } },
+          { stage: view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] } },
           ownDataFilter(user),
           ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
           ...((dateFrom || dateTo) ? [{
