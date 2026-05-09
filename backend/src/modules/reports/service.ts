@@ -525,40 +525,73 @@ export class ReportService {
       })
     ]);
 
-    // Process Efficiency Matrix
-    const efficiency = [1, 2, 3, 4, 5].map(stage => {
-      const g = efficiencyGroups.find(eg => eg.seqNo === stage);
-      const enquiryCount = g?._count.leadId || 0;
-      return {
-        stage: `Stage ${stage}`,
-        enquiryCount,
-        followupCount: enquiryCount * stage, // Simplification based on seqNo
-        avgFollowups: stage,
-        convRate: 0 // Will be calculated if needed
-      };
+    // Process Executive Performance Matrix
+    const matrixMap = new Map<string, any>();
+    
+    // We need to fetch leads with their followup counts to calculate the matrix
+    const leadData = await prisma.lead.findMany({
+      where: base,
+      select: {
+        executiveName: true,
+        assignedTo: true,
+        assignedUser: { select: { fullName: true } },
+        stage: true,
+        nextFollowupAt: true,
+        _count: { select: { followups: true } }
+      }
     });
 
-    // Process Executive Performance
-    const execMap = new Map<string, any>();
-    for (const g of executiveGroups) {
-      const eid = String(g.assignedTo);
-      if (!execMap.has(eid)) {
-        execMap.set(eid, { 
-          id: Number(eid),
-          name: users.find(u => String(u.id) === eid)?.fullName || "Unknown",
+    for (const l of leadData) {
+      const name = l.executiveName || l.assignedUser?.fullName || "Unassigned";
+      if (!matrixMap.has(name)) {
+        matrixMap.set(name, {
+          name,
+          booking: 0,
+          enquiry: 0,
+          lost: 0,
+          invoiced: 0,
+          quotation: 0,
+          totalEnquiry: 0,
+          totalFollowups: 0
+        });
+      }
+      const m = matrixMap.get(name);
+      m.totalEnquiry++;
+      m.totalFollowups += l._count.followups;
+      
+      if (l.stage === "BOOKED") m.booking++;
+      else if (l.stage === "ENQUIRED") m.enquiry++;
+      else if (l.stage === "LOST") m.lost++;
+      else if (l.stage === "INVOICED") m.invoiced++;
+      else if (l.stage === "QUOTATION_SHARED") m.quotation++;
+    }
+
+    const performanceMatrix = [...matrixMap.values()].map(m => ({
+      ...m,
+      avgFollowups: m.totalEnquiry > 0 ? Number((m.totalFollowups / m.totalEnquiry).toFixed(1)) : 0,
+      conversionRate: m.totalEnquiry > 0 ? Number(((m.invoiced / m.totalEnquiry) * 100).toFixed(2)) : 0
+    })).sort((a, b) => b.totalEnquiry - a.totalEnquiry);
+
+    // Process Executive Breakdown (Today/Overdue) using the same leadData
+    const execBreakdownMap = new Map<string, any>();
+    for (const l of leadData) {
+      const name = l.executiveName || l.assignedUser?.fullName || "Unassigned";
+      if (!execBreakdownMap.has(name)) {
+        execBreakdownMap.set(name, { 
+          name,
           today: 0, overdue: 0, upcoming: 0, noFollowup: 0, totalActive: 0, total: 0 
         });
       }
-      const e = execMap.get(eid);
-      e.total += g._count.id;
+      const e = execBreakdownMap.get(name);
+      e.total++;
       
-      const isClosed = ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].includes(g.stage);
+      const isClosed = ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].includes(l.stage);
       if (!isClosed) {
-        e.totalActive += g._count.id;
-        if (!g.nextFollowupAt) e.noFollowup += g._count.id;
-        else if (g.nextFollowupAt < todayStart) e.overdue += g._count.id;
-        else if (g.nextFollowupAt < todayEnd) e.today += g._count.id;
-        else e.upcoming += g._count.id;
+        e.totalActive++;
+        if (!l.nextFollowupAt) e.noFollowup++;
+        else if (l.nextFollowupAt < todayStart) e.overdue++;
+        else if (l.nextFollowupAt < todayEnd) e.today++;
+        else e.upcoming++;
       }
     }
 
@@ -581,10 +614,10 @@ export class ReportService {
     return {
       kpi: {
         ...kpi,
-        totalData: kpi.totalEnquiries // Placeholder for "Total Data in Sheet"
+        totalData: kpi.totalEnquiries
       },
-      efficiency,
-      executives: [...execMap.values()],
+      performanceMatrix,
+      executives: [...execBreakdownMap.values()],
       trends: [...monthMap.values()].sort((a, b) => a.month.localeCompare(b.month))
     };
   }

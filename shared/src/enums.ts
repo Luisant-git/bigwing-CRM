@@ -12,8 +12,8 @@ export type LeadChannel = (typeof LeadChannel)[keyof typeof LeadChannel];
 
 // ─── Enquiry Stage ──────────────────────────────────────────────
 export const EnquiryStage = {
-  NOT_CONTACTED: "NOT_CONTACTED",
-  CONTACTED: "CONTACTED",
+  NEW: "NEW",
+  ENQUIRED: "ENQUIRED",
   NOT_REACHABLE: "NOT_REACHABLE",
   TEST_RIDE_SCHEDULED: "TEST_RIDE_SCHEDULED",
   TEST_RIDE_COMPLETED: "TEST_RIDE_COMPLETED",

@@ -24,7 +24,7 @@ export default function SalesExecutiveDashboard() {
 
   if (isLoading) return <PageLoader message="Generating sales report..." />;
 
-  const { kpi, efficiency = [], executives = [], trends = [] } = data || {};
+  const { kpi, performanceMatrix = [], executives = [], trends = [] } = data || {};
 
   return (
     <div className="space-y-6">
@@ -65,102 +65,71 @@ export default function SalesExecutiveDashboard() {
         <KPICard label="No Followup" value={kpi?.noFollowup} icon={Ban} color="#D97706" onClick={() => navigate({ to: "/leads", search: { tab: "no-followup" } })} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Efficiency Matrix - Stage 1 to 5 */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#1F3864] uppercase tracking-wider">Follow-up Efficiency Matrix</h3>
-            <Badge variant="primary" className="text-[10px] bg-transparent border border-blue-200 text-blue-600">STAGE 1 - 5</Badge>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/50">
-                  <th className="px-3 py-2 text-left font-bold text-gray-500 uppercase text-[10px]">Stage</th>
-                  <th className="px-3 py-2 text-center font-bold text-gray-500 uppercase text-[10px]">Total Enquiry</th>
-                  <th className="px-3 py-2 text-center font-bold text-gray-500 uppercase text-[10px]">Total Follow-ups</th>
-                  <th className="px-3 py-2 text-center font-bold text-gray-500 uppercase text-[10px]">Avg Followups</th>
-                  <th className="px-3 py-2 text-center font-bold text-gray-500 uppercase text-[10px]">Conv %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {efficiency.map((e: any, i: number) => (
-                  <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <td className="px-3 py-3 font-semibold text-[#1F3864]">{e.stage}</td>
-                    <td className="px-3 py-3 text-center text-gray-600 font-medium">{e.enquiryCount}</td>
-                    <td className="px-3 py-3 text-center text-gray-600">{e.followupCount}</td>
-                    <td className="px-3 py-3 text-center text-gray-600">{e.avgFollowups}</td>
-                    <td className="px-3 py-3 text-center text-blue-600 font-bold">{e.convRate}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Executive Performance Matrix - Unified Table from Excel */}
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+        <div className="flex items-center gap-2 bg-[#1F3864] px-6 py-4">
+          <BarChart3 size={16} className="text-white/70" />
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Executive Performance Matrix</h3>
         </div>
-
-        {/* Legend / Info Card */}
-        <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden flex flex-col">
-          <div className="bg-[#1F3864] px-6 py-4 flex items-center gap-2">
-            <Info size={16} className="text-white/70" />
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Follow-up Guidelines</h3>
-          </div>
-          
-          <div className="p-6 flex-grow flex flex-col justify-between space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              {/* Follow-up Gap Section */}
-              <div className="space-y-4">
-                <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Follow-up Gap</p>
-                <div className="grid grid-cols-1 gap-2">
-                  {[
-                    { label: "F1", desc: "Next Day" },
-                    { label: "F2", desc: "3 Days" },
-                    { label: "F3", desc: "7 Days" },
-                    { label: "F4", desc: "15 Days" },
-                    { label: "F5", desc: "30 Days" }
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between group">
-                      <Badge variant="primary" className="w-8 justify-center font-bold border border-blue-100 text-blue-600 bg-blue-50/30">{item.label}</Badge>
-                      <span className="text-xs font-semibold text-[#1F3864]">{item.desc}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Performance Section */}
-              <div className="space-y-4">
-                <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Average Follow-ups</p>
-                <div className="grid grid-cols-1 gap-3">
-                  {[
-                    { range: "2 - 3", label: "Good", color: "bg-green-100 text-green-700" },
-                    { range: "3 - 4", label: "Very Good", color: "bg-blue-100 text-blue-700" },
-                    { range: "> 4", label: "Strong Followup", color: "bg-purple-100 text-purple-700" }
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center justify-between p-2 rounded-lg bg-gray-50/50 border border-gray-100/50">
-                      <span className="text-xs font-bold text-gray-600">{item.range}</span>
-                      <Badge className={`${item.color} border-none font-bold uppercase text-[9px] px-2 py-0.5`}>{item.label}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 mt-auto">
-              <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100/50">
-                <p className="text-[10px] text-blue-800/70 font-medium leading-relaxed">
-                  <span className="font-bold">Total Enquiries</span> = Active + Lost + Invoiced <br/>
-                  <span className="font-bold">Active</span> = Today + Overdue + Upcoming + No Followup
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-100 border-b border-gray-200">
+                <th className="px-4 py-3 font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200 min-w-[200px]">Dealer Sales Executive Name</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Booking</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Enquiry</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Enquiry Lost</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Invoiced</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Quotation</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Total Enquiry</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Total Follow up Counts</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Avg Followups</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px]">Conver %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {performanceMatrix.map((m: any, i: number) => (
+                <tr key={i} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 font-bold text-[#1F3864] border-r border-gray-100">{m.name}</td>
+                  <td className="px-4 py-3 text-center font-semibold text-gray-600 border-r border-gray-100">{m.booking || ""}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 border-r border-gray-100">{m.enquiry || ""}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 border-r border-gray-100">{m.lost || ""}</td>
+                  <td className="px-4 py-3 text-center font-bold text-green-600 border-r border-gray-100">{m.invoiced || ""}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 border-r border-gray-100">{m.quotation || ""}</td>
+                  <td className="px-4 py-3 text-center font-bold text-gray-700 bg-gray-50/30 border-r border-gray-100">{m.totalEnquiry}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 border-r border-gray-100">{m.totalFollowups}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 border-r border-gray-100">{m.avgFollowups}</td>
+                  <td className="px-4 py-3 text-center font-bold text-blue-600">{m.conversionRate}%</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="bg-gray-100 font-bold border-t-2 border-gray-300">
+              <tr>
+                <td className="px-4 py-3 border-r border-gray-200">Total</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + (b.booking || 0), 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + (b.enquiry || 0), 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + (b.lost || 0), 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + (b.invoiced || 0), 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + (b.quotation || 0), 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + b.totalEnquiry, 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">{performanceMatrix.reduce((a: any, b: any) => a + b.totalFollowups, 0)}</td>
+                <td className="px-4 py-3 text-center border-r border-gray-200">
+                  {(performanceMatrix.reduce((a: any, b: any) => a + b.totalFollowups, 0) / (performanceMatrix.reduce((a: any, b: any) => a + b.totalEnquiry, 0) || 1)).toFixed(1)}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  {((performanceMatrix.reduce((a: any, b: any) => a + (b.invoiced || 0), 0) / (performanceMatrix.reduce((a: any, b: any) => a + b.totalEnquiry, 0) || 1)) * 100).toFixed(2)}%
+                </td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
 
-      {/* Executive Performance Table */}
+      {/* Executive Active Status Breakdown (Full Width) */}
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
         <div className="flex items-center gap-2 bg-[#1F3864] px-6 py-4">
           <UserCheck size={16} className="text-white/70" />
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Executive Wise Active Breakdown</h3>
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">Follow-up Activity Status</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -168,7 +137,7 @@ export default function SalesExecutiveDashboard() {
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-6 py-3 font-bold text-gray-900 uppercase text-[11px]">Executive</th>
                 <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Today</th>
-                <th className="px-6 py-3 text-center font-bold text-[#EB5757] uppercase text-[11px]">Overdue</th>
+                <th className="px-6 py-3 text-center font-bold text-red-500 uppercase text-[11px]">Overdue</th>
                 <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Upcoming</th>
                 <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">No Followup</th>
                 <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Total Active</th>
@@ -176,16 +145,16 @@ export default function SalesExecutiveDashboard() {
               </tr>
             </thead>
             <tbody>
-              {executives.map((exec: any) => {
-                const overduePct = exec.totalActive > 0 ? Math.round((exec.overdue / exec.totalActive) * 100) : 0;
+              {executives.map((e: any, i: number) => {
+                const overduePct = e.totalActive > 0 ? Math.round((e.overdue / e.totalActive) * 100) : 0;
                 return (
-                  <tr key={exec.id} className="border-b border-gray-50 hover:bg-blue-50/20 transition-colors">
-                    <td className="px-6 py-4 font-bold text-[#1F3864]">{exec.name}</td>
-                    <td className="px-6 py-4 text-center font-medium">{exec.today}</td>
-                    <td className="px-6 py-4 text-center font-bold text-red-600">{exec.overdue}</td>
-                    <td className="px-6 py-4 text-center">{exec.upcoming}</td>
-                    <td className="px-6 py-4 text-center text-gray-400">{exec.noFollowup}</td>
-                    <td className="px-6 py-4 text-center font-extrabold text-[#2E75B6]">{exec.totalActive}</td>
+                  <tr key={i} className="border-b border-gray-50 hover:bg-blue-50/10 transition-colors">
+                    <td className="px-6 py-4 font-bold text-[#1F3864]">{e.name}</td>
+                    <td className="px-6 py-4 text-center font-medium">{e.today}</td>
+                    <td className="px-6 py-4 text-center font-bold text-red-600">{e.overdue}</td>
+                    <td className="px-6 py-4 text-center">{e.upcoming}</td>
+                    <td className="px-6 py-4 text-center text-gray-400">{e.noFollowup}</td>
+                    <td className="px-6 py-4 text-center font-extrabold text-[#2E75B6]">{e.totalActive}</td>
                     <td className="px-6 py-4 text-center">
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${overduePct > 50 ? 'bg-red-100 text-red-700' : overduePct > 20 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
                         {overduePct}%
@@ -195,19 +164,6 @@ export default function SalesExecutiveDashboard() {
                 );
               })}
             </tbody>
-            <tfoot className="bg-blue-50/50 font-bold">
-              <tr>
-                <td className="px-6 py-3">Total</td>
-                <td className="px-6 py-3 text-center">{executives.reduce((a: any, b: any) => a + b.today, 0)}</td>
-                <td className="px-6 py-3 text-center text-red-600">{executives.reduce((a: any, b: any) => a + b.overdue, 0)}</td>
-                <td className="px-6 py-3 text-center">{executives.reduce((a: any, b: any) => a + b.upcoming, 0)}</td>
-                <td className="px-6 py-3 text-center">{executives.reduce((a: any, b: any) => a + b.noFollowup, 0)}</td>
-                <td className="px-6 py-3 text-center text-[#2E75B6]">{executives.reduce((a: any, b: any) => a + b.totalActive, 0)}</td>
-                <td className="px-6 py-3 text-center">
-                  {Math.round((executives.reduce((a: any, b: any) => a + b.overdue, 0) / executives.reduce((a: any, b: any) => a + b.totalActive, 1)) * 100)}%
-                </td>
-              </tr>
-            </tfoot>
           </table>
         </div>
       </div>

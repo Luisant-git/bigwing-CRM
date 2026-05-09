@@ -92,10 +92,10 @@ export function normalizeName(
 
 // ─── Stage alias mapping ────────────────────────────────────────
 const stageAliases: Record<string, string> = {
-  "NEW": "NOT_CONTACTED",
-  "ENQUIRED": "CONTACTED",
-  "CONTACTED": "CONTACTED",
-  "CONTACT": "CONTACTED",
+  "NEW": "NEW",
+  "ENQUIRED": "ENQUIRED",
+  "CONTACTED": "ENQUIRED",
+  "CONTACT": "ENQUIRED",
   "NOT REACHABLE": "NOT_REACHABLE",
   "RNR": "NOT_REACHABLE",
   "SWITCHED OFF": "NOT_REACHABLE",
@@ -114,16 +114,16 @@ const stageAliases: Record<string, string> = {
   "LOST": "LOST",
   "ENQUIRY LOST": "LOST",
   "LEAD LOST": "LOST",
-  "ENQUIRY": "CONTACTED",
-  "ENQUIRY RECEIVED": "NOT_CONTACTED",
-  "NEW ENQUIRY": "NOT_CONTACTED",
+  "ENQUIRY": "ENQUIRED",
+  "ENQUIRY RECEIVED": "NEW",
+  "NEW ENQUIRY": "NEW",
   "CANCELLED AFTER BOOKING": "LOST",
   "CANCELLED": "LOST",
   "NOT INTERESTED": "LOST",
 };
 
 export function normalizeStage(value: any): string {
-  if (!value) return "NOT_CONTACTED";
+  if (!value) return "NEW";
   const str = String(value).trim();
   const key = str.toUpperCase();
   // Return the mapped key if it exists in aliases, otherwise return the raw trimmed string

@@ -130,16 +130,16 @@ export const createFollowupSchema = z.object({
 
 // ─── Lead List Filters ──────────────────────────────────────────
 export const leadListQuerySchema = paginationSchema.extend({
-  stage: z.nativeEnum(EnquiryStage).optional(),
-  channel: z.nativeEnum(LeadChannel).optional(),
-  interestLevel: z.nativeEnum(InterestLevel).optional(),
-  assignedTo: z.coerce.number().int().positive().optional(),
+  stage: z.preprocess((v) => v === "" ? undefined : v, z.nativeEnum(EnquiryStage).optional()),
+  channel: z.preprocess((v) => v === "" ? undefined : v, z.nativeEnum(LeadChannel).optional()),
+  interestLevel: z.preprocess((v) => v === "" ? undefined : v, z.nativeEnum(InterestLevel).optional()),
+  assignedTo: z.preprocess((v) => v === "" ? undefined : v, z.coerce.number().int().positive().optional()),
   executiveName: z.string().optional(),
-  sourceId: z.coerce.number().int().positive().optional(),
-  modelId: z.coerce.number().int().positive().optional(),
-  dateFrom: z.string().date().optional(),
-  dateTo: z.string().date().optional(),
-  referredFromBranch: z.string().optional(),
+  sourceId: z.preprocess((v) => v === "" ? undefined : v, z.coerce.number().int().positive().optional()),
+  modelId: z.preprocess((v) => v === "" ? undefined : v, z.coerce.number().int().positive().optional()),
+  dateFrom: z.preprocess((v) => v === "" ? undefined : v, z.string().date().optional()),
+  dateTo: z.preprocess((v) => v === "" ? undefined : v, z.string().date().optional()),
+  referredFromBranch: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
 });
 
 export const customerListQuerySchema = paginationSchema;
