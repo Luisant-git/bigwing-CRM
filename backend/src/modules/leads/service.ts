@@ -562,10 +562,13 @@ export class LeadService {
     const XLSX = await import("xlsx");
     const workbook = XLSX.utils.book_new();
     const data = formatted.map((l) => {
-      if (filters.format === "whatsapp") {
+      // Check for WhatsApp/Campaign format
+      const isWhatsapp = String(filters?.format || "").toLowerCase() === "whatsapp";
+      
+      if (isWhatsapp) {
         return {
-          "name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`,
-          "phone": l.customer?.mobile,
+          "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`.trim(),
+          "Phone Number": l.customer?.mobile || "N/A",
         };
       }
 
@@ -619,10 +622,10 @@ export class LeadService {
     
     // Set column widths based on view/format
     let widths = [];
-    if (filters.format === "whatsapp") {
+    if (String(filters?.format || "").toLowerCase() === "whatsapp") {
       widths = [
-        { wch: 30 }, // name
-        { wch: 15 }, // phone
+        { wch: 35 }, // Customer Name
+        { wch: 20 }, // Phone Number
       ];
     } else if (view === "all") {
       widths = [

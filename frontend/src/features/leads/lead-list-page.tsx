@@ -78,7 +78,7 @@ export default function LeadListPage() {
     try {
       setDownloading(true);
       const res = await api.get("/leads/export-excel", {
-        params: { ...params, view: tab, pageSize: 10000 },
+        params: { ...params, view: tab, pageSize: 10000, t: Date.now() },
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -99,7 +99,7 @@ export default function LeadListPage() {
     try {
       setDownloadingWhatsapp(true);
       const res = await api.get("/leads/export-excel", {
-        params: { ...params, view: tab, format: "whatsapp", pageSize: 10000 },
+        params: { ...params, view: tab, format: "whatsapp", pageSize: 10000, t: Date.now() },
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([res.data]));
