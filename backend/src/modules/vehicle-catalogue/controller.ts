@@ -32,6 +32,20 @@ export class VehicleCatalogueController {
     } catch (err) { next(err); }
   }
 
+  async updateModelFull(req: Request, res: Response, next: NextFunction) {
+    try {
+      const model = await vehicleCatalogueService.updateModelFull(BigInt(req.params.id as string), req.body);
+      res.json({ success: true, data: model });
+    } catch (err) { next(err); }
+  }
+
+  async deleteModel(req: Request, res: Response, next: NextFunction) {
+    try {
+      await vehicleCatalogueService.deleteModel(BigInt(req.params.id as string));
+      res.json({ success: true, message: "Model deleted" });
+    } catch (err) { next(err); }
+  }
+
   // ─── Variants ─────────────────────────────────────────────────
   async listVariants(req: Request, res: Response, next: NextFunction) {
     try {
@@ -63,6 +77,20 @@ export class VehicleCatalogueController {
     } catch (err) { next(err); }
   }
 
+  async deleteVariant(req: Request, res: Response, next: NextFunction) {
+    try {
+      await vehicleCatalogueService.deleteVariant(BigInt(req.params.id as string));
+      res.json({ success: true, message: "Variant deleted" });
+    } catch (err) { next(err); }
+  }
+
+  async importStock(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await vehicleCatalogueService.importStock(req.body.data);
+      res.json({ success: true, data: result });
+    } catch (err) { next(err); }
+  }
+
   // ─── Colours ──────────────────────────────────────────────────
   async listColours(req: Request, res: Response, next: NextFunction) {
     try {
@@ -90,6 +118,13 @@ export class VehicleCatalogueController {
     try {
       const colour = await vehicleCatalogueService.updateColour(BigInt(req.params.id as string), req.body);
       res.json({ success: true, data: colour });
+    } catch (err) { next(err); }
+  }
+
+  async deleteColour(req: Request, res: Response, next: NextFunction) {
+    try {
+      await vehicleCatalogueService.deleteColour(BigInt(req.params.id as string));
+      res.json({ success: true, message: "Colour deleted" });
     } catch (err) { next(err); }
   }
 }

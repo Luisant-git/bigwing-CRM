@@ -114,6 +114,16 @@ export class LeadService {
       createdBy,
     });
 
+    // Reduce stock for the variant if provided
+    if (data.variantId) {
+      await prisma.vehicleVariant.update({
+        where: { id: BigInt(data.variantId) },
+        data: { stock: { decrement: 1 } },
+      }).catch((err: any) => {
+        console.error(`Failed to reduce stock for variant ${data.variantId}:`, err.message);
+      });
+    }
+
     if (createdBy) {
       auditService.log({ userId: createdBy, entityType: "lead", entityId: lead.id, action: "CREATE" });
     }
@@ -552,6 +562,13 @@ export class LeadService {
     const XLSX = await import("xlsx");
     const workbook = XLSX.utils.book_new();
     const data = formatted.map((l) => {
+      if (filters.format === "whatsapp") {
+        return {
+          "name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`,
+          "phone": l.customer?.mobile,
+        };
+      }
+
       const stageMap: Record<string, string> = {
         NEW: "NEW",
         NOT_CONTACTED: "NEW",
@@ -600,9 +617,14 @@ export class LeadService {
 
     const sheet = XLSX.utils.json_to_sheet(data);
     
-    // Set column widths based on view
+    // Set column widths based on view/format
     let widths = [];
-    if (view === "all") {
+    if (filters.format === "whatsapp") {
+      widths = [
+        { wch: 30 }, // name
+        { wch: 15 }, // phone
+      ];
+    } else if (view === "all") {
       widths = [
         { wch: 15 }, // Enquiry No
         { wch: 25 }, // Customer Name

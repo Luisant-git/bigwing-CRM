@@ -43,6 +43,18 @@ router.patch(
   (req, res, next) => vehicleCatalogueController.updateModel(req, res, next)
 );
 
+router.put(
+  "/models/:id/full",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER"]),
+  (req, res, next) => vehicleCatalogueController.updateModelFull(req, res, next)
+);
+
+router.delete(
+  "/models/:id",
+  rbac(["SUPER_ADMIN", "ADMIN"]),
+  (req, res, next) => vehicleCatalogueController.deleteModel(req, res, next)
+);
+
 // ─── Variants ─────────────────────────────────────────────────
 router.get(
   "/variants",
@@ -70,6 +82,18 @@ router.patch(
   (req, res, next) => vehicleCatalogueController.updateVariant(req, res, next)
 );
 
+router.delete(
+  "/variants/:id",
+  rbac(["SUPER_ADMIN", "ADMIN"]),
+  (req, res, next) => vehicleCatalogueController.deleteVariant(req, res, next)
+);
+
+router.post(
+  "/variants/import-stock",
+  rbac(["SUPER_ADMIN", "ADMIN"]),
+  (req, res, next) => vehicleCatalogueController.importStock(req, res, next)
+);
+
 // ─── Colours ──────────────────────────────────────────────────
 router.get(
   "/colours",
@@ -95,6 +119,12 @@ router.patch(
   rbac(["SUPER_ADMIN", "ADMIN", "MANAGER"]),
   validate(updateVehicleColourSchema),
   (req, res, next) => vehicleCatalogueController.updateColour(req, res, next)
+);
+
+router.delete(
+  "/colours/:id",
+  rbac(["SUPER_ADMIN", "ADMIN"]),
+  (req, res, next) => vehicleCatalogueController.deleteColour(req, res, next)
 );
 
 export { router as vehicleCatalogueRoutes };

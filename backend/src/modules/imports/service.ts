@@ -978,6 +978,16 @@ export class ImportService {
       },
     });
 
+    // Reduce stock for the variant if provided
+    if (variantId) {
+      await tx.vehicleVariant.update({
+        where: { id: variantId },
+        data: { stock: { decrement: 1 } },
+      }).catch((err: any) => {
+        console.error(`[Import] Failed to reduce stock for variant ${variantId}:`, err.message);
+      });
+    }
+
     // Update cache so subsequent rows in same batch find this lead
     leadCache.set(enquiryNo, lead);
 

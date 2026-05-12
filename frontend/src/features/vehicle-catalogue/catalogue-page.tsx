@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as XLSX from "xlsx";
 import {
   Plus, Bike, Palette, ChevronRight, Zap, Mountain, Trophy, Compass,
-  ToggleLeft, ToggleRight, Pencil, Check, X, Eye, EyeOff,
+  ToggleLeft, ToggleRight, Pencil, Check, X, Eye, EyeOff, Package, Loader2, Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
-import { ConfirmModal, Tooltip, Breadcrumb } from "@/components/ui";
+import { ConfirmModal, Tooltip, Breadcrumb, FlyingModal } from "@/components/ui";
 
 type Tab = "models" | "colours";
 
@@ -43,6 +44,36 @@ function tint(hex: string, amount = 0.08): string {
 
 export default function CataloguePage() {
   const [tab, setTab] = useState<Tab>("models");
+  const qc = useQueryClient();
+
+  const [confirmDelete, setConfirmDelete] = useState<{ kind: "model" | "variant" | "colour"; id: number; name: string } | null>(null);
+
+  const deleteModelMut = useMutation({
+    mutationFn: (id: number) => api.delete(`/vehicle-catalogue/models/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["vehicle-catalogue"] });
+      toast.success("Model deleted");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to delete model"),
+  });
+
+  const deleteVariantMut = useMutation({
+    mutationFn: (id: number) => api.delete(`/vehicle-catalogue/variants/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["vehicle-catalogue"] });
+      toast.success("Variant deleted");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to delete variant"),
+  });
+
+  const deleteColourMut = useMutation({
+    mutationFn: (id: number) => api.delete(`/vehicle-catalogue/colours/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["vehicle-catalogue"] });
+      toast.success("Colour deleted");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to delete colour"),
+  });
 
   return (
     <div>
@@ -72,13 +103,33 @@ export default function CataloguePage() {
         </button>
       </div>
 
-      {tab === "models" && <ModelsTab />}
-      {tab === "colours" && <ColoursTab />}
+      {tab === "models" && <ModelsTab setConfirmDelete={setConfirmDelete} />}
+      {tab === "colours" && <ColoursTab setConfirmDelete={setConfirmDelete} />}
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title={`Delete ${confirmDelete?.name}?`}
+        message={`Are you sure you want to permanently delete this ${confirmDelete?.kind}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => {
+          if (!confirmDelete) return;
+          if (confirmDelete.kind === "model") {
+            deleteModelMut.mutate(confirmDelete.id);
+          } else if (confirmDelete.kind === "variant") {
+            deleteVariantMut.mutate(confirmDelete.id);
+          } else {
+            deleteColourMut.mutate(confirmDelete.id);
+          }
+          setConfirmDelete(null);
+        }}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </div>
   );
 }
 
-function ModelsTab() {
+function ModelsTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void }) {
   const qc = useQueryClient();
   const [showInactive, setShowInactive] = useState(false);
   const [confirmToggle, setConfirmToggle] = useState<{ kind: "model" | "variant"; id: number; name: string; active: boolean } | null>(null);
@@ -88,19 +139,6 @@ function ModelsTab() {
   });
 
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", segment: "", bodyType: "" });
-  const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
-
-  const createMut = useMutation({
-    mutationFn: (body: any) => api.post("/vehicle-catalogue/models", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["vehicle-catalogue"] });
-      toast.success("Model created");
-      setShowForm(false);
-      setForm({ name: "", segment: "", bodyType: "" });
-    },
-    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
-  });
 
   const updateModelMut = useMutation({
     mutationFn: ({ id, body }: { id: number; body: any }) =>
@@ -121,6 +159,58 @@ function ModelsTab() {
     },
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
   });
+
+  const [editingModel, setEditingModel] = useState<any>(null);
+
+  const importStockMut = useMutation({
+    mutationFn: (data: any[]) => api.post("/vehicle-catalogue/variants/import-stock", { data }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["vehicle-catalogue"] });
+      const { success, failed, errors } = res.data.data;
+      if (failed > 0) {
+        toast.error(`Imported ${success} rows, but ${failed} failed.`);
+        console.error("Stock Import Errors:", errors);
+      } else {
+        toast.success(`Successfully updated stock for ${success} variants.`);
+      }
+    },
+    onError: (err: any) => toast.error("Failed to import stock"),
+  });
+
+  const handleStockUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+        
+        if (data.length === 0) {
+          toast.error("File is empty");
+          return;
+        }
+
+        // Check for required columns (Model, Variant, Stock)
+        const first = data[0] as any;
+        const keys = Object.keys(first).map(k => k.toLowerCase());
+        if (!keys.includes("model") || !keys.includes("variant") || !keys.includes("stock")) {
+          toast.error("Excel must have 'Model', 'Variant', and 'Stock' columns");
+          return;
+        }
+
+        importStockMut.mutate(data);
+      } catch (err) {
+        toast.error("Failed to read Excel file");
+      }
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = ""; // Reset
+  };
 
   if (isLoading) return <PageLoader message="Loading catalogue..." />;
 
@@ -145,33 +235,37 @@ function ModelsTab() {
             </span>
           )}
         </button>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
-        >
-          <Plus size={16} /> Add Model
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
+          >
+            <Plus size={16} /> Add Model
+          </button>
+          <button
+            onClick={() => document.getElementById("stock-upload")?.click()}
+            disabled={importStockMut.isPending}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            {importStockMut.isPending ? <Loader2 size={16} className="animate-spin" /> : <Package size={16} />} 
+            Update Stock
+          </button>
+        </div>
+        <input 
+          id="stock-upload" 
+          type="file" 
+          accept=".xlsx, .xls, .csv" 
+          className="hidden" 
+          onChange={handleStockUpload} 
+        />
       </div>
 
-      {showForm && (
-        <form
-          onSubmit={(e) => { e.preventDefault(); createMut.mutate(form); }}
-          className="mb-5 rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-200"
-        >
-          <p className="mb-3 text-sm font-semibold text-[#1F3864]">New Model</p>
-          <div className="flex flex-wrap gap-3">
-            <input placeholder="Model Name *" value={form.name} onChange={(e) => set("name", e.target.value)} required className="min-w-40 flex-1 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]" />
-            <input placeholder="Segment" value={form.segment} onChange={(e) => set("segment", e.target.value)} className="w-40 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
-            <input placeholder="Body Type" value={form.bodyType} onChange={(e) => set("bodyType", e.target.value)} className="w-40 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
-            <button type="submit" disabled={createMut.isPending} className="rounded-lg bg-[#27AE60] px-5 py-2 text-sm font-semibold text-white hover:bg-[#219150] disabled:opacity-50">
-              Save
-            </button>
-            <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm text-gray-500 hover:bg-gray-50">
-              Cancel
-            </button>
-          </div>
-        </form>
-      )}
+      <ModelFormModal 
+        open={showForm || !!editingModel} 
+        model={editingModel}
+        onClose={() => { setShowForm(false); setEditingModel(null); }} 
+        onSuccess={() => { qc.invalidateQueries({ queryKey: ["vehicle-catalogue"] }); setShowForm(false); setEditingModel(null); }}
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filtered.map((m: any) => {
@@ -190,7 +284,6 @@ function ModelsTab() {
                   updateModelMut.mutate({ id: m.id, body: { isActive: true } });
                 }
               }}
-              onRename={(newName) => updateModelMut.mutate({ id: m.id, body: { name: newName } })}
               onVariantToggle={(v) => {
                 if (v.isActive) {
                   setConfirmToggle({ kind: "variant", id: v.id, name: v.name, active: true });
@@ -198,6 +291,9 @@ function ModelsTab() {
                   updateVariantMut.mutate({ id: v.id, body: { isActive: true } });
                 }
               }}
+              onVariantDelete={(id, name) => setConfirmDelete({ kind: "variant", id, name })}
+              onDelete={() => setConfirmDelete({ kind: "model", id: m.id, name: m.name })}
+              onEdit={() => setEditingModel(m)}
               saving={updateModelMut.isPending || updateVariantMut.isPending}
             />
           );
@@ -214,22 +310,16 @@ function ModelsTab() {
 
       <ConfirmModal
         open={!!confirmToggle}
-        title={`Deactivate ${confirmToggle?.kind === "model" ? "Model" : "Variant"}?`}
-        message={`"${confirmToggle?.name}" will no longer appear in dropdowns when creating or editing leads. Existing leads using it will not be affected.`}
+        title={`Deactivate ${confirmToggle?.name}?`}
+        message={`This will hide this ${confirmToggle?.kind} from the selection dropdowns in Leads and Sales.`}
         confirmLabel="Deactivate"
-        variant="warning"
-        loading={updateModelMut.isPending || updateVariantMut.isPending}
         onConfirm={() => {
-          if (!confirmToggle) return;
           if (confirmToggle.kind === "model") {
-            updateModelMut.mutate({ id: confirmToggle.id, body: { isActive: false } }, {
-              onSuccess: () => setConfirmToggle(null),
-            });
+            updateModelMut.mutate({ id: confirmToggle.id, body: { isActive: false } });
           } else {
-            updateVariantMut.mutate({ id: confirmToggle.id, body: { isActive: false } }, {
-              onSuccess: () => setConfirmToggle(null),
-            });
+            updateVariantMut.mutate({ id: confirmToggle.id, body: { isActive: false } });
           }
+          setConfirmToggle(null);
         }}
         onCancel={() => setConfirmToggle(null)}
       />
@@ -242,20 +332,22 @@ function ModelCard({
   color,
   Icon,
   onToggle,
-  onRename,
   onVariantToggle,
+  onVariantDelete,
+  onDelete,
+  onEdit,
   saving,
 }: {
   model: any;
   color: string;
   Icon: any;
   onToggle: () => void;
-  onRename: (name: string) => void;
   onVariantToggle: (v: any) => void;
+  onVariantDelete: (id: number, name: string) => void;
+  onDelete: () => void;
+  onEdit: () => void;
   saving: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState(m.name);
 
   return (
     <div className={`group relative overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-black/5 transition-all hover:shadow-lg ${!m.isActive ? "opacity-70" : ""}`}>
@@ -271,62 +363,43 @@ function ModelCard({
               <Icon size={22} style={{ color: m.isActive ? color : "#94A3B8" }} />
             </div>
             <div className="min-w-0">
-              {editing ? (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (editName.trim() && editName !== m.name) onRename(editName.trim());
-                    setEditing(false);
-                  }}
-                  className="flex items-center gap-1"
-                >
-                  <input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    autoFocus
-                    className="rounded-md border border-[#2E75B6] px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
-                  />
-                  <button type="submit" className="rounded p-1 text-green-600 hover:bg-green-50"><Check size={14} /></button>
-                  <button type="button" onClick={() => { setEditing(false); setEditName(m.name); }} className="rounded p-1 text-gray-400 hover:bg-gray-50"><X size={14} /></button>
-                </form>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <h3 className="truncate text-[15px] font-bold text-[#1F3864]">{m.name}</h3>
-                  <button
-                    onClick={() => setEditing(true)}
-                    className="rounded p-1 text-gray-300 opacity-0 group-hover:opacity-100 hover:text-[#2E75B6] hover:bg-gray-50 transition-opacity"
-                    title="Rename"
-                  >
-                    <Pencil size={11} />
-                  </button>
-                </div>
-              )}
+              <h3 className="truncate text-base font-bold text-[#1F3864]" title={m.name}>
+                {m.name}
+              </h3>
               <div className="mt-0.5 flex items-center gap-2">
-                {m.segment && (
-                  <span
-                    className="rounded-md px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ backgroundColor: tint(color, 0.1), color }}
-                  >
-                    {m.segment}
-                  </span>
-                )}
-                {m.bodyType && (
-                  <span className="text-[11px] text-gray-400">{m.bodyType}</span>
-                )}
+                <span className="text-[11px] font-medium text-gray-400">{m.segment || "No Segment"}</span>
+                <span className="h-1 w-1 rounded-full bg-gray-300" />
+                <span className="text-[11px] font-medium text-gray-400">{m.bodyType || "No Type"}</span>
               </div>
             </div>
           </div>
 
-          {/* Toggle button */}
-          <button
-            onClick={onToggle}
-            disabled={saving}
-            className={`flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${m.isActive ? "bg-green-50 text-green-600 hover:bg-green-100" : "bg-red-50 text-red-500 hover:bg-red-100"}`}
-            title={m.isActive ? "Deactivate model" : "Activate model"}
-          >
-            {m.isActive ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
-            {m.isActive ? "Active" : "Inactive"}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => onToggle()}
+              disabled={saving}
+              className="rounded-md p-1 transition-colors hover:bg-gray-100"
+              title={m.isActive ? "Deactivate Model" : "Activate Model"}
+            >
+              {m.isActive ? <ToggleRight size={20} className="text-[#27AE60]" /> : <ToggleLeft size={20} className="text-gray-300" />}
+            </button>
+            <button
+              onClick={onEdit}
+              disabled={saving}
+              className="rounded-md p-1 transition-colors hover:bg-blue-50 hover:text-[#2E75B6]"
+              title="Edit Model & Variants"
+            >
+              <Pencil size={16} />
+            </button>
+            <button
+              onClick={onDelete}
+              disabled={saving}
+              className="rounded-md p-1 transition-colors hover:bg-red-50 hover:text-red-500"
+              title="Delete Model"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Variants */}
@@ -335,22 +408,39 @@ function ModelCard({
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Variants ({m.variants.length})
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-col gap-1.5">
               {m.variants.map((v: any) => (
-                <button
-                  key={v.id}
-                  onClick={() => onVariantToggle(v)}
-                  disabled={saving}
-                  className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all hover:ring-2 hover:ring-offset-1"
-                  style={{
-                    backgroundColor: v.isActive ? tint(color, 0.08) : "#FEE2E2",
-                    color: v.isActive ? color : "#EB5757",
-                  }}
-                  title={v.isActive ? "Click to deactivate" : "Click to activate"}
-                >
-                  {v.isActive ? <ChevronRight size={10} /> : <X size={10} />}
-                  {v.name}
-                </button>
+                <div key={v.id} className="flex items-center justify-between group/v">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onVariantToggle(v)}
+                      disabled={saving}
+                      className="flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-all hover:ring-2 hover:ring-offset-1"
+                      style={{
+                        backgroundColor: v.isActive ? tint(color, 0.08) : "#FEE2E2",
+                        color: v.isActive ? color : "#EB5757",
+                      }}
+                      title={v.isActive ? "Click to deactivate" : "Click to activate"}
+                    >
+                      {v.isActive ? <ChevronRight size={10} /> : <X size={10} />}
+                      {v.name}
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Stock</span>
+                    <div className={`rounded border px-2 py-0.5 text-[11px] font-bold ${v.stock <= 0 ? "border-red-200 text-red-500 bg-red-50" : "border-gray-100 text-[#1F3864] bg-gray-50"}`}>
+                      {v.stock}
+                    </div>
+                    <button
+                      onClick={() => onVariantDelete(v.id, v.name)}
+                      className="ml-1 rounded-md p-1 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover/v:opacity-100"
+                      title="Delete Variant"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -399,7 +489,7 @@ function getColourStyle(name: string): { bg: string; text: string; dot: string }
   return { bg: tint(color, 0.12), text: color, dot: color };
 }
 
-function ColoursTab() {
+function ColoursTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void }) {
   const qc = useQueryClient();
   const [showInactive, setShowInactive] = useState(false);
   const { data, isLoading } = useQuery({
@@ -502,15 +592,26 @@ function ColoursTab() {
                   </p>
                 )}
               </div>
-              <button
-                onClick={() => updateMut.mutate({ id: c.id, body: { isActive: !c.isActive } })}
-                disabled={updateMut.isPending}
-                className="shrink-0 rounded-md p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-white/40"
-                title={c.isActive ? "Deactivate" : "Activate"}
-                style={{ color: style.text }}
-              >
-                {c.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-              </button>
+              <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <button
+                  onClick={() => updateMut.mutate({ id: c.id, body: { isActive: !c.isActive } })}
+                  disabled={updateMut.isPending}
+                  className="rounded-md p-1 hover:bg-white/40"
+                  title={c.isActive ? "Deactivate" : "Activate"}
+                  style={{ color: style.text }}
+                >
+                  {c.isActive ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete({ kind: "colour", id: c.id, name: c.name })}
+                  disabled={updateMut.isPending}
+                  className="rounded-md p-1 hover:bg-white/40"
+                  title="Delete Colour"
+                  style={{ color: style.text }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           );
         })}
@@ -524,5 +625,158 @@ function ColoursTab() {
         )}
       </div>
     </div>
+  );
+}
+
+function ModelFormModal({ open, model, onClose, onSuccess }: { open: boolean; model?: any; onClose: () => void; onSuccess: () => void }) {
+  const [form, setForm] = useState({ name: "", segment: "", bodyType: "" });
+  const [variants, setVariants] = useState<{ id?: number; name: string; stock: number }[]>([]);
+  
+  useEffect(() => {
+    if (model) {
+      setForm({ name: model.name, segment: model.segment || "", bodyType: model.bodyType || "" });
+      setVariants(model.variants?.map((v: any) => ({ id: v.id, name: v.name, stock: v.stock })) || []);
+    } else {
+      setForm({ name: "", segment: "", bodyType: "" });
+      setVariants([]);
+    }
+  }, [model, open]);
+
+  const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
+
+  const mutation = useMutation({
+    mutationFn: (body: any) => 
+      model 
+        ? api.put(`/vehicle-catalogue/models/${model.id}/full`, body)
+        : api.post("/vehicle-catalogue/models", body),
+    onSuccess: () => {
+      toast.success(model ? "Model updated successfully" : "Model created successfully");
+      onSuccess();
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to save model"),
+  });
+
+  const addVariant = () => setVariants([...variants, { name: "", stock: 0 }]);
+  const removeVariant = (idx: number) => setVariants(variants.filter((_, i) => i !== idx));
+  const updateVariant = (idx: number, f: string, v: any) => {
+    const next = [...variants];
+    (next[idx] as any)[f] = v;
+    setVariants(next);
+  };
+
+  return (
+    <FlyingModal open={open} onClose={onClose} title={model ? "Edit Model & Variants" : "Add New Model"} maxWidth="max-w-2xl">
+      <form onSubmit={(e) => { e.preventDefault(); mutation.mutate({ ...form, variants }); }}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-1">
+            <label className="block text-[11px] font-bold uppercase text-gray-400">Model Name *</label>
+            <input 
+              required 
+              value={form.name} 
+              onChange={(e) => set("name", e.target.value)} 
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" 
+              placeholder="e.g. CB350"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold uppercase text-gray-400">Segment</label>
+            <input 
+              value={form.segment} 
+              onChange={(e) => set("segment", e.target.value)} 
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" 
+              placeholder="e.g. Sport"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold uppercase text-gray-400">Body Type</label>
+            <input 
+              value={form.bodyType} 
+              onChange={(e) => set("bodyType", e.target.value)} 
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" 
+              placeholder="e.g. Cruiser"
+            />
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">Variants & Stock</p>
+            <button 
+              type="button" 
+              onClick={addVariant}
+              className="flex items-center gap-1 rounded-lg bg-[#2E75B6] px-3 py-1.5 text-[11px] font-bold text-white shadow-sm hover:bg-[#245f96] transition-colors"
+            >
+              <Plus size={14} /> Add Variant
+            </button>
+          </div>
+          
+          <div className="mt-3 space-y-3">
+            {variants.map((v, i) => (
+              <div key={i} className="flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
+                <input 
+                  required
+                  placeholder="Variant Name" 
+                  value={v.name} 
+                  onChange={(e) => updateVariant(i, "name", e.target.value)}
+                  className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase">Stock</span>
+                  <input 
+                    type="number"
+                    required
+                    value={v.stock} 
+                    onChange={(e) => updateVariant(i, "stock", e.target.value)}
+                    className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none font-bold"
+                  />
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => removeVariant(i)}
+                  className="rounded-full p-2 text-gray-300 hover:bg-red-50 hover:text-red-500"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+
+            {variants.length === 0 && (
+              <div className="rounded-xl border-2 border-dashed border-gray-100 py-10 text-center bg-gray-50/50">
+                <div className="flex flex-col items-center">
+                  <div className="rounded-full bg-white p-3 shadow-sm mb-3">
+                    <Plus size={24} className="text-gray-300" />
+                  </div>
+                  <p className="text-[13px] font-medium text-gray-500 mb-4">No variants added yet</p>
+                  <button 
+                    type="button" 
+                    onClick={addVariant}
+                    className="rounded-lg bg-white border border-gray-200 px-6 py-2 text-xs font-bold text-[#2E75B6] shadow-sm hover:bg-blue-50 transition-colors"
+                  >
+                    Add First Variant
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-8 flex justify-end gap-2 border-t pt-6">
+          <button 
+            type="button" 
+            onClick={onClose} 
+            className="rounded-lg border px-5 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            disabled={mutation.isPending}
+            className="rounded-lg bg-[#2E75B6] px-8 py-2 text-sm font-bold text-white shadow-md hover:bg-[#245f96] disabled:opacity-50"
+          >
+            {mutation.isPending ? <Loader2 size={16} className="animate-spin" /> : (model ? "Update All" : "Save Model")}
+          </button>
+        </div>
+      </form>
+    </FlyingModal>
   );
 }

@@ -29,6 +29,10 @@ export class VehicleCatalogueRepository {
     return prisma.vehicleModel.update({ where: { id }, data });
   }
 
+  async deleteModel(id: bigint) {
+    return prisma.vehicleModel.delete({ where: { id } });
+  }
+
   // ─── Variants ─────────────────────────────────────────────────
   async findAllVariants(modelId?: bigint, includeInactive = false) {
     return prisma.vehicleVariant.findMany({
@@ -63,6 +67,10 @@ export class VehicleCatalogueRepository {
     });
   }
 
+  async deleteVariant(id: bigint) {
+    return prisma.vehicleVariant.delete({ where: { id } });
+  }
+
   // ─── Colours ──────────────────────────────────────────────────
   async findAllColours(includeInactive = false) {
     return prisma.vehicleColour.findMany({
@@ -85,6 +93,10 @@ export class VehicleCatalogueRepository {
 
   async updateColour(id: bigint, data: any) {
     return prisma.vehicleColour.update({ where: { id }, data });
+  }
+
+  async deleteColour(id: bigint) {
+    return prisma.vehicleColour.delete({ where: { id } });
   }
 }
 

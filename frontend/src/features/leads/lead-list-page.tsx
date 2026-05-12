@@ -4,7 +4,7 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
-  Download, Loader2
+  Download, Loader2, MessageCircle
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
@@ -41,6 +41,7 @@ export default function LeadListPage() {
   const [interest, setInterest] = useState<InterestFilter>("ALL");
   const [showFilters, setShowFilters] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingWhatsapp, setDownloadingWhatsapp] = useState(false);
 
   // advanced filters
   const [stage, setStage] = useState("");
@@ -91,6 +92,27 @@ export default function LeadListPage() {
       console.error("Download failed", err);
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleDownloadWhatsapp = async () => {
+    try {
+      setDownloadingWhatsapp(true);
+      const res = await api.get("/leads/export-excel", {
+        params: { ...params, view: tab, format: "whatsapp", pageSize: 10000 },
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `campaign-report-${tab}-${new Date().toISOString().split("T")[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("WhatsApp export failed", err);
+    } finally {
+      setDownloadingWhatsapp(false);
     }
   };
 
@@ -324,58 +346,76 @@ export default function LeadListPage() {
         </div>
       </div>
 
-      {/* Follow-up tabs + Download + Date filters */}
-      <div className="mb-4 flex flex-col gap-4 border-b border-gray-200 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex gap-0 overflow-x-auto">
+      {/* Navigation Tabs */}
+      <div className="mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
+        <div className="flex min-w-max gap-1">
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => { setTab(t.key); setPage(1); }}
-              className={`whitespace-nowrap border-b-2 px-4 py-2.5 text-[13px] font-medium transition-colors ${tab === t.key ? "border-[#2E75B6] text-[#2E75B6] font-semibold" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+              className={`relative px-5 py-3 text-sm font-semibold transition-all ${
+                tab === t.key 
+                  ? "text-[#1F3864]" 
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
             >
               {t.label}
+              {tab === t.key && (
+                <div className="absolute bottom-0 left-0 h-1 w-full bg-[#2E75B6]" />
+              )}
             </button>
           ))}
         </div>
+      </div>
 
-        <div className="flex flex-wrap items-center gap-3 pb-2 lg:pb-0">
+      {/* Action Bar: Dates & Exports */}
+      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase text-gray-400 tracking-wider">From</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Date Filter</span>
+            <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
               <input 
                 type="date" 
                 value={dateFrom} 
                 onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} 
-                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium focus:border-[#2E75B6] focus:outline-none" 
+                className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none" 
               />
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold uppercase text-gray-400 tracking-wider">To</span>
+              <span className="font-medium text-gray-300 px-1">to</span>
               <input 
                 type="date" 
                 value={dateTo} 
                 onChange={(e) => { setDateTo(e.target.value); setPage(1); }} 
-                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs font-medium focus:border-[#2E75B6] focus:outline-none" 
+                className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none" 
               />
+              {(dateFrom || dateTo) && (
+                <button 
+                  onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
+                  className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+                >
+                  <X size={12} strokeWidth={2.5} />
+                </button>
+              )}
             </div>
-            {(dateFrom || dateTo) && (
-              <button 
-                onClick={() => { setDateFrom(""); setDateTo(""); setPage(1); }}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                title="Clear dates"
-              >
-                <X size={14} strokeWidth={3} />
-              </button>
-            )}
           </div>
+        </div>
 
+        <div className="flex items-center gap-3">
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-[#245f96] disabled:opacity-50"
+            className="flex items-center gap-2 rounded-xl bg-[#2E75B6] px-5 py-2 text-[13px] font-semibold text-white shadow-md transition-all hover:bg-[#245f96] hover:shadow-lg active:scale-95 disabled:opacity-50"
           >
-            {downloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
-            Download Excel
+            {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            Excel Report
+          </button>
+          
+          <button
+            onClick={handleDownloadWhatsapp}
+            disabled={downloadingWhatsapp}
+            className="flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-2 text-[13px] font-semibold text-white shadow-md transition-all hover:bg-[#128C7E] hover:shadow-lg active:scale-95 disabled:opacity-50"
+          >
+            {downloadingWhatsapp ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+            Campaign report
           </button>
         </div>
       </div>
