@@ -135,6 +135,19 @@ export class LeadController {
     }
   }
 
+  async activeLeads(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await leadService.getFollowupView(
+        "active",
+        req.query,
+        req.user
+      );
+      res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async exportExcel(req: Request, res: Response, next: NextFunction) {
     try {
       const { view, ...filters } = req.query;

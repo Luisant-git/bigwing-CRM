@@ -12,11 +12,12 @@ import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
 
-type Tab = "all" | "today" | "overdue" | "upcoming" | "no-followup" | "booked";
+type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked";
 type InterestFilter = "ALL" | "HOT" | "WARM" | "COLD";
 
 const TABS: { key: Tab; label: string; endpoint: string }[] = [
   { key: "all", label: "All Leads", endpoint: "/leads" },
+  { key: "active", label: "Active", endpoint: "/leads/active" },
   { key: "today", label: "Today's Follow-ups", endpoint: "/leads/today" },
   { key: "overdue", label: "Overdue", endpoint: "/leads/overdue" },
   { key: "upcoming", label: "Upcoming", endpoint: "/leads/upcoming" },

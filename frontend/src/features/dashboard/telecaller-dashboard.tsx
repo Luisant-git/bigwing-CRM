@@ -8,7 +8,7 @@ import {
 import {
   CheckCircle2, Calendar, Info, PhoneCall, Bike, Target, Zap,
   ClipboardList, TrendingUp, Clock, AlertTriangle, CalendarClock,
-  Ban, Bookmark, FileCheck, Truck, XCircle
+  Ban, Bookmark, FileCheck, Truck, XCircle, X
 } from "lucide-react";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
@@ -23,10 +23,10 @@ const PRIMARY_MODELS = [
   "CBR650R", "NX500", "Rebel 500"
 ];
 
-const STAGE_ORDER = ["NOT_CONTACTED", "CONTACTED", "NOT_REACHABLE", "BOOKED", "LOST", "DELIVERED_CLOSED"];
+const STAGE_ORDER = ["NEW", "ENQUIRED", "NOT_REACHABLE", "BOOKED", "LOST", "DELIVERED_CLOSED"];
 const STAGE_LABELS: Record<string, string> = {
-  NOT_CONTACTED: "New",
-  CONTACTED: "Enquiry",
+  NEW: "New",
+  ENQUIRED: "Enquiry",
   NOT_REACHABLE: "Not Reachable",
   BOOKED: "Booked",
   LOST: "Lost",
@@ -35,9 +35,18 @@ const STAGE_LABELS: Record<string, string> = {
 
 const INTEREST_LEVELS = ["HOT", "WARM", "COLD"];
 
-export default function TelecallerDashboard() {
-  const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+interface Props {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: propDateTo }: Props) {
+  const [internalDateFrom, setInternalDateFrom] = useState("");
+  const [internalDateTo, setInternalDateTo] = useState("");
+  
+  const dateFrom = propDateFrom || internalDateFrom;
+  const dateTo = propDateTo || internalDateTo;
+  
   const [matrixTab, setMatrixTab] = useState<"source" | "model">("source");
   const [hideEmptyDays, setHideEmptyDays] = useState(true);
 
@@ -142,12 +151,24 @@ export default function TelecallerDashboard() {
           <p className="text-[12px] text-gray-400">Date-wise and source-wise enquiry analytics</p>
         </div>
 
+      {!propDateFrom && !propDateTo && (
         <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
           <Calendar size={14} className="text-gray-400" />
-          <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
+          <input type="date" value={internalDateFrom} onChange={(e) => setInternalDateFrom(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
           <span className="text-gray-300">→</span>
-          <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
+          <input type="date" value={internalDateTo} onChange={(e) => setInternalDateTo(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
+          <button 
+            onClick={() => {
+              setInternalDateFrom("");
+              setInternalDateTo("");
+            }}
+            className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+            title="Clear dates"
+          >
+            <X size={14} />
+          </button>
         </div>
+      )}
       </div>
 
       {/* Admin Pattern KPI Cards */}

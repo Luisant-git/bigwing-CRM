@@ -64,6 +64,13 @@ router.get(
   (req, res, next) => leadController.bookedLeads(req, res, next)
 );
 
+router.get(
+  "/active",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
+  validate(followupViewQuerySchema, "query"),
+  (req, res, next) => leadController.activeLeads(req, res, next)
+);
+
 // ─── Lead CRUD ─────────────────────────────────────────────────
 router.get(
   "/",

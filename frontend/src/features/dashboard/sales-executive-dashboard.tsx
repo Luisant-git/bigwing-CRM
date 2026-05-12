@@ -4,7 +4,7 @@ import { format, startOfMonth, endOfMonth } from "date-fns";
 import { 
   ClipboardList, CheckCircle2, XCircle, TrendingUp, 
   Clock, AlertTriangle, CalendarClock, Ban, UserCheck, 
-  BarChart3, Info
+  BarChart3, Info, X
 } from "lucide-react";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
@@ -12,10 +12,18 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Badge } from "@/components/ui";
 
-export default function SalesExecutiveDashboard() {
+interface Props {
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export default function SalesExecutiveDashboard({ dateFrom: propDateFrom, dateTo: propDateTo }: Props) {
   const navigate = useNavigate();
-  const [dateFrom, setDateFrom] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
-  const [dateTo, setDateTo] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
+  const [internalDateFrom, setInternalDateFrom] = useState("");
+  const [internalDateTo, setInternalDateTo] = useState("");
+
+  const dateFrom = propDateFrom || internalDateFrom;
+  const dateTo = propDateTo || internalDateTo;
 
   const { data, isLoading } = useQuery({
     queryKey: ["reports", "sales-executive-detailed", dateFrom, dateTo],
@@ -29,27 +37,39 @@ export default function SalesExecutiveDashboard() {
   return (
     <div className="space-y-6">
       {/* Date Filter Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-        <div>
-          <h1 className="text-xl font-bold text-[#1F3864]">Sales Performance Dashboard</h1>
-          <p className="text-sm text-gray-500">Comprehensive executive and follow-up metrics</p>
+      {!propDateFrom && !propDateTo && (
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+          <div>
+            <h1 className="text-xl font-bold text-[#1F3864]">Sales Performance Dashboard</h1>
+            <p className="text-sm text-gray-500">Comprehensive executive and follow-up metrics</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={internalDateFrom}
+              onChange={(e) => setInternalDateFrom(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-gray-400">to</span>
+            <input
+              type="date"
+              value={internalDateTo}
+              onChange={(e) => setInternalDateTo(e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button 
+              onClick={() => {
+                setInternalDateFrom("");
+                setInternalDateTo("");
+              }}
+              className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+              title="Clear dates"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <span className="text-gray-400">to</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-      </div>
+      )}
 
       {/* KPI Cards Row - Matches Top Row of Excel */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-10">
@@ -58,7 +78,7 @@ export default function SalesExecutiveDashboard() {
         <KPICard label="Booked" value={kpi?.booked} icon={TrendingUp} color="#6366F1" onClick={() => navigate({ to: "/leads", search: { tab: "booked" } })} />
         <KPICard label="Invoiced" value={kpi?.invoiced} icon={CheckCircle2} color="#27AE60" />
         <KPICard label="Lost" value={kpi?.lost} icon={XCircle} color="#EB5757" />
-        <KPICard label="Active" value={kpi?.active} icon={TrendingUp} color="#3B82F6" />
+        <KPICard label="Active" value={kpi?.active} icon={TrendingUp} color="#3B82F6" onClick={() => navigate({ to: "/leads", search: { tab: "active" } })} />
         <KPICard label="Today" value={kpi?.today} icon={Clock} color="#0891B2" onClick={() => navigate({ to: "/leads", search: { tab: "today" } })} />
         <KPICard label="Overdue" value={kpi?.overdue} icon={AlertTriangle} color="#EB5757" onClick={() => navigate({ to: "/leads", search: { tab: "overdue" } })} />
         <KPICard label="Upcoming" value={kpi?.upcoming} icon={CalendarClock} color="#F2994A" onClick={() => navigate({ to: "/leads", search: { tab: "upcoming" } })} />

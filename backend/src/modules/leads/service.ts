@@ -360,7 +360,7 @@ export class LeadService {
   }
 
   async getFollowupView(
-    view: "today" | "overdue" | "upcoming" | "no-followup" | "booked",
+    view: "today" | "overdue" | "upcoming" | "no-followup" | "booked" | "active",
     filters: any,
     user?: any
   ) {
@@ -431,6 +431,7 @@ export class LeadService {
         break;
       case "no-followup":
       case "booked":
+      case "active":
         // Stage filter handled above
         break;
     }

@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from "recharts";
 import {
   ClipboardList, TrendingUp, Clock, AlertTriangle, CalendarClock,
-  Ban, Bookmark, FileCheck, Truck, XCircle,
+  Ban, Bookmark, FileCheck, Truck, XCircle, X
 } from "lucide-react";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
@@ -23,28 +24,30 @@ export default function DashboardPage() {
   const isAdmin = user?.roles.includes("ADMIN") || user?.roles.includes("SUPER_ADMIN") || user?.roles.includes("MANAGER");
   
   const [view, setView] = useState<"general" | "sales">("general");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const { data: kpi, isLoading: kpiLoading } = useQuery({
-    queryKey: ["reports", "dashboard"],
-    queryFn: () => api.get("/reports/dashboard").then((r) => r.data.data),
+    queryKey: ["reports", "dashboard", dateFrom, dateTo],
+    queryFn: () => api.get("/reports/dashboard", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
     enabled: !isTelecaller && view === "general",
   });
 
   const { data: funnel } = useQuery({
-    queryKey: ["reports", "funnel"],
-    queryFn: () => api.get("/reports/funnel").then((r) => r.data.data),
+    queryKey: ["reports", "funnel", dateFrom, dateTo],
+    queryFn: () => api.get("/reports/funnel", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
     enabled: !isTelecaller && view === "general",
   });
 
   const { data: source } = useQuery({
-    queryKey: ["reports", "source"],
-    queryFn: () => api.get("/reports/source").then((r) => r.data.data),
+    queryKey: ["reports", "source", dateFrom, dateTo],
+    queryFn: () => api.get("/reports/source", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
     enabled: !isTelecaller && view === "general",
   });
 
   const { data: executive } = useQuery({
-    queryKey: ["reports", "executive"],
-    queryFn: () => api.get("/reports/executive").then((r) => r.data.data),
+    queryKey: ["reports", "executive", dateFrom, dateTo],
+    queryFn: () => api.get("/reports/executive", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
     enabled: !isTelecaller && view === "general",
   });
 
@@ -68,7 +71,7 @@ export default function DashboardPage() {
             Sales Performance
           </button>
         </div>
-        <SalesExecutiveDashboard />
+        <SalesExecutiveDashboard dateFrom={dateFrom} dateTo={dateTo} />
       </div>
     );
   }
@@ -77,7 +80,7 @@ export default function DashboardPage() {
 
   const cards = [
     { label: "Total Enquiries", value: kpi?.totalEnquiries, icon: ClipboardList, accent: "#2E75B6", bg: "bg-blue-50", tab: "all" },
-    { label: "Active", value: kpi?.active, icon: TrendingUp, accent: "#6366F1", bg: "bg-indigo-50", tab: "all" },
+    { label: "Active", value: kpi?.active, icon: TrendingUp, accent: "#6366F1", bg: "bg-indigo-50", tab: "active" },
     { label: "Today's Follow-ups", value: kpi?.today, icon: Clock, accent: "#0891B2", bg: "bg-cyan-50", tab: "today" },
     { label: "Overdue", value: kpi?.overdue, icon: AlertTriangle, accent: "#EB5757", bg: "bg-red-50", tab: "overdue" },
     { label: "Upcoming", value: kpi?.upcoming, icon: CalendarClock, accent: "#F2994A", bg: "bg-amber-50", tab: "upcoming" },
@@ -99,24 +102,56 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[#1F3864]">Dashboard</h1>
-        {isAdmin && (
-          <div className="flex rounded-lg bg-gray-100 p-1">
-            <button
-              onClick={() => setView("general")}
-              className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-[#1F3864]">Dashboard</h1>
+          <p className="text-[12px] text-gray-400">General Overview & KPIs</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Date Filters */}
+          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
+            <input 
+              type="date" 
+              value={dateFrom} 
+              onChange={(e) => setDateFrom(e.target.value)} 
+              className="border-0 bg-transparent text-sm focus:outline-none" 
+            />
+            <span className="text-gray-300">→</span>
+            <input 
+              type="date" 
+              value={dateTo} 
+              onChange={(e) => setDateTo(e.target.value)} 
+              className="border-0 bg-transparent text-sm focus:outline-none" 
+            />
+            <button 
+              onClick={() => {
+                setDateFrom("");
+                setDateTo("");
+              }}
+              className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+              title="Clear dates"
             >
-              Overview
-            </button>
-            <button
-              onClick={() => setView("sales")}
-              className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-            >
-              Sales Performance
+              <X size={14} />
             </button>
           </div>
-        )}
+
+          {isAdmin && (
+            <div className="flex rounded-lg bg-gray-100 p-1 shadow-inner">
+              <button
+                onClick={() => setView("general")}
+                className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setView("sales")}
+                className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Sales Performance
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPI cards with icons + accent bars */}
