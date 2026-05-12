@@ -314,6 +314,7 @@ function ModelsTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void })
         message={`This will hide this ${confirmToggle?.kind} from the selection dropdowns in Leads and Sales.`}
         confirmLabel="Deactivate"
         onConfirm={() => {
+          if (!confirmToggle) return;
           if (confirmToggle.kind === "model") {
             updateModelMut.mutate({ id: confirmToggle.id, body: { isActive: false } });
           } else {
