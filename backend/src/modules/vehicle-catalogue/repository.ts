@@ -1,28 +1,38 @@
 import { prisma } from "@bigwing/db";
+import { brandContext } from "../../middlewares/brand.js";
+
+
 
 export class VehicleCatalogueRepository {
   // ─── Models ───────────────────────────────────────────────────
   async findAllModels(includeInactive = false) {
+    const brand = brandContext.getStore() || "BIGWING";
     return prisma.vehicleModel.findMany({
-      where: includeInactive ? {} : { isActive: true },
+      where: {
+        ...(includeInactive ? {} : { isActive: true }),
+        brand,
+      },
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
       include: { variants: { orderBy: [{ displayOrder: "asc" }, { name: "asc" }] } },
     });
   }
 
   async findModelById(id: bigint) {
-    return prisma.vehicleModel.findUnique({
-      where: { id },
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.vehicleModel.findFirst({
+      where: { id, brand },
       include: { variants: { orderBy: [{ displayOrder: "asc" }, { name: "asc" }] } },
     });
   }
 
   async findModelByName(name: string) {
-    return prisma.vehicleModel.findUnique({ where: { name } });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.vehicleModel.findFirst({ where: { name, brand } });
   }
 
   async createModel(data: any) {
-    return prisma.vehicleModel.create({ data });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.vehicleModel.create({ data: { ...data, brand } });
   }
 
   async updateModel(id: bigint, data: any) {
@@ -73,22 +83,29 @@ export class VehicleCatalogueRepository {
 
   // ─── Colours ──────────────────────────────────────────────────
   async findAllColours(includeInactive = false) {
+    const brand = brandContext.getStore() || "BIGWING";
     return prisma.vehicleColour.findMany({
-      where: includeInactive ? {} : { isActive: true },
+      where: {
+        ...(includeInactive ? {} : { isActive: true }),
+        brand,
+      },
       orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
     });
   }
 
   async findColourById(id: bigint) {
-    return prisma.vehicleColour.findUnique({ where: { id } });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.vehicleColour.findFirst({ where: { id, brand } });
   }
 
   async findColourByName(name: string) {
-    return prisma.vehicleColour.findUnique({ where: { name } });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.vehicleColour.findFirst({ where: { name, brand } });
   }
 
   async createColour(data: any) {
-    return prisma.vehicleColour.create({ data });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.vehicleColour.create({ data: { ...data, brand } });
   }
 
   async updateColour(id: bigint, data: any) {

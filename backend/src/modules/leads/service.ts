@@ -4,6 +4,8 @@ import { customerService } from "../customers/service.js";
 import { customerRepository } from "../customers/repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
+import { brandContext } from "../../middlewares/brand.js";
+
 
 // Roles that can see all leads
 export const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN"];
@@ -684,11 +686,16 @@ export class LeadService {
   // ─── Helpers ──────────────────────────────────────────────────
 
   private async generateEnquiryNo(): Promise<string> {
+    const brand = brandContext.getStore() || "BIGWING";
+    const brandPrefix = brand === "REDWING" ? "RW" : "BW";
+    
     const now = new Date();
     const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const prefix = `BW-${yearMonth}-`;
+    const prefix = `${brandPrefix}-${yearMonth}-`;
 
     const lastNo = await leadRepository.getLastEnquiryNoForMonth(prefix);
+
+
     let seq = 1;
     if (lastNo) {
       const lastSeq = parseInt(lastNo.split("-").pop()!, 10);

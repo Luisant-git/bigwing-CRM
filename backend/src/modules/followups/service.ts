@@ -14,7 +14,22 @@ export class FollowupService {
     const maxSeq = await followupRepository.getMaxSeqNo(leadId);
     const seqNo = maxSeq + 1;
 
-    // Create follow-up and update lead.nextFollowupAt in a transaction
+    // Follow-up gap logic
+    let nextActionAt = data.nextActionAt ? new Date(data.nextActionAt) : null;
+    if (!nextActionAt && !data.outcome) { // Only auto-set if not provided and not a special outcome like RNR
+      const now = new Date();
+      if (seqNo === 1) nextActionAt = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000); // F1: 1 Day
+      else if (seqNo === 2) nextActionAt = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // F2: 3 Days
+      else if (seqNo === 3) nextActionAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // F3: 7 Days
+      else if (seqNo === 4) nextActionAt = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // F4: 15 Days
+      else if (seqNo === 5) nextActionAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // F5: 30 Days
+    }
+
+    // Terminal logic: Move to LOST after F5
+    const shouldMoveToLost = seqNo > 5 && lead.stage !== "LOST";
+    const finalStage = shouldMoveToLost ? "LOST" : lead.stage;
+
+    // Create follow-up and update lead in a transaction
     const [followup] = await prisma.$transaction([
       prisma.leadFollowup.create({
         data: {
@@ -24,9 +39,7 @@ export class FollowupService {
           channel: data.channel,
           remark: data.remark,
           outcome: data.outcome,
-          nextActionAt: data.nextActionAt
-            ? new Date(data.nextActionAt)
-            : undefined,
+          nextActionAt: nextActionAt,
           createdBy,
         },
         include: {
@@ -36,13 +49,24 @@ export class FollowupService {
       prisma.lead.update({
         where: { id: leadId },
         data: {
-          nextFollowupAt: data.nextActionAt
-            ? new Date(data.nextActionAt)
-            : null,
+          nextFollowupAt: nextActionAt,
           lastFollowupAt: new Date(data.followupDate),
+          stage: finalStage,
+          ...(shouldMoveToLost && { closedAt: new Date() }),
           updatedBy: createdBy,
         },
       }),
+      ...(shouldMoveToLost ? [
+        prisma.leadStageHistory.create({
+          data: {
+            leadId,
+            fromStage: lead.stage,
+            toStage: "LOST",
+            remark: "Auto-moved to Lost after F5 (Long Term Follow-up)",
+            changedBy: createdBy,
+          },
+        })
+      ] : []),
     ]);
 
     return this.formatFollowup(followup);

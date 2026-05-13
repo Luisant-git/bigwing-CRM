@@ -5,12 +5,17 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Attach access token to every request
+// Attach access token and brand to every request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  const brandStore = localStorage.getItem("crm-brand-storage");
+  const brand = brandStore ? JSON.parse(brandStore).state?.brand : "bigwing";
+  config.headers["X-Brand"] = (brand || "bigwing").toUpperCase();
+  
   return config;
 });
 

@@ -1,27 +1,43 @@
 @import "tailwindcss";
 
+:root {
+  /* Default BigWing (Orange) */
+  --brand-primary: #E8792F;
+  --brand-alpha: rgba(232, 121, 47, 0.15);
+  --brand-dark: #1F3864;
+  --brand-light: #FFF7ED;
+  --brand-sidebar-bg: #1F3864;
+  --brand-sidebar-border: rgba(255, 255, 255, 0.1);
+}
+
+[data-brand="redwing"] {
+  --brand-primary: #DC2626; /* Red-600 */
+  --brand-alpha: rgba(220, 38, 38, 0.15);
+  --brand-dark: #111827;    /* Gray-900 */
+  --brand-light: #FEF2F2;   /* Red-50 */
+  --brand-sidebar-bg: #111827;
+  --brand-sidebar-border: rgba(220, 38, 38, 0.2);
+}
+
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
 
-  /* Design system colors from UX screens */
+  /* Global Brand Tokens (Dynamic) */
+  --color-brand-primary: var(--brand-primary);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-light: var(--brand-light);
+  --color-sidebar-bg: var(--brand-sidebar-bg);
+
+  /* Legacy Static colors (Keep for compatibility) */
   --color-navy: #1F3864;
-  --color-navy-light: #273B57;
   --color-brand-blue: #2E75B6;
-  --color-brand-blue-hover: #245f96;
-  --color-accent-orange: #E8792F;
-  --color-page-bg: #F5F7FA;
-  --color-card-border: #E8EBF0;
-
-  --color-primary-50: #EBF2FA;
-  --color-primary-100: #D6E4F5;
-  --color-primary-200: #ADC9EB;
-  --color-primary-300: #85AEE0;
-  --color-primary-400: #5C93D6;
-  --color-primary-500: #2E75B6;
-  --color-primary-600: #255E92;
-  --color-primary-700: #1C476D;
-  --color-primary-800: #133049;
-  --color-primary-900: #1F3864;
-
   --color-honda-red: #cc0000;
+  --color-page-bg: #F5F7FA;
 }
+
+/* Base styles to use tokens */
+.bg-brand-primary { background-color: var(--brand-primary); }
+.text-brand-primary { color: var(--brand-primary); }
+.bg-brand-dark { background-color: var(--brand-dark); }
+.text-brand-dark { color: var(--brand-dark); }
+

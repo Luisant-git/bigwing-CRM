@@ -103,6 +103,7 @@ model EnquirySource {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   leads Lead[]
 
@@ -117,6 +118,7 @@ model EnquiryTypeLookup {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   leads Lead[]
 
@@ -131,6 +133,7 @@ model InterestLevelLookup {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   @@map("interest_level")
   @@schema("master")
@@ -143,6 +146,7 @@ model ClosureReason {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   leads Lead[]
 
@@ -160,6 +164,7 @@ model VehicleModel {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   variants VehicleVariant[]
   leads    Lead[]
@@ -193,6 +198,7 @@ model VehicleColour {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   leads Lead[]
 
@@ -207,6 +213,7 @@ model ReferredBranch {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   @@map("referred_branch")
   @@schema("master")
@@ -220,6 +227,7 @@ model SalesExecutive {
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
 
   @@map("sales_executive")
   @@schema("master")
@@ -246,6 +254,7 @@ model Customer {
   rowVersion   Int          @default(1) @map("row_version")
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
+  brand        String       @default("BIGWING") @db.VarChar(20)
   createdBy    BigInt?      @map("created_by")
   updatedBy    BigInt?      @map("updated_by")
 
@@ -303,6 +312,7 @@ model Lead {
   rowVersion        Int       @default(1) @map("row_version")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
+  brand             String    @default("BIGWING") @db.VarChar(20)
   createdBy         BigInt?   @map("created_by")
   updatedBy         BigInt?   @map("updated_by")
 

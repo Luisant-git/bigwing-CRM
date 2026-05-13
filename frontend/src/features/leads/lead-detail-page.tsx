@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Phone,
@@ -234,7 +234,19 @@ export default function LeadDetailPage() {
                 {formatDateTime(lead.lastFollowupAt) || "—"}
               </Field>
               <Field label="Next Follow-up">
-                {formatDateTime(lead.nextFollowupAt) || "—"}
+                <div className="flex items-center gap-2">
+                  <span>{formatDateTime(lead.nextFollowupAt) || "—"}</span>
+                  {lead.nextFollowupAt && lead.followups?.length < 5 && (
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#2E75B6]" title="Follow-up Sequence">
+                      F{lead.followups.length + 1}
+                    </span>
+                  )}
+                  {lead.followups?.length >= 5 && lead.stage !== "LOST" && (
+                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
+                      Move to Lost
+                    </span>
+                  )}
+                </div>
               </Field>
               <Field label="Assigned To">
                 <div className="flex items-center gap-2">
@@ -395,6 +407,7 @@ export default function LeadDetailPage() {
           <FollowupForm
             onSubmit={(d) => followupMut.mutate(d)}
             loading={followupMut.isPending}
+            followupCount={lead.followups?.length ?? 0}
           />
         </Modal>
       )}
@@ -540,8 +553,8 @@ function FollowupsSection({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 font-medium text-gray-800">
-                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
-                      {i + 1}
+                    <span className="inline-flex h-5 px-1.5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
+                      F{i + 1}
                     </span>
                     <span className="font-bold">{formatDate(f.followupDate)}</span>
                     {f.channel && (
@@ -580,6 +593,19 @@ function FollowupsSection({
           })}
         </ol>
       )}
+
+      {/* Legend / Policy */}
+      <div className="mt-6 border-t border-dashed pt-4">
+        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Follow-up Policy (Gaps)</p>
+        <div className="grid grid-cols-5 gap-2 text-xs">
+          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 1: Next Day"><span className="font-bold text-[#2E75B6]">F1</span>: 1d</div>
+          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 2: 3 Days Later"><span className="font-bold text-[#2E75B6]">F2</span>: 3d</div>
+          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 3: 7 Days Later"><span className="font-bold text-[#2E75B6]">F3</span>: 7d</div>
+          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 4: 15 Days Later"><span className="font-bold text-[#2E75B6]">F4</span>: 15d</div>
+          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 5: 30 Days Later"><span className="font-bold text-[#2E75B6]">F5</span>: 30d</div>
+        </div>
+        <p className="mt-3 text-[11px] italic text-gray-500 text-center font-medium">After F5, leads are automatically moved to 'Lost / Long Term Follow-up'.</p>
+      </div>
     </div>
   );
 }
@@ -701,14 +727,18 @@ const OUTCOMES = ["CONNECTED", "RNR", "BUSY", "WRONG_NO", "SWITCHED_OFF", "CALLB
 function FollowupForm({
   onSubmit,
   loading,
+  followupCount = 0,
 }: {
   onSubmit: (d: any) => void;
   loading: boolean;
+  followupCount?: number;
 }) {
   const [channel, setChannel] = useState("");
   const [remark, setRemark] = useState("");
   const [outcome, setOutcome] = useState("");
   const [nextActionAt, setNextActionAt] = useState("");
+
+  const nextSeq = followupCount + 1;
 
   // Build a local-time `YYYY-MM-DDTHH:mm` string for the `datetime-local` input
   const toLocalInputValue = (d: Date) => {
@@ -716,11 +746,26 @@ function FollowupForm({
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  // Apply F1-F5 logic on mount
+  useEffect(() => {
+    const nextDate = new Date();
+    let days = 0;
+    if (nextSeq === 1) days = 1;
+    else if (nextSeq === 2) days = 3;
+    else if (nextSeq === 3) days = 7;
+    else if (nextSeq === 4) days = 15;
+    else if (nextSeq === 5) days = 30;
+
+    if (days > 0) {
+      nextDate.setDate(nextDate.getDate() + days);
+      setNextActionAt(toLocalInputValue(nextDate));
+    }
+  }, [nextSeq]);
+
   // RNR = Ring No Response. Standard behaviour is to retry next day at the same time.
-  // Prefill only if the user hasn't already picked a date so manual edits are preserved.
   const handleOutcomeChange = (v: string) => {
     setOutcome(v);
-    if (v === "RNR" && !nextActionAt) {
+    if (v === "RNR") {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       setNextActionAt(toLocalInputValue(tomorrow));
@@ -742,6 +787,19 @@ function FollowupForm({
       }}
       className="space-y-4"
     >
+      <div className="rounded-lg bg-blue-50 p-2.5 text-[11px] text-[#2E75B6]">
+        <p className="font-bold uppercase tracking-wider">
+          {nextSeq <= 5 ? `Next Follow-up: F${nextSeq} Logic` : "Follow-up limit reached"}
+        </p>
+        <p className="mt-0.5 opacity-80">
+          {nextSeq === 1 && "F1: Next day follow-up (+1 day)"}
+          {nextSeq === 2 && "F2: 3 days follow-up (+3 days)"}
+          {nextSeq === 3 && "F3: 7 days follow-up (+7 days)"}
+          {nextSeq === 4 && "F4: 15 days follow-up (+15 days)"}
+          {nextSeq === 5 && "F5: 30 days follow-up (+30 days)"}
+          {nextSeq > 5 && "After F5: Lead will be automatically moved to 'Lost / Long Term Follow-up'."}
+        </p>
+      </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="mb-1 block text-sm font-medium">Channel</label>

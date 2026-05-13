@@ -1,4 +1,7 @@
 import { prisma } from "@bigwing/db";
+import { brandContext } from "../../middlewares/brand.js";
+
+
 
 export class CustomerRepository {
   async findMany(params: {
@@ -6,8 +9,9 @@ export class CustomerRepository {
     skip: number;
     take: number;
   }) {
+    const brand = brandContext.getStore() || "BIGWING";
     return prisma.customer.findMany({
-      where: params.where,
+      where: { ...params.where, brand },
       skip: params.skip,
       take: params.take,
       orderBy: { createdAt: "desc" },
@@ -15,15 +19,17 @@ export class CustomerRepository {
   }
 
   async count(where: any) {
-    return prisma.customer.count({ where });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.customer.count({ where: { ...where, brand } });
   }
 
   async findById(id: bigint) {
-    return prisma.customer.findUnique({
-      where: { id },
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.customer.findFirst({
+      where: { id, brand },
       include: {
         leads: {
-          where: { isDeleted: false },
+          where: { isDeleted: false, brand },
           orderBy: { createdAt: "desc" },
           include: {
             source: true,
@@ -36,11 +42,13 @@ export class CustomerRepository {
   }
 
   async findByMobile(mobile: string) {
-    return prisma.customer.findUnique({ where: { mobile } });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.customer.findFirst({ where: { mobile, brand } });
   }
 
   async create(data: any) {
-    return prisma.customer.create({ data });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.customer.create({ data: { ...data, brand } });
   }
 
   async update(id: bigint, data: any) {

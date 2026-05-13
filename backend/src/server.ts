@@ -3,7 +3,9 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { env, logger } from "./config/index.js";
-import { requestIdMiddleware, errorHandler } from "./middlewares/index.js";
+import { requestIdMiddleware, errorHandler, brandMiddleware, brandContext } from "./middlewares/index.js";
+import { setBrandGetter } from "@bigwing/db";
+
 import { authRoutes } from "./modules/auth/routes.js";
 import { userRoutes } from "./modules/users/routes.js";
 import { lookupRoutes } from "./modules/lookups/routes.js";
@@ -19,7 +21,11 @@ import { taskRoutes } from "./modules/tasks/routes.js";
 import { profileRoutes } from "./modules/profile/routes.js";
 import { adminRoutes } from "./modules/admin/routes.js";
 
+// Connect DB to brand context
+setBrandGetter(() => brandContext.getStore());
+
 const app = express();
+
 
 // ─── Global middleware ──────────────────────────────────────────
 app.use(
@@ -44,6 +50,8 @@ app.use(
 );
 app.use(express.json({ limit: "5mb" }));
 app.use(requestIdMiddleware);
+app.use(brandMiddleware);
+
 app.use(
   rateLimit({
     windowMs: env.RATE_LIMIT_WINDOW_MS,

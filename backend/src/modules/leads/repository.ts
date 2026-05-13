@@ -1,4 +1,7 @@
 import { prisma } from "@bigwing/db";
+import { brandContext } from "../../middlewares/brand.js";
+
+
 
 const listIncludes = {
   customer: { select: { id: true, firstName: true, lastName: true, mobile: true } },
@@ -12,8 +15,9 @@ const listIncludes = {
 
 export class LeadRepository {
   async findMany(params: { where: any; skip?: number; take?: number }) {
+    const brand = brandContext.getStore() || "BIGWING";
     return prisma.lead.findMany({
-      where: params.where,
+      where: { ...params.where, brand },
       ...(params.skip !== undefined && { skip: params.skip }),
       ...(params.take !== undefined && { take: params.take }),
       orderBy: { createdAt: "desc" },
@@ -22,12 +26,14 @@ export class LeadRepository {
   }
 
   async count(where: any) {
-    return prisma.lead.count({ where });
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.lead.count({ where: { ...where, brand } });
   }
 
   async findById(id: bigint) {
-    return prisma.lead.findUnique({
-      where: { id },
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.lead.findFirst({
+      where: { id, brand },
       include: {
         customer: true,
         source: true,
@@ -49,8 +55,9 @@ export class LeadRepository {
   }
 
   async create(data: any) {
+    const brand = brandContext.getStore() || "BIGWING";
     return prisma.lead.create({
-      data,
+      data: { ...data, brand },
       include: listIncludes,
     });
   }
@@ -64,8 +71,9 @@ export class LeadRepository {
   }
 
   async getLastEnquiryNoForMonth(prefix: string) {
+    const brand = brandContext.getStore() || "BIGWING";
     const lead = await prisma.lead.findFirst({
-      where: { enquiryNo: { startsWith: prefix } },
+      where: { enquiryNo: { startsWith: prefix }, brand },
       orderBy: { enquiryNo: "desc" },
       select: { enquiryNo: true },
     });

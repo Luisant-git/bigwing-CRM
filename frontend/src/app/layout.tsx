@@ -19,6 +19,8 @@ import {
   PanelLeft,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
+import { useBrandStore } from "@/stores/brand";
+import { useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { Avatar, Tooltip } from "@/components/ui";
 import { GlobalSearch } from "@/components/global-search";
@@ -44,10 +46,19 @@ export default function AppLayout() {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("sidebar-collapsed") === "true";
   });
+  const { brand, setBrand } = useBrandStore();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", String(collapsed));
   }, [collapsed]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-brand", brand);
+    // Invalidate all queries when brand changes to force refetch
+    queryClient.invalidateQueries();
+  }, [brand, queryClient]);
+
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -78,10 +89,15 @@ export default function AppLayout() {
         {!isCollapsed ? (
           <>
             <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8792F] text-sm font-bold text-white">
-                BW
+              <div 
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white shadow-sm"
+                style={{ backgroundColor: brand === "bigwing" ? "#E8792F" : "#DC2626" }}
+              >
+                {brand === "bigwing" ? "BW" : "RW"}
               </div>
-              <span className="text-[15px] font-semibold text-white">Bigwing CRM</span>
+              <span className="text-[15px] font-bold text-white tracking-tight uppercase">
+                {brand === "bigwing" ? "Bigwing" : "Redwing"} <span className="font-normal opacity-60">CRM</span>
+              </span>
             </div>
             {/* Close button — mobile only */}
             <button
@@ -92,8 +108,11 @@ export default function AppLayout() {
             </button>
           </>
         ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#E8792F] text-sm font-bold text-white">
-            BW
+          <div 
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-bold text-white"
+            style={{ backgroundColor: brand === "bigwing" ? "#E8792F" : "#DC2626" }}
+          >
+            {brand === "bigwing" ? "BW" : "RW"}
           </div>
         )}
       </div>
@@ -114,8 +133,19 @@ export default function AppLayout() {
                 to={item.to}
                 search={(item as any).search}
                 onClick={() => setMobileOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-[rgba(46,117,182,0.15)] hover:text-white [&.active]:bg-[rgba(232,121,47,0.15)] [&.active]:text-[#E8792F]"
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+                activeOptions={{ includeHash: true }}
+                activeProps={{
+                  style: { 
+                    backgroundColor: "var(--brand-alpha)",
+                    color: "var(--brand-primary)",
+                    borderLeft: "3px solid var(--brand-primary)",
+                    borderTopLeftRadius: "0",
+                    borderBottomLeftRadius: "0",
+                  }
+                }}
               >
+
                 <item.icon size={18} />
               </Link>
             </Tooltip>
@@ -125,10 +155,30 @@ export default function AppLayout() {
               to={item.to}
               search={(item as any).search}
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/60 transition-colors hover:bg-[rgba(46,117,182,0.15)] hover:text-white [&.active]:border-l-[3px] [&.active]:border-[#E8792F] [&.active]:bg-[rgba(232,121,47,0.15)] [&.active]:text-[#E8792F] [&.active]:font-semibold"
+              className="group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+              activeOptions={{ includeHash: true }}
+              activeProps={{
+                style: { 
+                  backgroundColor: "var(--brand-alpha)",
+                  color: "var(--brand-primary)",
+                  borderLeft: "4px solid var(--brand-primary)",
+                  borderTopLeftRadius: "0",
+                  borderBottomLeftRadius: "0",
+                  fontWeight: "600"
+
+                }
+              }}
             >
-              <item.icon size={18} className="shrink-0" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <item.icon 
+                    size={18} 
+                    className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`} 
+                    style={{ color: isActive ? "var(--brand-primary)" : "inherit" }}
+                  />
+                  {item.label}
+                </>
+              )}
             </Link>
           )
         )}
@@ -193,7 +243,7 @@ export default function AppLayout() {
       {/* Desktop sidebar — collapsible */}
       <aside
         className={`hidden flex-col transition-[width] duration-300 ease-in-out lg:flex ${collapsed ? "w-[64px]" : "w-[260px]"}`}
-        style={{ background: "#1F3864" }}
+        style={{ background: "var(--brand-sidebar-bg)" }}
       >
         {renderSidebar(collapsed)}
       </aside>
@@ -207,7 +257,7 @@ export default function AppLayout() {
           />
           <aside
             className="relative flex h-full w-[260px] flex-col"
-            style={{ background: "#1F3864" }}
+            style={{ background: "var(--brand-sidebar-bg)" }}
           >
             {renderSidebar(false)}
           </aside>
@@ -240,11 +290,32 @@ export default function AppLayout() {
           <GlobalSearch />
 
           {/* Mobile: show app name */}
-          <span className="text-sm font-semibold text-[#1F3864] sm:hidden">
-            Bigwing CRM
+          <span className="text-sm font-bold uppercase tracking-tight text-[var(--brand-dark)] sm:hidden">
+            {brand === "bigwing" ? "Bigwing" : "Redwing"} CRM
           </span>
 
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Brand Switcher Toggle */}
+          <div className="flex items-center bg-gray-50/80 border border-gray-200/50 rounded-lg p-0.5 scale-90 sm:scale-100 shadow-sm">
+            <button
+              onClick={() => setBrand("bigwing")}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                brand === "bigwing" ? "bg-white text-[#1F3864] shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+              }`}
+            >
+              Bigwing
+            </button>
+            <button
+              onClick={() => setBrand("redwing")}
+              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                brand === "redwing" ? "bg-[#DC2626] text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+              }`}
+            >
+              Redwing
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1 sm:gap-2">
             <Tooltip content="Notifications">
               <button className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100">
                 <Bell size={20} />
@@ -267,6 +338,8 @@ export default function AppLayout() {
               </Link>
             </Tooltip>
           </div>
+        </div>
+
         </header>
 
         {/* Page content — responsive padding */}
