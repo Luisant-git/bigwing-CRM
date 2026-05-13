@@ -25,10 +25,6 @@ export class FollowupService {
       else if (seqNo === 5) nextActionAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // F5: 30 Days
     }
 
-    // Terminal logic: Move to LOST after F5
-    const shouldMoveToLost = seqNo > 5 && lead.stage !== "LOST";
-    const finalStage = shouldMoveToLost ? "LOST" : lead.stage;
-
     // Create follow-up and update lead in a transaction
     const [followup] = await prisma.$transaction([
       prisma.leadFollowup.create({
@@ -51,22 +47,9 @@ export class FollowupService {
         data: {
           nextFollowupAt: nextActionAt,
           lastFollowupAt: new Date(data.followupDate),
-          stage: finalStage,
-          ...(shouldMoveToLost && { closedAt: new Date() }),
           updatedBy: createdBy,
         },
       }),
-      ...(shouldMoveToLost ? [
-        prisma.leadStageHistory.create({
-          data: {
-            leadId,
-            fromStage: lead.stage,
-            toStage: "LOST",
-            remark: "Auto-moved to Lost after F5 (Long Term Follow-up)",
-            changedBy: createdBy,
-          },
-        })
-      ] : []),
     ]);
 
     return this.formatFollowup(followup);

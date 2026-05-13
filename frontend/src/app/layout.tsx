@@ -30,7 +30,7 @@ const navItems = [
   { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },
   { to: "/customers", label: "Customers", icon: UserCircle },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
+  // { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/users", label: "Users", icon: Users },
   { to: "/import", label: "Import", icon: FileSpreadsheet },
   { to: "/vehicle-catalogue", label: "Catalogue", icon: Bike },

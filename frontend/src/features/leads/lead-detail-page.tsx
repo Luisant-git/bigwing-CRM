@@ -243,7 +243,7 @@ export default function LeadDetailPage() {
                   )}
                   {lead.followups?.length >= 5 && lead.stage !== "LOST" && (
                     <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
-                      Move to Lost
+                      Move to Lost Stage
                     </span>
                   )}
                 </div>
@@ -595,16 +595,15 @@ function FollowupsSection({
       )}
 
       {/* Legend / Policy */}
-      <div className="mt-6 border-t border-dashed pt-4">
-        <p className="mb-2 text-xs font-bold uppercase tracking-wider text-gray-500">Follow-up Policy (Gaps)</p>
-        <div className="grid grid-cols-5 gap-2 text-xs">
-          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 1: Next Day"><span className="font-bold text-[#2E75B6]">F1</span>: 1d</div>
-          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 2: 3 Days Later"><span className="font-bold text-[#2E75B6]">F2</span>: 3d</div>
-          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 3: 7 Days Later"><span className="font-bold text-[#2E75B6]">F3</span>: 7d</div>
-          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 4: 15 Days Later"><span className="font-bold text-[#2E75B6]">F4</span>: 15d</div>
-          <div className="rounded-lg bg-gray-50 p-2 text-center" title="Follow-up 5: 30 Days Later"><span className="font-bold text-[#2E75B6]">F5</span>: 30d</div>
+      <div className="mt-8 border-t border-dashed pt-6">
+        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-600">Follow-up Policy (Gaps)</p>
+        <div className="grid grid-cols-5 gap-3 text-sm">
+          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 1: Next Day"><span className="font-bold text-[#2E75B6]">F1</span><br/><span className="text-gray-500">1d</span></div>
+          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 2: 3 Days Later"><span className="font-bold text-[#2E75B6]">F2</span><br/><span className="text-gray-500">3d</span></div>
+          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 3: 7 Days Later"><span className="font-bold text-[#2E75B6]">F3</span><br/><span className="text-gray-500">7d</span></div>
+          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 4: 15 Days Later"><span className="font-bold text-[#2E75B6]">F4</span><br/><span className="text-gray-500">15d</span></div>
+          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 5: 30 Days Later"><span className="font-bold text-[#2E75B6]">F5</span><br/><span className="text-gray-500">30d</span></div>
         </div>
-        <p className="mt-3 text-[11px] italic text-gray-500 text-center font-medium">After F5, leads are automatically moved to 'Lost / Long Term Follow-up'.</p>
       </div>
     </div>
   );
@@ -797,7 +796,7 @@ function FollowupForm({
           {nextSeq === 3 && "F3: 7 days follow-up (+7 days)"}
           {nextSeq === 4 && "F4: 15 days follow-up (+15 days)"}
           {nextSeq === 5 && "F5: 30 days follow-up (+30 days)"}
-          {nextSeq > 5 && "After F5: Lead will be automatically moved to 'Lost / Long Term Follow-up'."}
+          {/* {nextSeq > 5 && "After F5: Please manually move the lead to 'Lost / Long Term Follow-up' if required."} */}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
