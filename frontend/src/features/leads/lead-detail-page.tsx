@@ -242,8 +242,8 @@ export default function LeadDetailPage() {
                     </span>
                   )}
                   {lead.followups?.length >= 5 && lead.stage !== "LOST" && (
-                    <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
-                      Move to Lost Stage
+                    <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#2E75B6]">
+                      Other Followups
                     </span>
                   )}
                 </div>
@@ -596,13 +596,31 @@ function FollowupsSection({
 
       {/* Legend / Policy */}
       <div className="mt-8 border-t border-dashed pt-6">
-        <p className="mb-3 text-sm font-bold uppercase tracking-wider text-gray-600">Follow-up Policy (Gaps)</p>
-        <div className="grid grid-cols-5 gap-3 text-sm">
-          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 1: Next Day"><span className="font-bold text-[#2E75B6]">F1</span><br/><span className="text-gray-500">1d</span></div>
-          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 2: 3 Days Later"><span className="font-bold text-[#2E75B6]">F2</span><br/><span className="text-gray-500">3d</span></div>
-          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 3: 7 Days Later"><span className="font-bold text-[#2E75B6]">F3</span><br/><span className="text-gray-500">7d</span></div>
-          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 4: 15 Days Later"><span className="font-bold text-[#2E75B6]">F4</span><br/><span className="text-gray-500">15d</span></div>
-          <div className="rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 5: 30 Days Later"><span className="font-bold text-[#2E75B6]">F5</span><br/><span className="text-gray-500">30d</span></div>
+        <p className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-600">Follow-up Policy (Gaps)</p>
+        <div className="flex items-center justify-between gap-1 text-sm">
+          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 1: Next Day">
+            <span className="font-bold text-[#2E75B6]">F1</span><br/><span className="text-gray-500">1d</span>
+          </div>
+          <ChevronRight size={14} className="text-gray-600" />
+          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 2: 3 Days Later">
+            <span className="font-bold text-[#2E75B6]">F2</span><br/><span className="text-gray-500">3d</span>
+          </div>
+          <ChevronRight size={14} className="text-gray-600" />
+          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 3: 7 Days Later">
+            <span className="font-bold text-[#2E75B6]">F3</span><br/><span className="text-gray-500">7d</span>
+          </div>
+          <ChevronRight size={14} className="text-gray-600" />
+          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 4: 15 Days Later">
+            <span className="font-bold text-[#2E75B6]">F4</span><br/><span className="text-gray-500">15d</span>
+          </div>
+          <ChevronRight size={14} className="text-gray-600" />
+          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 5: 30 Days Later">
+            <span className="font-bold text-[#2E75B6]">F5</span><br/><span className="text-gray-500">30d</span>
+          </div>
+          <ChevronRight size={14} className="text-gray-600" />
+          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Beyond F5">
+            <span className="font-bold text-[#2E75B6]">Other</span><br/><span className="text-gray-500 text-[10px]">Followups</span>
+          </div>
         </div>
       </div>
     </div>
