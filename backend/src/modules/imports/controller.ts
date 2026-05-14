@@ -82,6 +82,15 @@ export class ImportController {
       next(err);
     }
   }
+
+  async getActiveBatch(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await importService.getActiveBatch();
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const importController = new ImportController();

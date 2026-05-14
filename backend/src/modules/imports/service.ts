@@ -387,6 +387,22 @@ export class ImportService {
     };
   }
 
+  async getActiveBatch() {
+    const batch = await importRepository.findActiveBatch();
+    if (!batch) return null;
+    return {
+      id: Number(batch.id),
+      fileName: batch.fileName,
+      status: batch.status,
+      totalRows: batch.totalRows,
+      successRows: batch.successRows,
+      errorRows: batch.errorRows,
+      skippedRows: batch.skippedRows,
+      startedAt: batch.startedAt,
+      createdAt: batch.createdAt,
+    };
+  }
+
   // ─── Error report ─────────────────────────────────────────────
 
   async getErrors(batchId: bigint) {

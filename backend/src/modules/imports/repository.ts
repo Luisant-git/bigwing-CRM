@@ -23,6 +23,17 @@ export class ImportRepository {
     return prisma.importBatch.update({ where: { id }, data });
   }
 
+  async findActiveBatch() {
+    const brand = brandContext.getStore();
+    return prisma.importBatch.findFirst({
+      where: { 
+        status: { in: ["PENDING", "PROCESSING"] },
+        brand 
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
   async createRowErrors(
     errors: {
       batchId: bigint;

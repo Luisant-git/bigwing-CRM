@@ -33,6 +33,12 @@ const upload = multer({
 
 router.use(authMiddleware);
 
+router.get(
+  "/active/status",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
+  (req, res, next) => importController.getActiveBatch(req, res, next)
+);
+
 router.post(
   "/upload",
   rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),

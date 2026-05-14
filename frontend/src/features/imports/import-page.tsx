@@ -48,6 +48,28 @@ export default function ImportPage() {
   const [showTruncate, setShowTruncate] = useState(false);
   const [truncateInput, setTruncateInput] = useState("");
 
+  // Auto-restore active import on mount
+  useEffect(() => {
+    const checkActive = async () => {
+      try {
+        const res = await api.get("/import/active/status");
+        const active = res.data.data;
+        if (active) {
+          setBatchId(active.id);
+          if (active.status === "PROCESSING") {
+            setStep("importing");
+          } else if (active.status === "PENDING") {
+             // If it's pending, we might want to show preview or just stay on upload
+             // For now, let's just restore the batchId
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check active import", err);
+      }
+    };
+    checkActive();
+  }, []);
+
   const qc = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
   const isSeniorDeveloper = currentUser?.email === SENIOR_DEVELOPER_EMAIL;
