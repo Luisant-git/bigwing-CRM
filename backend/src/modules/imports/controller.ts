@@ -13,10 +13,12 @@ export class ImportController {
       }
 
       const createdBy = BigInt(req.user!.userId);
+      const brand = (req.query.brand as string || (req as any).brand || "BIGWING").toUpperCase();
       const result = await importService.upload(
         req.file.path,
         req.file.filename,
-        createdBy
+        createdBy,
+        brand
       );
       res.status(201).json({ success: true, data: result });
     } catch (err) {

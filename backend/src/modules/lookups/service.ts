@@ -71,7 +71,7 @@ export class LookupService {
     const model = lookupModels[name]() as any;
 
     // Check uniqueness
-    const existing = await model.findUnique({ where: { name: data.name } });
+    const existing = await model.findFirst({ where: { name: data.name } });
     if (existing) {
       throw new AppError(409, "NAME_EXISTS", `An item with this name already exists`, "name");
     }
@@ -99,7 +99,7 @@ export class LookupService {
     if (!existing) throw new AppError(404, "NOT_FOUND", "Item not found");
 
     if (data.name && data.name !== existing.name) {
-      const dup = await model.findUnique({ where: { name: data.name } });
+      const dup = await model.findFirst({ where: { name: data.name } });
       if (dup) throw new AppError(409, "NAME_EXISTS", "An item with this name already exists", "name");
     }
 

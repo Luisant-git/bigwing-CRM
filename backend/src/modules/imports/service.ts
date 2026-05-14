@@ -5,6 +5,7 @@ import ExcelJS from "exceljs";
 import { prisma } from "@bigwing/db";
 import { importRepository } from "./repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
+import { brandContext } from "../../middlewares/brand.js";
 import {
   normalizeMobile,
   normalizeDate,
@@ -143,7 +144,7 @@ interface ParsedRow {
 export class ImportService {
   // ─── Upload ───────────────────────────────────────────────────
 
-  async upload(filePath: string, fileName: string, createdBy: bigint) {
+  async upload(filePath: string, fileName: string, createdBy: bigint, brandOverride?: string) {
     const fileBuffer = readFileSync(filePath);
     // Hash is kept on the batch row for traceability (which file produced which batch),
     // but we no longer block re-uploads of the same file — the Hirise Honda DMS export
@@ -167,10 +168,12 @@ export class ImportService {
       }
     }
 
+    const brand = brandOverride || brandContext.getStore();
     const batch = await importRepository.createBatch({
       fileName,
       fileHash,
       createdBy,
+      brand,
     });
 
     return {
@@ -824,10 +827,19 @@ export class ImportService {
       : null;
 
     if (mapped.source && !sourceId) {
-      const newSource = await tx.enquirySource.create({
-        data: { name: mapped.source, displayOrder: 999, isActive: true },
+      // Check again inside transaction to prevent race conditions
+      const existing = await tx.enquirySource.findFirst({
+        where: { name: { equals: mapped.source, mode: "insensitive" } },
       });
-      sourceId = newSource.id;
+      
+      if (existing) {
+        sourceId = existing.id;
+      } else {
+        const newSource = await tx.enquirySource.create({
+          data: { name: mapped.source, displayOrder: 999, isActive: true },
+        });
+        sourceId = newSource.id;
+      }
       sourceMap.set(mapped.source.toLowerCase(), sourceId);
     }
 
@@ -839,10 +851,17 @@ export class ImportService {
       : null;
 
     if (mapped.enquiryType && !enquiryTypeId) {
-      const newType = await tx.enquiryTypeLookup.create({
-        data: { name: mapped.enquiryType, displayOrder: 999, isActive: true },
+      const existing = await tx.enquiryTypeLookup.findFirst({
+        where: { name: { equals: mapped.enquiryType, mode: "insensitive" } },
       });
-      enquiryTypeId = newType.id;
+      if (existing) {
+        enquiryTypeId = existing.id;
+      } else {
+        const newType = await tx.enquiryTypeLookup.create({
+          data: { name: mapped.enquiryType, displayOrder: 999, isActive: true },
+        });
+        enquiryTypeId = newType.id;
+      }
       typeMap.set(mapped.enquiryType.toLowerCase(), enquiryTypeId);
     }
 
@@ -853,10 +872,17 @@ export class ImportService {
       : null;
 
     if (mapped.modelName && !modelId) {
-      const newModel = await tx.vehicleModel.create({
-        data: { name: mapped.modelName, displayOrder: 999, isActive: true },
+      const existing = await tx.vehicleModel.findFirst({
+        where: { name: { equals: mapped.modelName, mode: "insensitive" } },
       });
-      modelId = newModel.id;
+      if (existing) {
+        modelId = existing.id;
+      } else {
+        const newModel = await tx.vehicleModel.create({
+          data: { name: mapped.modelName, displayOrder: 999, isActive: true },
+        });
+        modelId = newModel.id;
+      }
       modelMap.set(mapped.modelName.toLowerCase(), modelId);
     }
 
@@ -865,10 +891,17 @@ export class ImportService {
       : null;
 
     if (mapped.colourName && !colourId) {
-      const newColour = await tx.vehicleColour.create({
-        data: { name: mapped.colourName, displayOrder: 999, isActive: true },
+      const existing = await tx.vehicleColour.findFirst({
+        where: { name: { equals: mapped.colourName, mode: "insensitive" } },
       });
-      colourId = newColour.id;
+      if (existing) {
+        colourId = existing.id;
+      } else {
+        const newColour = await tx.vehicleColour.create({
+          data: { name: mapped.colourName, displayOrder: 999, isActive: true },
+        });
+        colourId = newColour.id;
+      }
       colourMap.set(mapped.colourName.toLowerCase(), colourId);
     }
 
@@ -878,10 +911,17 @@ export class ImportService {
       variantId = variantMap.get(key)?.id ?? null;
 
       if (!variantId) {
-        const newVariant = await tx.vehicleVariant.create({
-          data: { name: mapped.variantName, modelId, displayOrder: 999, isActive: true },
+        const existing = await tx.vehicleVariant.findFirst({
+          where: { modelId, name: { equals: mapped.variantName, mode: "insensitive" } },
         });
-        variantId = newVariant.id;
+        if (existing) {
+          variantId = existing.id;
+        } else {
+          const newVariant = await tx.vehicleVariant.create({
+            data: { name: mapped.variantName, modelId, displayOrder: 999, isActive: true },
+          });
+          variantId = newVariant.id;
+        }
         variantMap.set(key, { id: variantId, modelId });
       }
     }

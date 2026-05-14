@@ -1,10 +1,12 @@
 import { prisma } from "@bigwing/db";
+import { brandContext } from "../../middlewares/brand.js";
 
 export class ImportRepository {
   async createBatch(data: {
     fileName: string;
     fileHash: string;
     createdBy: bigint;
+    brand?: string;
   }) {
     return prisma.importBatch.create({ data });
   }
@@ -36,8 +38,10 @@ export class ImportRepository {
     // Truncate long strings to fit DB column limits (column=80, value=500, error=500)
     const truncate = (s: string | undefined, n: number) =>
       s ? (s.length > n ? s.slice(0, n) : s) : s;
+    const brand = brandContext.getStore();
     const safe = errors.map((e) => ({
       ...e,
+      brand,
       column: truncate(e.column, 80),
       value: truncate(e.value, 495),
       error: truncate(e.error, 495) ?? "Unknown error",
@@ -105,11 +109,13 @@ export class ImportRepository {
   }
 
   async findCustomerByMobile(mobile: string) {
-    return prisma.customer.findUnique({ where: { mobile } });
+    const brand = brandContext.getStore();
+    return prisma.customer.findFirst({ where: { mobile, brand } });
   }
 
   async findLeadByEnquiryNo(enquiryNo: string) {
-    return prisma.lead.findUnique({ where: { enquiryNo } });
+    const brand = brandContext.getStore();
+    return prisma.lead.findFirst({ where: { enquiryNo, brand } });
   }
 }
 

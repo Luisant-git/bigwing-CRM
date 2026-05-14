@@ -20,8 +20,9 @@ const PIE_COLORS = ["#2E75B6", "#27AE60", "#F2994A", "#EB5757", "#9B59B6", "#2D9
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const isTelecaller = user?.roles.includes("TELE_CALLER");
-  const isAdmin = user?.roles.includes("ADMIN") || user?.roles.includes("SUPER_ADMIN") || user?.roles.includes("MANAGER");
+  const roles = user?.roles ?? [];
+  const isTelecaller = roles.includes("TELE_CALLER");
+  const isAdmin = roles.includes("ADMIN") || roles.includes("SUPER_ADMIN") || roles.includes("MANAGER");
   
   const [view, setView] = useState<"general" | "sales">("general");
   const [dateFrom, setDateFrom] = useState("");
@@ -55,28 +56,7 @@ export default function DashboardPage() {
     return <TelecallerDashboard />;
   }
 
-  if (view === "sales" && isAdmin) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-start border-b border-gray-200">
-          <button 
-            onClick={() => setView("general")}
-            className="px-6 py-3 text-sm font-medium text-gray-500 hover:text-gray-700"
-          >
-            General Overview
-          </button>
-          <button 
-            className="px-6 py-3 text-sm font-bold text-[#2E75B6] border-b-2 border-[#2E75B6]"
-          >
-            Sales Performance
-          </button>
-        </div>
-        <SalesExecutiveDashboard dateFrom={dateFrom} dateTo={dateTo} />
-      </div>
-    );
-  }
 
-  if (kpiLoading) return <PageLoader message="Loading dashboard..." />;
 
   const cards = [
     { label: "Total Enquiries", value: kpi?.totalEnquiries, icon: ClipboardList, accent: "#2E75B6", bg: "bg-blue-50", tab: "all" },
@@ -101,14 +81,15 @@ export default function DashboardPage() {
   }));
 
   return (
-    <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#1F3864]">Dashboard</h1>
-          <p className="text-[12px] text-gray-400">General Overview & KPIs</p>
+          <p className="text-[12px] text-gray-400">
+            {view === "sales" ? "Sales Performance Metrics" : "General Overview & KPIs"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
-          {/* Date Filters */}
           <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
             <input 
               type="date" 
@@ -153,6 +134,13 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {view === "sales" && isAdmin ? (
+        <SalesExecutiveDashboard dateFrom={dateFrom} dateTo={dateTo} />
+      ) : kpiLoading ? (
+        <PageLoader message="Loading dashboard data..." />
+      ) : (
+        <div className="space-y-6">
 
       {/* KPI cards with icons + accent bars */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -309,6 +297,8 @@ export default function DashboardPage() {
               );
             })}
           </div>
+        </div>
+      )}
         </div>
       )}
     </div>

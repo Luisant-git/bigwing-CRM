@@ -36,7 +36,7 @@ router.post("/purge", rbac(["SUPER_ADMIN"]), async (req, res, next) => {
     };
 
     await prisma.$transaction([
-      // Pipeline docs (reference lead)
+      // Pipeline docs
       prisma.delivery.deleteMany({}),
       prisma.invoice.deleteMany({}),
       prisma.booking.deleteMany({}),
@@ -50,14 +50,13 @@ router.post("/purge", rbac(["SUPER_ADMIN"]), async (req, res, next) => {
       prisma.customerContact.deleteMany({}),
       // Customer
       prisma.customer.deleteMany({}),
-      // App data (audit, tasks, notifications, imports)
-      prisma.auditLog.deleteMany({
-        where: { entityType: { in: ["lead", "customer"] } },
-      }),
+      // App data
+      prisma.auditLog.deleteMany({}),
       prisma.task.deleteMany({}),
       prisma.notification.deleteMany({}),
       prisma.importRowError.deleteMany({}),
       prisma.importBatch.deleteMany({}),
+      prisma.reportSnapshot.deleteMany({}),
     ]);
 
     // Log the purge as audit entry
@@ -128,13 +127,12 @@ router.post("/truncate", async (req, res, next) => {
       prisma.lead.deleteMany({}),
       prisma.customerContact.deleteMany({}),
       prisma.customer.deleteMany({}),
-      prisma.auditLog.deleteMany({
-        where: { entityType: { in: ["lead", "customer"] } },
-      }),
+      prisma.auditLog.deleteMany({}),
       prisma.task.deleteMany({}),
       prisma.notification.deleteMany({}),
       prisma.importRowError.deleteMany({}),
       prisma.importBatch.deleteMany({}),
+      prisma.reportSnapshot.deleteMany({}),
     ]);
 
     await prisma.auditLog.create({

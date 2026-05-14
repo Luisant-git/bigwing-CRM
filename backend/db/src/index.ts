@@ -20,7 +20,20 @@ const BRANDED_MODELS = [
   "interestLevelLookup",
   "closureReason",
   "referredBranch",
-  "salesExecutive"
+  "salesExecutive",
+  "quotation",
+  "booking",
+  "invoice",
+  "delivery",
+  "leadFollowup",
+  "leadStageHistory",
+  "customerContact",
+  "importBatch",
+  "importRowError",
+  "task",
+  "notification",
+  "auditLog",
+  "reportSnapshot"
 ];
 
 const basePrisma = globalForPrisma.prisma ||
@@ -39,6 +52,10 @@ export const prisma = basePrisma.$extends({
         // Lowercase model name for comparison
         const modelKey = model.charAt(0).toLowerCase() + model.slice(1);
         
+        if (brand && BRANDED_MODELS.includes(modelKey)) {
+           // brand isolation is active
+        }
+
         if (!brand || !BRANDED_MODELS.includes(modelKey)) {
           return query(args);
         }
@@ -58,13 +75,22 @@ export const prisma = basePrisma.$extends({
         // Apply brand to writing operations
         if (["create", "createMany"].includes(operation)) {
           if (operation === "create") {
-            a.data = { ...a.data, brand };
-          } else if (Array.isArray(a.data)) {
-            a.data = a.data.map((d: any) => ({ ...d, brand }));
+            // Only add brand if not already provided explicitly
+            if (!a.data.brand) {
+              a.data = { ...a.data, brand };
+            }
+          }
+          if (operation === "createMany") {
+            const applyBrand = (d: any) => (d.brand ? d : { ...d, brand });
+            if (Array.isArray(a.data)) {
+              a.data = a.data.map(applyBrand);
+            } else {
+              a.data.data = a.data.data.map(applyBrand);
+            }
           }
         }
 
-        if (["update", "updateMany", "upsert"].includes(operation)) {
+        if (["update", "updateMany", "upsert", "delete", "deleteMany"].includes(operation)) {
           a.where = { ...a.where, brand };
         }
 

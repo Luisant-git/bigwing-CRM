@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { Alert, Breadcrumb, ConfirmModal, StripedProgress } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth";
+import { useBrandStore } from "@/stores/brand";
 
 // The Truncate button is a dev-only maintenance/testing helper. It is shown
 // exclusively for this account; the backend enforces the same check.
@@ -73,7 +74,8 @@ export default function ImportPage() {
     mutationFn: (file: File) => {
       const fd = new FormData();
       fd.append("file", file);
-      return api.post("/import/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      const brand = useBrandStore.getState().brand;
+      return api.post(`/import/upload?brand=${brand}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
     },
     onSuccess: (res) => {
       const data = res.data.data;
