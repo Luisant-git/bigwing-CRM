@@ -22,7 +22,7 @@ import {
   normalizeEnquiryType,
 } from "./normalizer.js";
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 200;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Column header → CRM field mapping for auto-detect
@@ -275,11 +275,17 @@ export class ImportService {
       // Process batch rows sequentially for resilience (so one failure doesn't kill the batch)
       // but lookups are already optimized above.
       for (const row of slice) {
-        // Check if batch was cancelled
-        if (row.rowNum % 50 === 0) {
-          const currentBatch = await importRepository.findBatchById(batchId);
-          if (currentBatch?.status === "CANCELLED") {
-            throw new Error("IMPORT_CANCELLED");
+        // Check if batch was cancelled (only once at the start of the slice for efficiency)
+        if (row === slice[0]) {
+          try {
+            const currentBatch = await importRepository.findBatchById(batchId);
+            if (currentBatch?.status === "CANCELLED") {
+              throw new Error("IMPORT_CANCELLED");
+            }
+          } catch (err: any) {
+            if (err.message === "IMPORT_CANCELLED") throw err;
+            console.warn(`[Import] Could not check cancellation status for batch ${batchId}:`, err.message);
+            // Continue import if it's just a transient connection issue on the status check
           }
         }
 
@@ -361,7 +367,7 @@ export class ImportService {
         });
 
         if (batchStart + BATCH_SIZE < parsed.length) {
-          await sleep(200);
+          await sleep(1000); // 1s breather for Postgres
         }
       }
 
