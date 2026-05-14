@@ -22,7 +22,7 @@ import {
   normalizeEnquiryType,
 } from "./normalizer.js";
 
-const BATCH_SIZE = 200;
+const BATCH_SIZE = 500;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Column header → CRM field mapping for auto-detect
@@ -272,6 +272,103 @@ export class ImportService {
       const customerCache = new Map<string, any>(existingCustomers.map(c => [c.mobile, c]));
       const leadCache = new Map<string, any>(existingLeads.map(l => [l.enquiryNo!, l]));
 
+      // Pre-create missing lookups to avoid queries inside the loop
+      const missingSources = new Set<string>();
+      const missingTypes = new Set<string>();
+      const missingModels = new Set<string>();
+      const missingColours = new Set<string>();
+
+      slice.forEach(r => {
+        if (r.mapped.source && !sourceMap.has(r.mapped.source.toLowerCase())) missingSources.add(r.mapped.source);
+        if (r.mapped.enquiryType && !typeMap.has(r.mapped.enquiryType.toLowerCase())) missingTypes.add(r.mapped.enquiryType);
+        if (r.mapped.modelName && !modelMap.has(r.mapped.modelName.toLowerCase())) missingModels.add(r.mapped.modelName);
+        if (r.mapped.colourName && !colourMap.has(r.mapped.colourName.toLowerCase())) missingColours.add(r.mapped.colourName);
+      });
+
+      if (missingSources.size > 0) {
+        for (const name of missingSources) {
+          const s = await prisma.enquirySource.upsert({
+            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            update: {},
+            create: { name, isActive: true, displayOrder: 999 }
+          });
+          sourceMap.set(name.toLowerCase(), s.id);
+        }
+      }
+      if (missingTypes.size > 0) {
+        for (const name of missingTypes) {
+          const t = await prisma.enquiryTypeLookup.upsert({
+            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            update: {},
+            create: { name, isActive: true, displayOrder: 999 }
+          });
+          typeMap.set(name.toLowerCase(), t.id);
+        }
+      }
+      if (missingModels.size > 0) {
+        for (const name of missingModels) {
+          const m = await prisma.vehicleModel.upsert({
+            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            update: {},
+            create: { name, isActive: true, displayOrder: 999 }
+          });
+          modelMap.set(name.toLowerCase(), m.id);
+        }
+      }
+      if (missingColours.size > 0) {
+        for (const name of missingColours) {
+          const c = await prisma.vehicleColour.upsert({
+            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            update: {},
+            create: { name, isActive: true, displayOrder: 999 }
+          });
+          colourMap.set(name.toLowerCase(), c.id);
+        }
+      }
+
+      // Pre-create missing variants
+      const missingVariants = new Set<string>();
+      slice.forEach(r => {
+        if (r.mapped.modelName && r.mapped.variantName) {
+          const modelId = modelMap.get(r.mapped.modelName.toLowerCase());
+          if (modelId) {
+            const key = `${modelId}:${r.mapped.variantName.toLowerCase().trim()}`;
+            if (!variantMap.has(key)) {
+              missingVariants.add(`${modelId}|${r.mapped.variantName}`);
+            }
+          }
+        }
+      });
+
+      if (missingVariants.size > 0) {
+        for (const composite of missingVariants) {
+          const [modelIdStr, name] = composite.split("|");
+          const modelId = BigInt(modelIdStr);
+          const v = await prisma.vehicleVariant.upsert({
+            where: { modelId_name_brand: { modelId, name, brand: brandContext.getStore()! } },
+            update: {},
+            create: { modelId, name, isActive: true, displayOrder: 999 }
+          });
+          variantMap.set(`${modelId}:${name.toLowerCase().trim()}`, { id: v.id, modelId });
+        }
+      }
+
+      // Pre-fetch all followups for existing leads in this batch to avoid 1 query per row
+      const existingLeadIds = existingLeads.map(l => l.id);
+      const allFollowups = existingLeadIds.length > 0 
+        ? await prisma.leadFollowup.findMany({
+            where: { leadId: { in: existingLeadIds } },
+            orderBy: { seqNo: "desc" }
+          })
+        : [];
+      
+      const followupCache = new Map<bigint, any[]>();
+      allFollowups.forEach(f => {
+        const list = followupCache.get(f.leadId) || [];
+        list.push(f);
+        followupCache.set(f.leadId, list);
+      });
+
       // Process batch rows sequentially for resilience (so one failure doesn't kill the batch)
       // but lookups are already optimized above.
       for (const row of slice) {
@@ -311,7 +408,7 @@ export class ImportService {
             row.mapped,
             batch.createdBy,
             prisma, // Use global prisma for resilience
-            { customerCache, leadCache },
+            { customerCache, leadCache, followupCache },
             {
               sourceMap,
               typeMap,
@@ -367,7 +464,7 @@ export class ImportService {
         });
 
         if (batchStart + BATCH_SIZE < parsed.length) {
-          await sleep(1000); // 1s breather for Postgres
+          await sleep(100); // 100ms breather for Postgres (reduced from 1s)
         }
       }
 
@@ -831,6 +928,7 @@ export class ImportService {
     cache: {
       customerCache: Map<string, any>;
       leadCache: Map<string, any>;
+      followupCache: Map<bigint, any[]>;
     },
     lookups: {
       sourceMap: Map<string, bigint>;
@@ -848,23 +946,36 @@ export class ImportService {
     // Resolve customer (upsert by mobile)
     let customer = customerCache.get(mapped.mobile);
     if (customer) {
-      // Update customer info if it changed in Excel
-      customer = await tx.customer.update({
-        where: { id: customer.id },
-        data: {
-          firstName: mapped.firstName ?? customer.firstName,
-          lastName: mapped.lastName ?? customer.lastName,
-          email: mapped.email ?? customer.email,
-          dob: mapped.dob ?? customer.dob,
-          anniversary: mapped.anniversary ?? customer.anniversary,
-          location: mapped.location ?? customer.location,
-          customerType: mapped.customerType ?? customer.customerType,
-          accountType: mapped.accountType ?? customer.accountType,
-          accountName: mapped.accountName ?? customer.accountName,
-          updatedBy: createdBy,
-          updatedAt: new Date(),
-        },
-      });
+      // Update customer info ONLY if it changed in Excel
+      const hasChanged = 
+        (mapped.firstName && mapped.firstName !== customer.firstName) ||
+        (mapped.lastName && mapped.lastName !== customer.lastName) ||
+        (mapped.email && mapped.email !== customer.email) ||
+        (mapped.dob && mapped.dob?.getTime() !== customer.dob?.getTime()) ||
+        (mapped.anniversary && mapped.anniversary?.getTime() !== customer.anniversary?.getTime()) ||
+        (mapped.location && mapped.location !== customer.location) ||
+        (mapped.customerType && mapped.customerType !== customer.customerType) ||
+        (mapped.accountType && mapped.accountType !== customer.accountType) ||
+        (mapped.accountName && mapped.accountName !== customer.accountName);
+
+      if (hasChanged) {
+        customer = await tx.customer.update({
+          where: { id: customer.id },
+          data: {
+            firstName: mapped.firstName ?? customer.firstName,
+            lastName: mapped.lastName ?? customer.lastName,
+            email: mapped.email ?? customer.email,
+            dob: mapped.dob ?? customer.dob,
+            anniversary: mapped.anniversary ?? customer.anniversary,
+            location: mapped.location ?? customer.location,
+            customerType: mapped.customerType ?? customer.customerType,
+            accountType: mapped.accountType ?? customer.accountType,
+            accountName: mapped.accountName ?? customer.accountName,
+            updatedBy: createdBy,
+            updatedAt: new Date(),
+          },
+        });
+      }
     } else {
       customer = await tx.customer.create({
         data: {
@@ -885,109 +996,30 @@ export class ImportService {
       customerCache.set(mapped.mobile, customer);
     }
 
-    // Resolve lookups
+    // Resolve lookups - now guaranteed by pre-creation in commit()
     let sourceId = mapped.source
       ? sourceMap.get(mapped.source.toLowerCase()) ?? null
       : null;
-
-    if (mapped.source && !sourceId) {
-      // Check again inside transaction to prevent race conditions
-      const existing = await tx.enquirySource.findFirst({
-        where: { name: { equals: mapped.source, mode: "insensitive" } },
-      });
-      
-      if (existing) {
-        sourceId = existing.id;
-      } else {
-        const newSource = await tx.enquirySource.create({
-          data: { name: mapped.source, displayOrder: 999, isActive: true },
-        });
-        sourceId = newSource.id;
-      }
-      sourceMap.set(mapped.source.toLowerCase(), sourceId);
-    }
-
     if (!sourceId) sourceId = sourceMap.get("other") || null;
     if (!sourceId) throw new Error(`No source available for: ${mapped.source}`);
 
     let enquiryTypeId = mapped.enquiryType
       ? typeMap.get(mapped.enquiryType.toLowerCase()) ?? null
       : null;
-
-    if (mapped.enquiryType && !enquiryTypeId) {
-      const existing = await tx.enquiryTypeLookup.findFirst({
-        where: { name: { equals: mapped.enquiryType, mode: "insensitive" } },
-      });
-      if (existing) {
-        enquiryTypeId = existing.id;
-      } else {
-        const newType = await tx.enquiryTypeLookup.create({
-          data: { name: mapped.enquiryType, displayOrder: 999, isActive: true },
-        });
-        enquiryTypeId = newType.id;
-      }
-      typeMap.set(mapped.enquiryType.toLowerCase(), enquiryTypeId);
-    }
-
     if (!enquiryTypeId) enquiryTypeId = typeMap.get("new")!;
 
     let modelId = mapped.modelName
       ? modelMap.get(mapped.modelName.toLowerCase()) ?? null
       : null;
 
-    if (mapped.modelName && !modelId) {
-      const existing = await tx.vehicleModel.findFirst({
-        where: { name: { equals: mapped.modelName, mode: "insensitive" } },
-      });
-      if (existing) {
-        modelId = existing.id;
-      } else {
-        const newModel = await tx.vehicleModel.create({
-          data: { name: mapped.modelName, displayOrder: 999, isActive: true },
-        });
-        modelId = newModel.id;
-      }
-      modelMap.set(mapped.modelName.toLowerCase(), modelId);
-    }
-
     let colourId = mapped.colourName
       ? colourMap.get(mapped.colourName.toLowerCase()) ?? null
       : null;
-
-    if (mapped.colourName && !colourId) {
-      const existing = await tx.vehicleColour.findFirst({
-        where: { name: { equals: mapped.colourName, mode: "insensitive" } },
-      });
-      if (existing) {
-        colourId = existing.id;
-      } else {
-        const newColour = await tx.vehicleColour.create({
-          data: { name: mapped.colourName, displayOrder: 999, isActive: true },
-        });
-        colourId = newColour.id;
-      }
-      colourMap.set(mapped.colourName.toLowerCase(), colourId);
-    }
 
     let variantId: bigint | null = null;
     if (modelId && mapped.variantName) {
       const key = `${modelId}:${mapped.variantName.toLowerCase().trim()}`;
       variantId = variantMap.get(key)?.id ?? null;
-
-      if (!variantId) {
-        const existing = await tx.vehicleVariant.findFirst({
-          where: { modelId, name: { equals: mapped.variantName, mode: "insensitive" } },
-        });
-        if (existing) {
-          variantId = existing.id;
-        } else {
-          const newVariant = await tx.vehicleVariant.create({
-            data: { name: mapped.variantName, modelId, displayOrder: 999, isActive: true },
-          });
-          variantId = newVariant.id;
-        }
-        variantMap.set(key, { id: variantId, modelId });
-      }
     }
 
     // Resolve executive
@@ -1023,29 +1055,46 @@ export class ImportService {
         const shouldUpdateNext = nextDate && (!existing.nextFollowupAt || nextDate.getTime() !== existing.nextFollowupAt.getTime());
         const shouldUpdateLast = lastDate && (!existing.lastFollowupAt || lastDate.getTime() !== existing.lastFollowupAt.getTime());
 
-        await tx.lead.update({
-          where: { id: existing.id },
-          data: {
-            stage: targetStage,
-            sourceId: sourceId ?? existing.sourceId,
-            enquiryTypeId: enquiryTypeId ?? existing.enquiryTypeId,
-            modelId: modelId ?? existing.modelId,
-            variantId: variantId ?? existing.variantId,
-            colourId: colourId ?? existing.colourId,
-            assignedTo: assignedTo ?? existing.assignedTo,
-            executiveName: mapped.executive ?? existing.executiveName,
-            interestLevel: mapped.interestLevel ?? existing.interestLevel,
-            testRideFlag: mapped.testRideFlag ?? existing.testRideFlag,
-            nextFollowupAt: shouldUpdateNext ? nextDate : existing.nextFollowupAt,
-            lastFollowupAt: shouldUpdateLast ? lastDate : existing.lastFollowupAt,
-            enquiryDate: mapped.enquiryDate ?? existing.enquiryDate,
-            remark: mapped.remark ?? mapped.closureRemark ?? existing.remark,
-            referredFromBranch: mapped.referredFromBranch ?? existing.referredFromBranch,
-            updatedBy: createdBy,
-            updatedAt: new Date(),
-          },
-        });
-        await this.appendImportedFollowup(existing.id, mapped, createdBy, tx);
+        const hasChanged = 
+          targetStage !== existing.stage ||
+          (sourceId && sourceId !== existing.sourceId) ||
+          (enquiryTypeId && enquiryTypeId !== existing.enquiryTypeId) ||
+          (modelId && modelId !== existing.modelId) ||
+          (variantId && variantId !== existing.variantId) ||
+          (colourId && colourId !== existing.colourId) ||
+          (assignedTo && assignedTo !== existing.assignedTo) ||
+          (mapped.executive && mapped.executive !== existing.executiveName) ||
+          (mapped.interestLevel && mapped.interestLevel !== existing.interestLevel) ||
+          (mapped.testRideFlag !== undefined && mapped.testRideFlag !== existing.testRideFlag) ||
+          shouldUpdateNext ||
+          shouldUpdateLast ||
+          (mapped.referredFromBranch && mapped.referredFromBranch !== existing.referredFromBranch);
+
+        if (hasChanged) {
+          await tx.lead.update({
+            where: { id: existing.id },
+            data: {
+              stage: targetStage,
+              sourceId: sourceId ?? existing.sourceId,
+              enquiryTypeId: enquiryTypeId ?? existing.enquiryTypeId,
+              modelId: modelId ?? existing.modelId,
+              variantId: variantId ?? existing.variantId,
+              colourId: colourId ?? existing.colourId,
+              assignedTo: assignedTo ?? existing.assignedTo,
+              executiveName: mapped.executive ?? existing.executiveName,
+              interestLevel: mapped.interestLevel ?? existing.interestLevel,
+              testRideFlag: mapped.testRideFlag ?? existing.testRideFlag,
+              nextFollowupAt: shouldUpdateNext ? nextDate : existing.nextFollowupAt,
+              lastFollowupAt: shouldUpdateLast ? lastDate : existing.lastFollowupAt,
+              enquiryDate: mapped.enquiryDate ?? existing.enquiryDate,
+              remark: mapped.remark ?? mapped.closureRemark ?? existing.remark,
+              referredFromBranch: mapped.referredFromBranch ?? existing.referredFromBranch,
+              updatedBy: createdBy,
+              updatedAt: new Date(),
+            },
+          });
+        }
+        await this.appendImportedFollowup(existing.id, mapped, createdBy, tx, cache.followupCache);
         return "skipped" as const;
       }
     } else {
@@ -1130,7 +1179,8 @@ export class ImportService {
     leadId: bigint,
     mapped: Record<string, any>,
     createdBy: bigint,
-    tx: any
+    tx: any,
+    followupCache?: Map<bigint, any[]>
   ) {
     const remark = this.buildFollowupRemark(
       mapped.followupRemark,
@@ -1142,11 +1192,14 @@ export class ImportService {
     // Nothing to record
     if (!remark && !followupDate) return;
 
-    const existing = await tx.leadFollowup.findMany({
-      where: { leadId },
-      select: { seqNo: true, followupDate: true, remark: true },
-      orderBy: { seqNo: "desc" },
-    });
+    // Use cache if available, otherwise fetch
+    const existing = followupCache 
+      ? (followupCache.get(leadId) || [])
+      : await tx.leadFollowup.findMany({
+          where: { leadId },
+          select: { seqNo: true, followupDate: true, remark: true },
+          orderBy: { seqNo: "desc" },
+        });
 
     // Dedup check
     const followupIdTag = mapped.followupId
