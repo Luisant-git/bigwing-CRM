@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { importService } from "./service.js";
+import { brandContext } from "../../middlewares/brand.js";
 
 export class ImportController {
   async upload(req: Request, res: Response, next: NextFunction) {
@@ -42,8 +43,23 @@ export class ImportController {
       const batchId = BigInt(req.params.id as string);
       const sheetName = req.query.sheet as string | undefined;
       const channel = req.query.channel as string | undefined;
-      const result = await importService.commit(batchId, sheetName, channel);
-      res.json({ success: true, data: result });
+      
+      const brand = brandContext.getStore() || "BIGWING";
+
+      // Return immediately and process in background
+      setImmediate(() => {
+        brandContext.run(brand, () => {
+          importService.commit(batchId, sheetName, channel).catch(err => {
+            console.error(`[Import] Background commit failed for batch ${batchId}:`, err);
+          });
+        });
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Import started in background",
+        data: { batchId: Number(batchId), status: "PROCESSING" }
+      });
     } catch (err) {
       next(err);
     }

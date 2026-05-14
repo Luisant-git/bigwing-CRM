@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, Download, RotateCw, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
@@ -100,30 +100,47 @@ export default function ImportPage() {
 
   const commitMut = useMutation({
     mutationFn: (id: number) => api.post(`/import/${id}/commit`),
-    onSuccess: (res) => {
-      setResult(res.data.data);
-      setProgress(100);
-      setTimeout(() => setStep("done"), 500);
-      toast.success("Import completed successfully!");
+    onSuccess: () => {
+      toast.success("Import started in background...");
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.error?.message || "Import failed");
+      toast.error(err.response?.data?.error?.message || "Failed to start import");
       setStep("preview");
     },
   });
 
-  // Simulated progress during commit (real backend is sync so we fake the bar)
+  // Poll batch status during importing
+  const { data: batchStatus } = useQuery({
+    queryKey: ["import-batch", batchId],
+    queryFn: () => api.get(`/import/${batchId}`).then((r) => r.data.data),
+    enabled: step === "importing" && !!batchId,
+    refetchInterval: (data: any) => {
+      if (data?.status === "COMPLETED" || data?.status === "FAILED") return false;
+      return 3000; // Poll every 3s
+    },
+  });
+
+  // Sync state when batch completes/fails
   useEffect(() => {
-    if (step !== "importing") return;
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 90) return 90;
-        return p + Math.random() * 15;
+    if (batchStatus?.status === "COMPLETED") {
+      setResult({
+        totalRows: batchStatus.totalRows,
+        successRows: batchStatus.successRows,
+        errorRows: batchStatus.errorRows,
+        skippedRows: batchStatus.skippedRows,
       });
-    }, 250);
-    return () => clearInterval(interval);
-  }, [step]);
+      setStep("done");
+      toast.success("Import completed successfully!");
+    } else if (batchStatus?.status === "FAILED") {
+      setStep("preview");
+      toast.error("Import failed in background. Check errors.");
+    }
+    
+    if (batchStatus?.status === "PROCESSING" && batchStatus.totalRows > 0) {
+      const processed = (batchStatus.successRows || 0) + (batchStatus.errorRows || 0) + (batchStatus.skippedRows || 0);
+      setProgress(Math.round((processed / batchStatus.totalRows) * 100));
+    }
+  }, [batchStatus]);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -280,11 +297,37 @@ export default function ImportPage() {
         <div className="rounded-xl bg-white p-10 shadow-sm ring-1 ring-black/5">
           <div className="mx-auto max-w-md text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 mx-auto">
-              <RotateCw size={28} className="animate-spin text-[#2E75B6]" />
+            <RotateCw size={28} className="animate-spin text-[#2E75B6]" />
+          </div>
+          <h2 className="mb-1 text-xl font-bold text-[#1F3864]">Importing Data</h2>
+          <p className="mb-4 text-sm text-gray-500">
+            {batchStatus?.status === "PROCESSING" 
+              ? `Processing row ${(batchStatus.successRows || 0) + (batchStatus.errorRows || 0) + (batchStatus.skippedRows || 0)} of ${batchStatus.totalRows}...`
+              : "Preparing to import records..."
+            }
+          </p>
+          <StripedProgress percent={Math.round(progress)} label={`${progress}% Complete`} />
+          
+          {batchStatus?.status === "PROCESSING" && (
+            <div className="mt-6 grid grid-cols-3 gap-2 border-t border-gray-100 pt-6">
+              <div className="text-center">
+                <p className="text-[10px] uppercase font-bold text-gray-400">Success</p>
+                <p className="text-lg font-bold text-[#27AE60]">{batchStatus.successRows || 0}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] uppercase font-bold text-gray-400">Failed</p>
+                <p className="text-lg font-bold text-[#EB5757]">{batchStatus.errorRows || 0}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] uppercase font-bold text-gray-400">Skipped</p>
+                <p className="text-lg font-bold text-gray-600">{batchStatus.skippedRows || 0}</p>
+              </div>
             </div>
-            <h2 className="mb-1 text-xl font-bold text-[#1F3864]">Importing Data</h2>
-            <p className="mb-6 text-sm text-gray-500">Please wait while we process your file...</p>
-            <StripedProgress percent={Math.round(progress)} label="Importing records into the database..." />
+          )}
+          
+          <div className="mt-4 rounded-lg bg-blue-50/50 p-3 text-[11px] text-[#1F3864]/70">
+            <p><strong>Note:</strong> You can safely navigate away from this page. The import will continue in the background.</p>
+          </div>
           </div>
         </div>
       )}
