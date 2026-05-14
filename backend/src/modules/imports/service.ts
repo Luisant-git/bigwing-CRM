@@ -23,6 +23,7 @@ import {
 } from "./normalizer.js";
 
 const BATCH_SIZE = 500;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Column header → CRM field mapping for auto-detect
 const TELE_HEADERS: Record<string, string> = {
@@ -255,7 +256,8 @@ export class ImportService {
     let currentPrefix = "";
 
     // Process in batches of 500 for memory safety and performance
-    for (let batchStart = 0; batchStart < parsed.length; batchStart += BATCH_SIZE) {
+    try {
+      for (let batchStart = 0; batchStart < parsed.length; batchStart += BATCH_SIZE) {
       const slice = parsed.slice(batchStart, batchStart + BATCH_SIZE);
 
       // Pre-fetch existing records for this batch to minimize individual lookups
@@ -343,25 +345,37 @@ export class ImportService {
         await importRepository.createRowErrors(rowErrors.splice(0, rowErrors.length));
       }
 
+        await importRepository.updateBatch(batchId, {
+          totalRows: parsed.length,
+          successRows,
+          errorRows,
+          skippedRows,
+        });
+
+        if (batchStart + BATCH_SIZE < parsed.length) {
+          await sleep(200);
+        }
+      }
+
+    // Bulk insert remaining errors
+    await importRepository.createRowErrors(rowErrors);
+
       await importRepository.updateBatch(batchId, {
+        status: "COMPLETED",
+        completedAt: new Date(),
         totalRows: parsed.length,
         successRows,
         errorRows,
         skippedRows,
       });
+    } catch (err: any) {
+      console.error(`[Import] Critical failure during commit for batch ${batchId}:`, err);
+      await importRepository.updateBatch(batchId, {
+        status: "FAILED",
+        completedAt: new Date(),
+      });
+      throw err;
     }
-
-    // Bulk insert remaining errors
-    await importRepository.createRowErrors(rowErrors);
-
-    await importRepository.updateBatch(batchId, {
-      status: "COMPLETED",
-      completedAt: new Date(),
-      totalRows: parsed.length,
-      successRows,
-      errorRows,
-      skippedRows,
-    });
 
     return {
       batchId: Number(batchId),
