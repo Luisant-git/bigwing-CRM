@@ -288,7 +288,7 @@ export class ImportService {
       if (missingSources.size > 0) {
         for (const name of missingSources) {
           const s = await prisma.enquirySource.upsert({
-            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: brandContext.getStore()! } },
             update: {},
             create: { name, isActive: true, displayOrder: 999 }
           });
@@ -298,7 +298,7 @@ export class ImportService {
       if (missingTypes.size > 0) {
         for (const name of missingTypes) {
           const t = await prisma.enquiryTypeLookup.upsert({
-            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: brandContext.getStore()! } },
             update: {},
             create: { name, isActive: true, displayOrder: 999 }
           });
@@ -308,7 +308,7 @@ export class ImportService {
       if (missingModels.size > 0) {
         for (const name of missingModels) {
           const m = await prisma.vehicleModel.upsert({
-            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: brandContext.getStore()! } },
             update: {},
             create: { name, isActive: true, displayOrder: 999 }
           });
@@ -318,7 +318,7 @@ export class ImportService {
       if (missingColours.size > 0) {
         for (const name of missingColours) {
           const c = await prisma.vehicleColour.upsert({
-            where: { name_brand: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: brandContext.getStore()! } },
             update: {},
             create: { name, isActive: true, displayOrder: 999 }
           });
@@ -345,7 +345,7 @@ export class ImportService {
           const [modelIdStr, name] = composite.split("|");
           const modelId = BigInt(modelIdStr);
           const v = await prisma.vehicleVariant.upsert({
-            where: { modelId_name_brand: { modelId, name, brand: brandContext.getStore()! } },
+            where: { modelId_name: { modelId, name } },
             update: {},
             create: { modelId, name, isActive: true, displayOrder: 999 }
           });
