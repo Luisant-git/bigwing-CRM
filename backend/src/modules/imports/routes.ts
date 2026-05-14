@@ -91,6 +91,12 @@ router.post(
   (req, res, next) => importController.commit(req, res, next)
 );
 
+router.post(
+  "/:id/cancel",
+  rbac(["SUPER_ADMIN", "ADMIN", "TELE_CALLER"]),
+  (req, res, next) => importController.cancel(req, res, next)
+);
+
 router.get(
   "/:id/errors.xlsx",
   rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),

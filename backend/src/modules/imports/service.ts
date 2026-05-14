@@ -275,6 +275,14 @@ export class ImportService {
       // Process batch rows sequentially for resilience (so one failure doesn't kill the batch)
       // but lookups are already optimized above.
       for (const row of slice) {
+        // Check if batch was cancelled
+        if (row.rowNum % 50 === 0) {
+          const currentBatch = await importRepository.findBatchById(batchId);
+          if (currentBatch?.status === "CANCELLED") {
+            throw new Error("IMPORT_CANCELLED");
+          }
+        }
+
         // Skip rows with critical validation errors
         if (row.errors.length > 0) {
           errorRows++;
@@ -369,6 +377,10 @@ export class ImportService {
         skippedRows,
       });
     } catch (err: any) {
+      if (err.message === "IMPORT_CANCELLED") {
+        console.log(`[Import] Batch ${batchId} was cancelled by user.`);
+        return;
+      }
       console.error(`[Import] Critical failure during commit for batch ${batchId}:`, err);
       await importRepository.updateBatch(batchId, {
         status: "FAILED",
@@ -385,6 +397,22 @@ export class ImportService {
       errorRows,
       skippedRows,
     };
+  }
+
+  async cancel(batchId: bigint) {
+    const batch = await importRepository.findBatchById(batchId);
+    if (!batch) throw new AppError(404, "BATCH_NOT_FOUND", "Import batch not found");
+    
+    if (batch.status !== "PROCESSING" && batch.status !== "PENDING") {
+      throw new AppError(400, "INVALID_STATUS", `Cannot cancel batch in ${batch.status} status`);
+    }
+
+    await importRepository.updateBatch(batchId, {
+      status: "CANCELLED",
+      completedAt: new Date(),
+    });
+
+    return { success: true };
   }
 
   async getActiveBatch() {

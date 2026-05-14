@@ -131,13 +131,24 @@ export default function ImportPage() {
     },
   });
 
+  const cancelMut = useMutation({
+    mutationFn: (id: number) => api.post(`/import/${id}/cancel`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["import-batch", batchId] });
+      toast.success("Cancellation requested. Stopping import...");
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.error?.message || "Failed to cancel import");
+    },
+  });
+
   // Poll batch status during importing
   const { data: batchStatus } = useQuery({
     queryKey: ["import-batch", batchId],
     queryFn: () => api.get(`/import/${batchId}`).then((r) => r.data.data),
     enabled: step === "importing" && !!batchId,
     refetchInterval: (data: any) => {
-      if (data?.status === "COMPLETED" || data?.status === "FAILED") return false;
+      if (data?.status === "COMPLETED" || data?.status === "FAILED" || data?.status === "CANCELLED") return false;
       return 3000; // Poll every 3s
     },
   });
@@ -156,6 +167,9 @@ export default function ImportPage() {
     } else if (batchStatus?.status === "FAILED") {
       setStep("preview");
       toast.error("Import failed in background. Check errors.");
+    } else if (batchStatus?.status === "CANCELLED") {
+      setStep("preview");
+      toast.warn("Import was cancelled.");
     }
     
     if (batchStatus?.status === "PROCESSING" && batchStatus.totalRows > 0) {
@@ -350,6 +364,18 @@ export default function ImportPage() {
           <div className="mt-4 rounded-lg bg-blue-50/50 p-3 text-[11px] text-[#1F3864]/70">
             <p><strong>Note:</strong> You can safely navigate away from this page. The import will continue in the background.</p>
           </div>
+
+          <button
+            onClick={() => {
+              if (window.confirm("Are you sure you want to cancel this import? Already imported records will remain in the database.")) {
+                cancelMut.mutate(batchId!);
+              }
+            }}
+            disabled={cancelMut.isPending}
+            className="mt-6 flex items-center justify-center gap-2 w-full rounded-lg border border-red-200 py-2.5 text-sm font-semibold text-[#EB5757] hover:bg-red-50 transition-colors disabled:opacity-50"
+          >
+            {cancelMut.isPending ? "Cancelling..." : "Cancel Import"}
+          </button>
           </div>
         </div>
       )}

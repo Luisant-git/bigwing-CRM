@@ -91,6 +91,16 @@ export class ImportController {
       next(err);
     }
   }
+
+  async cancel(req: Request, res: Response, next: NextFunction) {
+    try {
+      const batchId = BigInt(req.params.id as string);
+      const result = await importService.cancel(batchId);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const importController = new ImportController();
