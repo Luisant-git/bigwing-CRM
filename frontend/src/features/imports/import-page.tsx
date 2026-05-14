@@ -169,7 +169,7 @@ export default function ImportPage() {
       toast.error("Import failed in background. Check errors.");
     } else if (batchStatus?.status === "CANCELLED") {
       setStep("preview");
-      toast.warn("Import was cancelled.");
+      toast("Import was cancelled.", { icon: "⚠️" });
     }
     
     if (batchStatus?.status === "PROCESSING" && batchStatus.totalRows > 0) {
