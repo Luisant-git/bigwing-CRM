@@ -70,28 +70,34 @@ export class ImportRepository {
   // ─── Master data lookups (cached per import run) ──────────────
 
   async getSourceMap(): Promise<Map<string, bigint>> {
-    const sources = await prisma.enquirySource.findMany();
+    const brand = brandContext.getStore();
+    const sources = await prisma.enquirySource.findMany({ where: { brand } });
     const map = new Map<string, bigint>();
     for (const s of sources) map.set(s.name.toLowerCase(), s.id);
     return map;
   }
 
   async getEnquiryTypeMap(): Promise<Map<string, bigint>> {
-    const types = await prisma.enquiryTypeLookup.findMany();
+    const brand = brandContext.getStore();
+    const types = await prisma.enquiryTypeLookup.findMany({ where: { brand } });
     const map = new Map<string, bigint>();
     for (const t of types) map.set(t.name.toLowerCase(), t.id);
     return map;
   }
 
   async getModelMap(): Promise<Map<string, bigint>> {
-    const models = await prisma.vehicleModel.findMany();
+    const brand = brandContext.getStore();
+    const models = await prisma.vehicleModel.findMany({ where: { brand } });
     const map = new Map<string, bigint>();
     for (const m of models) map.set(m.name.toLowerCase(), m.id);
     return map;
   }
 
   async getVariantMap(): Promise<Map<string, { id: bigint; modelId: bigint }>> {
-    const variants = await prisma.vehicleVariant.findMany();
+    const brand = brandContext.getStore();
+    const variants = await prisma.vehicleVariant.findMany({ 
+      where: { model: { brand } } 
+    });
     const map = new Map<string, { id: bigint; modelId: bigint }>();
     for (const v of variants)
       map.set(`${v.modelId}:${v.name.toLowerCase()}`, {
@@ -102,7 +108,8 @@ export class ImportRepository {
   }
 
   async getColourMap(): Promise<Map<string, bigint>> {
-    const colours = await prisma.vehicleColour.findMany();
+    const brand = brandContext.getStore();
+    const colours = await prisma.vehicleColour.findMany({ where: { brand } });
     const map = new Map<string, bigint>();
     for (const c of colours) map.set(c.name.toLowerCase(), c.id);
     return map;

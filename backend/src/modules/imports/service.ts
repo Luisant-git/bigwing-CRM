@@ -288,9 +288,9 @@ export class ImportService {
       if (missingSources.size > 0) {
         for (const name of missingSources) {
           const s = await prisma.enquirySource.upsert({
-            where: { brand_name: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: batch.brand } },
             update: {},
-            create: { name, isActive: true, displayOrder: 999 }
+            create: { name, brand: batch.brand, isActive: true, displayOrder: 999 }
           });
           sourceMap.set(name.toLowerCase(), s.id);
         }
@@ -298,9 +298,9 @@ export class ImportService {
       if (missingTypes.size > 0) {
         for (const name of missingTypes) {
           const t = await prisma.enquiryTypeLookup.upsert({
-            where: { brand_name: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: batch.brand } },
             update: {},
-            create: { name, isActive: true, displayOrder: 999 }
+            create: { name, brand: batch.brand, isActive: true, displayOrder: 999 }
           });
           typeMap.set(name.toLowerCase(), t.id);
         }
@@ -308,9 +308,9 @@ export class ImportService {
       if (missingModels.size > 0) {
         for (const name of missingModels) {
           const m = await prisma.vehicleModel.upsert({
-            where: { brand_name: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: batch.brand } },
             update: {},
-            create: { name, isActive: true, displayOrder: 999 }
+            create: { name, brand: batch.brand, isActive: true, displayOrder: 999 }
           });
           modelMap.set(name.toLowerCase(), m.id);
         }
@@ -318,9 +318,9 @@ export class ImportService {
       if (missingColours.size > 0) {
         for (const name of missingColours) {
           const c = await prisma.vehicleColour.upsert({
-            where: { brand_name: { name, brand: brandContext.getStore()! } },
+            where: { brand_name: { name, brand: batch.brand } },
             update: {},
-            create: { name, isActive: true, displayOrder: 999 }
+            create: { name, brand: batch.brand, isActive: true, displayOrder: 999 }
           });
           colourMap.set(name.toLowerCase(), c.id);
         }

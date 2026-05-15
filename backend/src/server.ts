@@ -645,7 +645,7 @@ app.get("/api/docs/openapi.json", (_req, res) => {
         post: {
           tags: ["Import"],
           summary: "Upload Excel/CSV file",
-          description: "Upload a file for import. Max 25 MB. Accepts .xlsx, .xls, .csv. Returns batch ID and detected sheets.",
+          description: "Upload a file for import. Max 100 MB. Accepts .xlsx, .xls, .csv. Returns batch ID and detected sheets.",
           security: [{ bearerAuth: [] }],
           requestBody: { required: true, content: { "multipart/form-data": { schema: { type: "object", required: ["file"], properties: { file: { type: "string", format: "binary" } } } } } },
           responses: { "201": { description: "File uploaded, batch created" }, "409": { description: "Duplicate file" } },

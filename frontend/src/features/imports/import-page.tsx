@@ -11,29 +11,17 @@ import { useBrandStore } from "@/stores/brand";
 // exclusively for this account; the backend enforces the same check.
 const SENIOR_DEVELOPER_EMAIL = "seniordeveloper@bigwing.in";
 
-// The errors.xlsx route is auth-protected; a plain <a href> skips the Authorization
-// header and gets a 401. Fetch via the axios client (which injects the Bearer token
-// and handles 401→refresh) as a blob, then trigger a client-side download.
-async function downloadErrorReport(batchId: number) {
-  try {
-    const res = await api.get(`/import/${batchId}/errors.xlsx`, {
-      responseType: "blob",
-    });
-    const url = window.URL.createObjectURL(new Blob([res.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `import-errors-${batchId}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-  } catch (err: any) {
-    const msg =
-      err?.response?.data?.error?.message ??
-      err?.message ??
-      "Failed to download error report";
-    toast.error(msg);
-  }
+// Helper to handle blob downloads from auth-protected routes
+async function triggerBlobDownload(url: string, filename: string) {
+  const res = await api.get(url, { responseType: "blob" });
+  const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
 }
 
 type Step = "upload" | "preview" | "importing" | "done";
@@ -47,6 +35,20 @@ export default function ImportPage() {
   const [progress, setProgress] = useState(0);
   const [showTruncate, setShowTruncate] = useState(false);
   const [truncateInput, setTruncateInput] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const downloadErrorReport = async () => {
+    if (!batchId) return;
+    setIsDownloading(true);
+    try {
+      await triggerBlobDownload(`/import/${batchId}/errors.xlsx`, `import-errors-${batchId}.xlsx`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.error?.message ?? err?.message ?? "Failed to download error report";
+      toast.error(msg);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // Auto-restore active import on mount
   useEffect(() => {
@@ -255,16 +257,19 @@ export default function ImportPage() {
             Upload Excel, CSV or XML file
           </p>
           <p className="mb-6 text-sm text-gray-400">
-            Supports .xlsx, .xls, .csv, .xml — maximum 25 MB
+            Supports .xlsx, .xls, .csv, .xml — maximum 100 MB
           </p>
-          <label className="cursor-pointer rounded-lg bg-[#2E75B6] px-6 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-[#245f96] hover:shadow-lg transition-all">
-            {uploadMut.isPending ? "Uploading..." : "Choose File"}
-            <input type="file" accept=".xlsx,.xls,.csv,.xml" onChange={handleFile} className="hidden" disabled={uploadMut.isPending} />
+          <label className={`cursor-pointer rounded-lg px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all ${uploadMut.isPending || previewMut.isPending ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2E75B6] hover:bg-[#245f96] hover:shadow-lg'}`}>
+            {uploadMut.isPending ? "Uploading..." : previewMut.isPending ? "Analyzing..." : "Choose File"}
+            <input type="file" accept=".xlsx,.xls,.csv,.xml" onChange={handleFile} className="hidden" disabled={uploadMut.isPending || previewMut.isPending} />
           </label>
 
-          {uploadMut.isPending && (
+          {(uploadMut.isPending || previewMut.isPending) && (
             <div className="mt-6 w-full max-w-sm">
-              <StripedProgress percent={50} label="Uploading file..." />
+              <StripedProgress 
+                percent={uploadMut.isPending ? 30 : 70} 
+                label={uploadMut.isPending ? "Uploading file..." : "Analyzing data and validating rows..."} 
+              />
             </div>
           )}
         </div>
@@ -317,6 +322,17 @@ export default function ImportPage() {
 
           <div className="flex gap-3">
             <button onClick={reset} className="rounded-lg border px-5 py-2 text-sm font-medium hover:bg-gray-50">Cancel</button>
+            {preview.errorRows > 0 && (
+              <button
+                type="button"
+                onClick={downloadErrorReport}
+                disabled={isDownloading}
+                className="flex items-center gap-1.5 rounded-lg border border-[#EB5757] px-4 py-2 text-sm font-medium text-[#EB5757] hover:bg-red-50 disabled:opacity-50"
+              >
+                {isDownloading ? <RotateCw size={14} className="animate-spin" /> : <Download size={14} />}
+                Download Error Report
+              </button>
+            )}
             <button
               onClick={() => setShowConfirm(true)}
               disabled={preview.validRows === 0}
@@ -411,10 +427,12 @@ export default function ImportPage() {
             {result.errorRows > 0 && (
               <button
                 type="button"
-                onClick={() => downloadErrorReport(batchId!)}
-                className="flex items-center gap-1.5 rounded-lg border border-[#EB5757] px-4 py-2 text-sm font-medium text-[#EB5757] hover:bg-red-50"
+                onClick={downloadErrorReport}
+                disabled={isDownloading}
+                className="flex items-center gap-1.5 rounded-lg border border-[#EB5757] px-4 py-2 text-sm font-medium text-[#EB5757] hover:bg-red-50 disabled:opacity-50"
               >
-                <Download size={14} /> Download Error Report
+                {isDownloading ? <RotateCw size={14} className="animate-spin" /> : <Download size={14} />}
+                Download Error Report
               </button>
             )}
             <button onClick={reset} className="rounded-lg bg-[#2E75B6] px-6 py-2 text-sm font-semibold text-white hover:bg-[#245f96]">
