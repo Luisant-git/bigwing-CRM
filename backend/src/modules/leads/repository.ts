@@ -11,6 +11,7 @@ const listIncludes = {
   variant: { select: { id: true, name: true } },
   colour: { select: { id: true, name: true } },
   assignedUser: { select: { id: true, fullName: true } },
+  _count: { select: { followups: true } },
 } as const;
 
 export class LeadRepository {

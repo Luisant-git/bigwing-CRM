@@ -147,6 +147,7 @@ export class LeadService {
       dateTo,
       referredFromBranch,
       executiveName,
+      followupSeq,
       q,
     } = filters;
 
@@ -167,6 +168,14 @@ export class LeadService {
             ...(dateFrom && { gte: new Date(dateFrom) }),
             ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
           },
+        }] : []),
+        ...(followupSeq ? [{
+          followups: followupSeq === "gt5"
+            ? { some: { seqNo: { gt: 5 } } }
+            : {
+                some: { seqNo: parseInt(followupSeq) },
+                none: { seqNo: { gt: parseInt(followupSeq) } }
+              }
         }] : []),
         ...(q ? [{
           OR: [
@@ -397,6 +406,7 @@ export class LeadService {
       referredFromBranch,
       dateFrom,
       dateTo,
+      followupSeq,
       q,
     } = filters;
 
@@ -417,6 +427,14 @@ export class LeadService {
             ...(dateFrom && { gte: new Date(dateFrom) }),
             ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
           },
+        }] : []),
+        ...(followupSeq ? [{
+          followups: followupSeq === "gt5"
+            ? { some: { seqNo: { gt: 5 } } }
+            : {
+                some: { seqNo: parseInt(followupSeq) },
+                none: { seqNo: { gt: parseInt(followupSeq) } }
+              }
         }] : []),
         ...(q ? [{
           OR: [
@@ -483,9 +501,9 @@ export class LeadService {
         assignedTo,
         sourceId,
         modelId,
-        dateFrom,
-        dateTo,
         referredFromBranch,
+        executiveName,
+        followupSeq,
         q,
       } = filters;
 
@@ -497,13 +515,22 @@ export class LeadService {
           ...(channel ? [{ channel }] : []),
           ...(interestLevel ? [{ interestLevel }] : []),
           ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+          ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
           ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
           ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
           ...(referredFromBranch ? [{ referredFromBranch }] : []),
-          ...((dateFrom || dateTo) ? [{
+          ...(followupSeq ? [{
+            followups: followupSeq === "gt5"
+              ? { some: { seqNo: { gt: 5 } } }
+              : {
+                  some: { seqNo: parseInt(followupSeq) },
+                  none: { seqNo: { gt: parseInt(followupSeq) } }
+                }
+          }] : []),
+          ...((filters.dateFrom || filters.dateTo) ? [{
             enquiryDate: {
-              ...(dateFrom && { gte: new Date(dateFrom) }),
-              ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
+              ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
+              ...(filters.dateTo && { lte: new Date(new Date(filters.dateTo).setHours(23, 59, 59, 999)) }),
             },
           }] : []),
           ...(q ? [{
@@ -741,6 +768,7 @@ export class LeadService {
       assignedTo: l.assignedUser
         ? { id: Number(l.assignedUser.id), fullName: l.assignedUser.fullName }
         : null,
+      followupSeq: l._count?.followups ?? 0,
       stage: l.stage,
       interestLevel: l.interestLevel,
       testRideFlag: l.testRideFlag,

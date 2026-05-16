@@ -147,6 +147,7 @@ export const leadListQuerySchema = paginationSchema.extend({
   dateFrom: z.preprocess((v) => v === "" ? undefined : v, z.string().date().optional()),
   dateTo: z.preprocess((v) => v === "" ? undefined : v, z.string().date().optional()),
   referredFromBranch: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
+  followupSeq: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
 });
 
 export const customerListQuerySchema = paginationSchema;

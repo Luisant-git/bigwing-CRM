@@ -39,6 +39,7 @@ export default function LeadListPage() {
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
   const [interest, setInterest] = useState<InterestFilter>("ALL");
+  const [followupSeq, setFollowupSeq] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadingWhatsapp, setDownloadingWhatsapp] = useState(false);
@@ -55,7 +56,7 @@ export default function LeadListPage() {
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
     setPage(1);
-  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo]);
+  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo, followupSeq]);
 
   const { data: sources } = useLookup("enquiry-sources");
   const { data: models } = useLookup("vehicle-models");
@@ -73,6 +74,7 @@ export default function LeadListPage() {
   if (sourceId) params.sourceId = sourceId;
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;
+  if (followupSeq) params.followupSeq = followupSeq;
 
   const handleDownload = async () => {
     try {
@@ -135,6 +137,7 @@ export default function LeadListPage() {
   if (sourceId) countParams.sourceId = sourceId;
   if (modelId) countParams.modelId = modelId;
   if (executiveName) countParams.executiveName = executiveName;
+  if (followupSeq) countParams.followupSeq = followupSeq;
   const countQueries = useQueries({
     queries: ["HOT", "WARM", "COLD"].map((lvl) => ({
       queryKey: ["leads-count", tab, lvl, countParams],
@@ -330,28 +333,51 @@ export default function LeadListPage() {
       </div>
 
       {/* Top bar: search + filter toggle + interest chips */}
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <FilterChips
-          value={interest}
-          onChange={(v) => { setInterest(v); setPage(1); }}
-          options={[
-            { key: "ALL", label: "All" },
-            { key: "HOT", label: "🔥 Hot", color: "#EF4444", count: counts.HOT },
-            { key: "WARM", label: "🌤️ Warm", color: "#F59E0B", count: counts.WARM },
-            { key: "COLD", label: "❄️ Cold", color: "#64748B", count: counts.COLD },
-          ]}
-        />
+      <div className="mb-4 flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-6 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-sm">
+            <div className="flex items-center gap-3 pl-2 pr-4 border-r border-gray-100">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Interest</span>
+              <FilterChips
+                value={interest}
+                onChange={(v) => { setInterest(v); setPage(1); }}
+                options={[
+                  { key: "ALL", label: "All" },
+                  { key: "HOT", label: "🔥 Hot", color: "#EF4444", count: counts.HOT },
+                  { key: "WARM", label: "🌤️ Warm", color: "#F59E0B", count: counts.WARM },
+                  { key: "COLD", label: "❄️ Cold", color: "#64748B", count: counts.COLD },
+                ]}
+              />
+            </div>
+            <div className="flex items-center gap-3 pl-2 pr-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Follow-up</span>
+              <FilterChips
+                value={followupSeq}
+                onChange={(v) => { setFollowupSeq(v); setPage(1); }}
+                options={[
+                  { key: "", label: "All" },
+                  { key: "1", label: "F1", color: "#2E75B6" },
+                  { key: "2", label: "F2", color: "#2E75B6" },
+                  { key: "3", label: "F3", color: "#2E75B6" },
+                  { key: "4", label: "F4", color: "#2E75B6" },
+                  { key: "5", label: "F5", color: "#2E75B6" },
+                  { key: "gt5", label: "More than F5", color: "#6366F1" },
+                ]}
+              />
+            </div>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+              />
+            </div>
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
