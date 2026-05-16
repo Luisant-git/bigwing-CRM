@@ -6,9 +6,14 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  registerSchema,
 } from "@bigwing/shared";
 
 const router = Router();
+
+router.post("/register", validate(registerSchema), (req, res, next) =>
+  authController.register(req, res, next)
+);
 
 router.post("/login", validate(loginSchema), (req, res, next) =>
   authController.login(req, res, next)

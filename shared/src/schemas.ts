@@ -41,6 +41,13 @@ export const resetPasswordSchema = z.object({
   password: z.string().min(8).max(128),
 });
 
+export const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(128),
+  fullName: z.string().min(1).max(160),
+  role: z.nativeEnum(UserRole).default(UserRole.VIEWER),
+});
+
 // ─── User ───────────────────────────────────────────────────────
 export const createUserSchema = z.object({
   email: z.string().email(),

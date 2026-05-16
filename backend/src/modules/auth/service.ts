@@ -9,6 +9,56 @@ import type { JwtPayload } from "../../middlewares/auth.js";
 const BCRYPT_ROUNDS = 12;
 
 export class AuthService {
+  async register(data: {
+    email: string;
+    password: string;
+    fullName: string;
+    role?: string;
+  }) {
+    // Check email uniqueness
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) {
+      throw new AppError(409, "EMAIL_EXISTS", "A user with this email already exists");
+    }
+
+    // Find role (default to VIEWER if not specified)
+    const roleName = data.role || "VIEWER";
+    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    if (!role) {
+      throw new AppError(400, "INVALID_ROLE", `Role '${roleName}' does not exist`);
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
+
+    const user = await prisma.user.create({
+      data: {
+        email: data.email,
+        password: hashedPassword,
+        fullName: data.fullName,
+        isActive: true,
+        userRoles: {
+          create: { roleId: role.id },
+        },
+      },
+      include: { userRoles: { include: { role: true } } },
+    });
+
+    const roles = user.userRoles.map((ur) => ur.role.name);
+    const accessToken = this.generateAccessToken(user.id, user.email, roles);
+    const refreshToken = await this.generateRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: Number(user.id),
+        email: user.email,
+        fullName: user.fullName,
+        roles,
+      },
+    };
+  }
+
   async login(email: string, password: string) {
     const user = await prisma.user.findUnique({
       where: { email },
