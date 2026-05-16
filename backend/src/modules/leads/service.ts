@@ -563,6 +563,9 @@ export class LeadService {
     // Create Excel
     const XLSX = await import("xlsx");
     const workbook = XLSX.utils.book_new();
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
     const data = formatted.map((l) => {
       // Check for WhatsApp/Campaign format
       const isWhatsapp = String(filters?.format || "").toLowerCase() === "whatsapp";
@@ -572,6 +575,14 @@ export class LeadService {
           "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`.trim(),
           "Phone Number": l.customer?.mobile || "N/A",
         };
+      }
+
+      // Calculate overdue days
+      const nextDate = l.nextFollowupAt ? new Date(l.nextFollowupAt) : null;
+      let overdueDays = 0;
+      if (nextDate && nextDate < todayStart) {
+        const nextDateStart = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+        overdueDays = Math.round((todayStart.getTime() - nextDateStart.getTime()) / (1000 * 60 * 60 * 24));
       }
 
       const stageMap: Record<string, string> = {
@@ -615,6 +626,7 @@ export class LeadService {
           ...common,
           "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleDateString() : "None",
           "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
+          ...(view === "overdue" && { "Overdue Days": overdueDays }),
           "Remarks": l.remark || "",
         };
       }
@@ -656,6 +668,7 @@ export class LeadService {
         { wch: 20 }, // Assigned To
         { wch: 15 }, // Last Follow-up
         { wch: 15 }, // Next Follow-up
+        ...(view === "overdue" ? [{ wch: 12 }] : []), // Overdue Days
         { wch: 40 }, // Remarks (Wider for focus)
       ];
     }

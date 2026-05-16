@@ -248,6 +248,23 @@ export default function LeadListPage() {
         );
       },
     },
+    ...(tab === "overdue" ? [
+      {
+        key: "overdueDays",
+        label: "Overdue Days",
+        sortable: true,
+        render: (l: any) => {
+          if (!l.nextFollowupAt) return <span className="text-gray-300">—</span>;
+          const nextDate = new Date(l.nextFollowupAt);
+          const now = new Date();
+          const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const nextDateStart = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+          const days = Math.round((todayStart.getTime() - nextDateStart.getTime()) / (1000 * 60 * 60 * 24));
+          return <span className="font-bold text-red-600">{days} Days</span>;
+        },
+        sortValue: (l: any) => l.nextFollowupAt ? new Date(l.nextFollowupAt).getTime() : 0,
+      }
+    ] : []),
     {
       key: "enquiryDate",
       label: "Enquiry Date",

@@ -243,7 +243,7 @@ export default function LeadDetailPage() {
                   )}
                   {lead.followups?.length >= 5 && lead.stage !== "LOST" && (
                     <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#2E75B6]">
-                      Other Followups
+                      More than F5
                     </span>
                   )}
                 </div>
@@ -619,7 +619,7 @@ function FollowupsSection({
           </div>
           <ChevronRight size={14} className="text-gray-600" />
           <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Beyond F5">
-            <span className="font-bold text-[#2E75B6]">Other</span><br/><span className="text-gray-500 text-[10px]">Followups</span>
+            <span className="font-bold text-[#2E75B6]">More than</span><br/><span className="text-gray-500 text-[10px]">F5</span>
           </div>
         </div>
       </div>
