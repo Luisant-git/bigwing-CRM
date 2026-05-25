@@ -443,6 +443,35 @@ export default function LeadListPage() {
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
+          {tab === "meta" && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
+              <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
+                <select
+                  value={sourceId}
+                  onChange={(e) => { setSourceId(e.target.value); setPage(1); }}
+                  className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
+                >
+                  <option value="">All forms</option>
+                  {(sources ?? [])
+                    .filter((s: any) => s.name.startsWith("FB:"))
+                    .map((s: any) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name.replace("FB: ", "").replace("FB:", "")}
+                      </option>
+                    ))}
+                </select>
+                {sourceId && (
+                  <button 
+                    onClick={() => { setSourceId(""); setPage(1); }}
+                    className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+                  >
+                    <X size={12} strokeWidth={2.5} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Date Filter</span>
             <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
