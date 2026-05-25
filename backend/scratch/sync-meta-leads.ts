@@ -80,7 +80,7 @@ async function syncLeads() {
                         // We embed the Meta Lead ID in the remark, so we never import the exact same lead twice!
                         const remarkIdentifier = `Historical Meta Lead ID: ${lead.id}`;
                         const alreadyImported = await prisma.lead.findFirst({
-                            where: { remark: { contains: lead.id } }
+                            where: { remark: { contains: lead.id }, isDeleted: false }
                         });
 
                         if (alreadyImported) {
@@ -145,7 +145,7 @@ async function syncLeads() {
 
                         // --- Check if Customer already exists by mobile ---
                         const existingCustomer = await prisma.customer.findFirst({
-                            where: { mobile }
+                            where: { mobile, isDeleted: false }
                         });
 
                         // --- Create Lead Payload ---
