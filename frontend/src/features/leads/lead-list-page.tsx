@@ -4,10 +4,11 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
-  Download, Loader2, MessageCircle
+  Download, Loader2, MessageCircle, Trash2
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
@@ -44,6 +45,8 @@ export default function LeadListPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadingWhatsapp, setDownloadingWhatsapp] = useState(false);
+  const [isTruncating, setIsTruncating] = useState(false);
+  const currentUser = useAuthStore((s) => s.user);
 
   // advanced filters
   const [stage, setStage] = useState("");
@@ -117,6 +120,20 @@ export default function LeadListPage() {
       console.error("WhatsApp export failed", err);
     } finally {
       setDownloadingWhatsapp(false);
+    }
+  };
+
+  const handleTruncateMeta = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL Meta Leads? This cannot be undone!")) return;
+    try {
+      setIsTruncating(true);
+      await api.delete("/leads/meta/truncate");
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to truncate", err);
+      alert("Failed to truncate leads");
+    } finally {
+      setIsTruncating(false);
     }
   };
 
@@ -290,6 +307,16 @@ export default function LeadListPage() {
           <p className="text-[12px] text-gray-400">Track and manage all sales enquiries</p>
         </div>
         <div className="flex items-center gap-2">
+          {tab === "meta" && currentUser?.email === "seniordeveloper@bigwing.in" && (
+            <button
+              onClick={handleTruncateMeta}
+              disabled={isTruncating}
+              className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-100 disabled:opacity-50"
+            >
+              {isTruncating ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 
+              Truncate Meta
+            </button>
+          )}
           <Link
             to="/leads/new"
             className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"

@@ -190,6 +190,16 @@ async getByPhoneNumber(req: Request, res: Response, next: NextFunction) {
       next(err);
     }
   }
+
+  async truncateMeta(req: Request, res: Response, next: NextFunction) {
+    try {
+      const deletedBy = BigInt(req.user!.userId);
+      const result = await leadService.truncateMeta(deletedBy);
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const leadController = new LeadController();

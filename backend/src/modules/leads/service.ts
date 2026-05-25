@@ -848,6 +848,16 @@ async getByPhoneNumber(phoneNo: string) {
         })) ?? [],
     };
   }
+
+  async truncateMeta(deletedBy: bigint) {
+    const brand = brandContext.getStore() || "BIGWING";
+    const result = await prisma.lead.updateMany({
+      where: { channel: "SOCIAL", brand },
+      data: { isDeleted: true, updatedBy: deletedBy, rowVersion: { increment: 1 } },
+    });
+    auditService.log({ userId: deletedBy, entityType: "lead", action: "TRUNCATE_META" });
+    return { message: `Truncated ${result.count} Meta leads` };
+  }
 }
 
 export const leadService = new LeadService();
