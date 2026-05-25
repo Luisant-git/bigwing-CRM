@@ -140,7 +140,10 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           if (extractedModelName) {
             const cleanExtracted = extractedModelName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
             const models = await prisma.vehicleModel.findMany({ where: { isActive: true } });
-            const matchedModel = models.find(m => m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === cleanExtracted || m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().includes(cleanExtracted));
+            const matchedModel = models.find(m => {
+                const cleanModel = m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                return cleanExtracted === cleanModel || cleanExtracted.includes(cleanModel);
+            });
             if (matchedModel) {
               modelId = matchedModel.id;
             }
