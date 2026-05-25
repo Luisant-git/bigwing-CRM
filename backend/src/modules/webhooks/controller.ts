@@ -58,7 +58,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             continue;
           }
 
-          const leadData = await response.json();
+          const leadData: any = await response.json();
           logger.info(`Received Meta Lead: ${leadgenId}`);
 
           // Extract fields (Facebook usually sends field_data array)
