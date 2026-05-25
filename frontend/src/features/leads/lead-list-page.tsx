@@ -66,12 +66,7 @@ export default function LeadListPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
-  const params = {
-    page, pageSize, q: search, stage, channel: channel, 
-    sourceId, modelId, interestLevel, assignedTo, executiveName, dateFrom, dateTo,
-    referredFromBranch
-  };
-  
+
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
     setPage(1);
@@ -95,6 +90,7 @@ export default function LeadListPage() {
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;
   if (followupSeq) params.followupSeq = followupSeq;
+  if (referredFromBranch) params.referredFromBranch = referredFromBranch;
 
   const handleDownload = async () => {
     try {
