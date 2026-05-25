@@ -7,7 +7,7 @@ import {
   Download, Loader2, MessageCircle, Trash2
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -66,6 +66,12 @@ export default function LeadListPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const params = {
+    page, pageSize, q: search, stage, channel: channel, 
+    sourceId, modelId, interestLevel, assignedTo, executiveName, dateFrom, dateTo,
+    referredFromBranch
+  };
+  
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
     setPage(1);
@@ -89,7 +95,6 @@ export default function LeadListPage() {
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;
   if (followupSeq) params.followupSeq = followupSeq;
-  if (referredFromBranch) params.referredFromBranch = referredFromBranch;
 
   const handleDownload = async () => {
     try {
@@ -301,7 +306,7 @@ export default function LeadListPage() {
       key: "enquiryDate",
       label: "Enquiry Date",
       sortable: true,
-      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{formatDateTime(l.enquiryDate)}</span>,
+      render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
       sortValue: (l: any) => l.enquiryDate,
     },
   ];
@@ -453,7 +458,7 @@ export default function LeadListPage() {
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
-          {tab === "meta" && metaForms && metaForms.length > 0 && (
+          {tab === "meta" && (
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
               <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
@@ -463,7 +468,7 @@ export default function LeadListPage() {
                   className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
                 >
                   <option value="">All forms</option>
-                  {metaForms.map((formName: string) => (
+                  {(metaForms ?? []).map((formName: string) => (
                     <option key={formName} value={formName}>
                       {formName}
                     </option>
