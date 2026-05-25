@@ -90,8 +90,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             } else if (fieldName === "email" || fieldName.includes("email")) {
                 email = value;
             } else {
-                // Handle custom questions from the lead form
-                if (fieldName.includes("motorcycle") || fieldName.includes("interested in") || fieldName.includes("bike")) {
+                if (fieldName.includes("motorcycle") || fieldName.includes("interested in") || fieldName.includes("bike") || fieldName.includes("model")) {
                     extractedModelName = value;
                 }
                 if (fieldName.includes("bangalore") && value.toLowerCase() === "yes") {
