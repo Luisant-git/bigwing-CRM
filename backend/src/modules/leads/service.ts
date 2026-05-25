@@ -216,6 +216,18 @@ export class LeadService {
     return this.formatLeadDetail(lead);
   }
 
+  
+async getByPhoneNumber(phoneNo: string) {
+  const leads = await leadRepository.findByCustomerPhone(phoneNo);
+
+  if (!leads || leads.length === 0) {
+    throw new AppError(404, "LEADS_NOT_FOUND", "No leads found for this phone number");
+  }
+
+  return leads.map((lead) => this.formatLeadDetail(lead));
+}
+
+
   async update(id: bigint, data: any, updatedBy?: bigint) {
     const existing = await leadRepository.findById(id);
     if (!existing || existing.isDeleted) {

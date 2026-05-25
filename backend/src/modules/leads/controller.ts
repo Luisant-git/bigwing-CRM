@@ -30,6 +30,23 @@ export class LeadController {
     }
   }
 
+
+  async getByPhoneNumber(req: Request, res: Response, next: NextFunction) {
+    try {
+      const phoneNo = req.params.phoneNo;
+
+      const leads = await leadService.getByPhoneNumber(phoneNo);
+
+      res.json({
+        success: true,
+        data: leads,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+
   async update(req: Request, res: Response, next: NextFunction) {
     try {
       const updatedBy = req.user ? BigInt(req.user.userId) : undefined;

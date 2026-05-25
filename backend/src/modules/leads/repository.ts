@@ -71,6 +71,29 @@ export class LeadRepository {
     });
   }
 
+  
+async findByCustomerPhone(phoneNo: string) {
+  return prisma.lead.findMany({
+    where: {
+      isDeleted: false,
+      customer: {
+        contactNo: phoneNo,
+      },
+    },
+    include: {
+      customer: true,
+      model: true,
+      variant: true,
+      source: true,
+      enquiryType: true,
+      assignedUser: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
+
   async getLastEnquiryNoForMonth(prefix: string) {
     const brand = brandContext.getStore() || "BIGWING";
     const lead = await prisma.lead.findFirst({
@@ -81,5 +104,6 @@ export class LeadRepository {
     return lead?.enquiryNo;
   }
 }
+
 
 export const leadRepository = new LeadRepository();
