@@ -40,7 +40,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
   try {
     for (const entry of body.entry) {
       for (const change of entry.changes) {
-        if (change.value.item === "leadgen") {
+        if (change.field === "leadgen") {
           const leadgenId = change.value.leadgen_id;
           
           if (!PAGE_ACCESS_TOKEN) {

@@ -26,6 +26,7 @@ import { webhookRoutes } from "./modules/webhooks/routes.js";
 setBrandGetter(() => brandContext.getStore());
 
 const app = express();
+app.set("trust proxy", 1);
 
 
 // ─── Global middleware ──────────────────────────────────────────
