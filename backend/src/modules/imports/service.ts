@@ -139,7 +139,6 @@ const WALKIN_HEADERS: Record<string, string> = {
   "type": "vehicleType",
   "real next followup": "realNextFollowup",
   "real next follow up": "realNextFollowup",
-  "enq type": "enquiryType",
   "customer type": "customerType",
   "customer category": "accountType",
   "account type": "accountType",
