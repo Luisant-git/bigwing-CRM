@@ -20,6 +20,11 @@ const router = Router();
 // Schema for follow-up view queries (same as lead list)
 const followupViewQuerySchema = leadListQuerySchema;
 
+router.get(
+  "/phone/:phoneNo",
+  (req, res, next) => leadController.getByPhoneNumber(req, res, next)
+);
+
 router.use(authMiddleware);
 
 router.get(
@@ -86,10 +91,7 @@ router.post(
   (req, res, next) => leadController.create(req, res, next)
 );
 
-router.get(
-  "/phone/:phoneNo",
-  (req, res, next) => leadController.getByPhoneNumber(req, res, next)
-);
+
 
 router.get(
   "/:id",
