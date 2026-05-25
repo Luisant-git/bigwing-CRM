@@ -120,13 +120,13 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
               logger.error("Failed to fetch form name", e);
           }
 
-          let sourceName = `FB: ${formName}`;
+          // 1. Get or create a Source for 'Facebook'
           let source = await prisma.enquirySource.findFirst({
-            where: { name: { equals: sourceName, mode: "insensitive" } }
+            where: { name: { contains: "Facebook", mode: "insensitive" } }
           });
           if (!source) {
             source = await prisma.enquirySource.create({
-                data: { name: sourceName, isActive: true }
+                data: { name: "Facebook Ads", isActive: true }
             });
           }
 
@@ -138,11 +138,11 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           // 3. Resolve Model if provided
           let modelId;
           if (extractedModelName) {
-            const model = await prisma.vehicleModel.findFirst({
-              where: { name: { contains: extractedModelName, mode: "insensitive" } }
-            });
-            if (model) {
-              modelId = model.id;
+            const cleanExtracted = extractedModelName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            const models = await prisma.vehicleModel.findMany({ where: { isActive: true } });
+            const matchedModel = models.find(m => m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === cleanExtracted || m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().includes(cleanExtracted));
+            if (matchedModel) {
+              modelId = matchedModel.id;
             }
           }
 
@@ -153,13 +153,14 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
 
           // 5. Create lead
           const leadPayload: any = {
-            channel: "SOCIAL",
-            sourceId: source.id,
-            modelId,
-            enquiryTypeId: enquiryType?.id || 1, // fallback to 1 if empty
-            enquiryDate: new Date(leadData.created_time || Date.now()),
-            remark: "Generated from Facebook Lead Ads."
-          };
+              channel: "SOCIAL",
+              sourceId: source.id,
+              modelId,
+              enquiryTypeId: enquiryType?.id || 1,
+              enquiryDate: new Date(leadData.created_time || Date.now()),
+              remark: "Generated from Facebook Lead Ads.",
+              referredFromBranch: formName
+            };
 
           if (existingCustomer) {
             leadPayload.customerId = Number(existingCustomer.id);

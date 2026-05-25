@@ -41,6 +41,16 @@ async function syncLeads() {
     let skipped = 0;
 
     await brandContext.run("BIGWING", async () => {
+        // 1. Get or create a Source for 'Facebook'
+        let source = await prisma.enquirySource.findFirst({
+            where: { name: { contains: "Facebook", mode: "insensitive" } }
+        });
+        if (!source) {
+            source = await prisma.enquirySource.create({
+                data: { name: "Facebook Ads", isActive: true }
+            });
+        }
+
         // 2. Get default enquiry type
         let enquiryType = await prisma.enquiryTypeLookup.findFirst({
             where: { isActive: true }
@@ -48,17 +58,6 @@ async function syncLeads() {
 
         for (const form of forms) {
             console.log(`\n▶️ Processing Form: ${form.name} (ID: ${form.id})`);
-
-            // 1. Get or create a Source for this specific Form
-            let sourceName = `FB: ${form.name}`;
-            let source = await prisma.enquirySource.findFirst({
-                where: { name: { equals: sourceName, mode: "insensitive" } }
-            });
-            if (!source) {
-                source = await prisma.enquirySource.create({
-                    data: { name: sourceName, isActive: true }
-                });
-            }
             
             let url = `https://graph.facebook.com/v19.0/${form.id}/leads?access_token=${PAGE_ACCESS_TOKEN}&limit=50`;
 
@@ -136,11 +135,11 @@ async function syncLeads() {
                         // --- Resolve Model ---
                         let modelId;
                         if (extractedModelName) {
-                            const model = await prisma.vehicleModel.findFirst({
-                                where: { name: { contains: extractedModelName, mode: "insensitive" } }
-                            });
-                            if (model) {
-                                modelId = model.id;
+                            const cleanExtracted = extractedModelName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                            const models = await prisma.vehicleModel.findMany({ where: { isActive: true } });
+                            const matchedModel = models.find(m => m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() === cleanExtracted || m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().includes(cleanExtracted));
+                            if (matchedModel) {
+                                modelId = matchedModel.id;
                             }
                         }
 
@@ -156,7 +155,8 @@ async function syncLeads() {
                             modelId,
                             enquiryTypeId: enquiryType?.id || 1,
                             enquiryDate: new Date(lead.created_time || Date.now()),
-                            remark: remarkIdentifier
+                            remark: remarkIdentifier,
+                            referredFromBranch: form.name
                         };
 
                         if (existingCustomer) {

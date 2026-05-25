@@ -858,6 +858,16 @@ async getByPhoneNumber(phoneNo: string) {
     auditService.log({ userId: deletedBy, entityType: "lead", entityId: BigInt(0), action: "DELETE" });
     return { message: `Truncated ${result.count} Meta leads` };
   }
+
+  async getMetaForms() {
+    const brand = brandContext.getStore() || "BIGWING";
+    const leads = await prisma.lead.findMany({
+      where: { channel: "SOCIAL", brand, referredFromBranch: { not: null } },
+      select: { referredFromBranch: true },
+      distinct: ['referredFromBranch']
+    });
+    return leads.map(l => l.referredFromBranch).filter(Boolean);
+  }
 }
 
 export const leadService = new LeadService();

@@ -7,7 +7,7 @@ import {
   Download, Loader2, MessageCircle, Trash2
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -48,12 +48,21 @@ export default function LeadListPage() {
   const [isTruncating, setIsTruncating] = useState(false);
   const currentUser = useAuthStore((s) => s.user);
 
+  const { data: metaForms } = useQuery({
+    queryKey: ["meta-forms"],
+    queryFn: () => api.get("/leads/meta/forms").then(r => r.data.data),
+    enabled: tab === "meta",
+  });
+
   // advanced filters
   const [stage, setStage] = useState("");
   const [channel, setChannel] = useState("");
+  const [interestLevel, setInterestLevel] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [executiveName, setExecutiveName] = useState("");
+  const [referredFromBranch, setReferredFromBranch] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [modelId, setModelId] = useState("");
-  const [executiveName, setExecutiveName] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -80,6 +89,7 @@ export default function LeadListPage() {
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;
   if (followupSeq) params.followupSeq = followupSeq;
+  if (referredFromBranch) params.referredFromBranch = referredFromBranch;
 
   const handleDownload = async () => {
     try {
@@ -173,10 +183,10 @@ export default function LeadListPage() {
     COLD: countQueries[2].data ?? 0,
   };
 
-  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo;
+  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo || referredFromBranch;
   const clearFilters = () => {
     setStage(""); setChannel(""); setSourceId("");
-    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo("");
+    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo(""); setReferredFromBranch("");
   };
 
   // ─── Column definitions ────────────────────────────────────
@@ -291,7 +301,7 @@ export default function LeadListPage() {
       key: "enquiryDate",
       label: "Enquiry Date",
       sortable: true,
-      render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
+      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{formatDateTime(l.enquiryDate)}</span>,
       sortValue: (l: any) => l.enquiryDate,
     },
   ];
@@ -443,27 +453,25 @@ export default function LeadListPage() {
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
-          {tab === "meta" && (
+          {tab === "meta" && metaForms && metaForms.length > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
               <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
                 <select
-                  value={sourceId}
-                  onChange={(e) => { setSourceId(e.target.value); setPage(1); }}
+                  value={referredFromBranch}
+                  onChange={(e) => { setReferredFromBranch(e.target.value); setPage(1); }}
                   className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
                 >
                   <option value="">All forms</option>
-                  {(sources ?? [])
-                    .filter((s: any) => s.name.startsWith("FB:"))
-                    .map((s: any) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name.replace("FB: ", "").replace("FB:", "")}
-                      </option>
-                    ))}
+                  {metaForms.map((formName: string) => (
+                    <option key={formName} value={formName}>
+                      {formName}
+                    </option>
+                  ))}
                 </select>
-                {sourceId && (
+                {referredFromBranch && (
                   <button 
-                    onClick={() => { setSourceId(""); setPage(1); }}
+                    onClick={() => { setReferredFromBranch(""); setPage(1); }}
                     className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
                   >
                     <X size={12} strokeWidth={2.5} />

@@ -138,4 +138,10 @@ router.delete(
   (req, res, next) => leadController.truncateMeta(req, res, next)
 );
 
+router.get(
+  "/meta/forms",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
+  (req, res, next) => leadController.getMetaForms(req, res, next)
+);
+
 export { router as leadRoutes };

@@ -200,6 +200,14 @@ async getByPhoneNumber(req: Request, res: Response, next: NextFunction) {
       next(err);
     }
   }
+  async getMetaForms(req: Request, res: Response, next: NextFunction) {
+    try {
+      const forms = await leadService.getMetaForms();
+      res.json({ success: true, data: forms });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const leadController = new LeadController();
