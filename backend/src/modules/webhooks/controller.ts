@@ -134,22 +134,34 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             }
           }
 
-          // 4. Create lead
-          await leadService.create({
+          // 4. Check if customer already exists
+          const existingCustomer = await prisma.customer.findFirst({
+            where: { mobile }
+          });
+
+          // 5. Create lead
+          const leadPayload: any = {
             channel: "SOCIAL",
             sourceId: source.id,
             modelId,
             enquiryTypeId: enquiryType?.id || 1, // fallback to 1 if empty
             enquiryDate: new Date(leadData.created_time || Date.now()),
-            customer: {
+            remark: "Generated from Facebook Lead Ads."
+          };
+
+          if (existingCustomer) {
+            leadPayload.customerId = Number(existingCustomer.id);
+          } else {
+            leadPayload.customer = {
               firstName,
               lastName,
               mobile,
               email,
               ...(location && { location })
-            },
-            remark: "Generated from Facebook Lead Ads."
-          });
+            };
+          }
+
+          await leadService.create(leadPayload);
         }
       }
     }
