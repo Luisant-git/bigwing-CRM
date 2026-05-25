@@ -855,7 +855,7 @@ async getByPhoneNumber(phoneNo: string) {
       where: { channel: "SOCIAL", brand },
       data: { isDeleted: true, updatedBy: deletedBy, rowVersion: { increment: 1 } },
     });
-    auditService.log({ userId: deletedBy, entityType: "lead", action: "TRUNCATE_META" });
+    auditService.log({ userId: deletedBy, entityType: "lead", entityId: BigInt(0), action: "DELETE" });
     return { message: `Truncated ${result.count} Meta leads` };
   }
 }
