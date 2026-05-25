@@ -62,12 +62,12 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           logger.info(`Received Meta Lead: ${leadgenId}`);
 
           // Extract fields (Facebook usually sends field_data array)
-          let firstName = "Facebook";
-          let lastName = "Lead";
+          let firstName = "";
+          let lastName = "";
           let mobile = "";
           let email = "";
+          let location = "";
           let extractedModelName = "";
-          let extraRemarks: string[] = [];
 
           for (const field of leadData.field_data || []) {
             const value = field.values[0] || "";
@@ -94,9 +94,13 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                 if (fieldName.includes("motorcycle") || fieldName.includes("interested in") || fieldName.includes("bike")) {
                     extractedModelName = value;
                 }
-                extraRemarks.push(`${field.name}: ${value}`);
+                if (fieldName.includes("bangalore") && value.toLowerCase() === "yes") {
+                    location = "Bangalore";
+                }
             }
           }
+
+          if (!firstName) firstName = "Facebook";
 
           if (!mobile) {
             logger.warn("Meta lead did not contain a valid phone number. Skipping.");
@@ -131,8 +135,6 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           }
 
           // 4. Create lead
-          const remarkText = `Generated from Facebook Lead Ads.\n\nForm Data:\n${extraRemarks.join("\n")}`;
-
           await leadService.create({
             channel: "SOCIAL",
             sourceId: source.id,
@@ -143,9 +145,10 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
               firstName,
               lastName,
               mobile,
-              email
+              email,
+              ...(location && { location })
             },
-            remark: remarkText
+            remark: "Generated from Facebook Lead Ads."
           });
         }
       }
