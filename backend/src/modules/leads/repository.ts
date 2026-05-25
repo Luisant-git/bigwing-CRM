@@ -21,7 +21,7 @@ export class LeadRepository {
       where: { ...params.where, brand },
       ...(params.skip !== undefined && { skip: params.skip }),
       ...(params.take !== undefined && { take: params.take }),
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ enquiryDate: "desc" }, { createdAt: "desc" }],
       include: listIncludes,
     });
   }

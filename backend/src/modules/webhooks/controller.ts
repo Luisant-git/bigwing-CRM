@@ -42,6 +42,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
       for (const change of entry.changes) {
         if (change.field === "leadgen") {
           const leadgenId = change.value.leadgen_id;
+          const formId = change.value.form_id;
           
           if (!PAGE_ACCESS_TOKEN) {
             logger.error("META_PAGE_ACCESS_TOKEN is not configured");
@@ -107,13 +108,25 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           }
 
           // Prepare payload for CRM
-          // 1. Get or create a Source for 'Facebook'
+          // 1. Fetch Form Name from Meta to use as Source
+          let formName = formId;
+          try {
+              const formResponse = await fetch(`https://graph.facebook.com/v19.0/${formId}?access_token=${PAGE_ACCESS_TOKEN}`);
+              const formData: any = await formResponse.json();
+              if (formData && formData.name) {
+                  formName = formData.name;
+              }
+          } catch (e) {
+              logger.error("Failed to fetch form name", e);
+          }
+
+          let sourceName = `FB: ${formName}`;
           let source = await prisma.enquirySource.findFirst({
-            where: { name: { contains: "Facebook", mode: "insensitive" } }
+            where: { name: { equals: sourceName, mode: "insensitive" } }
           });
           if (!source) {
             source = await prisma.enquirySource.create({
-                data: { name: "Facebook Ads", isActive: true }
+                data: { name: sourceName, isActive: true }
             });
           }
 
