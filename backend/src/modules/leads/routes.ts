@@ -88,7 +88,6 @@ router.post(
 
 router.get(
   "/phone/:phoneNo",
-  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
   (req, res, next) => leadController.getByPhoneNumber(req, res, next)
 );
 

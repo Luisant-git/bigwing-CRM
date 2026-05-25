@@ -77,11 +77,27 @@ async findByCustomerPhone(phoneNo: string) {
     where: {
       isDeleted: false,
       customer: {
-        contactNo: phoneNo,
+        OR: [
+          { mobile: phoneNo },
+          { altMobile: phoneNo },
+          {
+            contacts: {
+              some: {
+                value: phoneNo,
+                // optional filter if you store types
+                // type: "PHONE",
+              },
+            },
+          },
+        ],
       },
     },
     include: {
-      customer: true,
+      customer: {
+        include: {
+          contacts: true,
+        },
+      },
       model: true,
       variant: true,
       source: true,
