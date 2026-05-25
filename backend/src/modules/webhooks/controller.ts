@@ -66,6 +66,8 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           let lastName = "Lead";
           let mobile = "";
           let email = "";
+          let extractedModelName = "";
+          let extraRemarks: string[] = [];
 
           for (const field of leadData.field_data || []) {
             const value = field.values[0] || "";
@@ -85,8 +87,14 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
                 // Keep only digits, limit to last 10
                 const digits = value.replace(/\D/g, "");
                 mobile = digits.slice(-10);
-            } else if (fieldName === "email") {
+            } else if (fieldName === "email" || fieldName.includes("email")) {
                 email = value;
+            } else {
+                // Handle custom questions from the lead form
+                if (fieldName.includes("motorcycle") || fieldName.includes("interested in") || fieldName.includes("bike")) {
+                    extractedModelName = value;
+                }
+                extraRemarks.push(`${field.name}: ${value}`);
             }
           }
 
@@ -111,10 +119,24 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             where: { isActive: true }
           });
 
-          // 3. Create lead
+          // 3. Resolve Model if provided
+          let modelId;
+          if (extractedModelName) {
+            const model = await prisma.vehicleModel.findFirst({
+              where: { name: { contains: extractedModelName, mode: "insensitive" } }
+            });
+            if (model) {
+              modelId = model.id;
+            }
+          }
+
+          // 4. Create lead
+          const remarkText = `Generated from Facebook Lead Ads.\n\nForm Data:\n${extraRemarks.join("\n")}`;
+
           await leadService.create({
             channel: "SOCIAL",
             sourceId: source.id,
+            modelId,
             enquiryTypeId: enquiryType?.id || 1, // fallback to 1 if empty
             enquiryDate: new Date(leadData.created_time || Date.now()),
             customer: {
@@ -123,7 +145,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
               mobile,
               email
             },
-            remark: `Generated from Facebook Lead Ads. Lead ID: ${leadgenId}`
+            remark: remarkText
           });
         }
       }
