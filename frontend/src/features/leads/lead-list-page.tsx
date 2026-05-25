@@ -12,7 +12,7 @@ import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
 
-type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked";
+type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked" | "meta";
 type InterestFilter = "ALL" | "HOT" | "WARM" | "COLD";
 
 const TABS: { key: Tab; label: string; endpoint: string }[] = [
@@ -23,6 +23,7 @@ const TABS: { key: Tab; label: string; endpoint: string }[] = [
   { key: "upcoming", label: "Upcoming", endpoint: "/leads/upcoming" },
   { key: "no-followup", label: "No Follow-up", endpoint: "/leads/no-followup" },
   { key: "booked", label: "Booked", endpoint: "/leads/booked" },
+  { key: "meta", label: "Meta Leads", endpoint: "/leads" },
 ];
 
 export default function LeadListPage() {
@@ -70,6 +71,7 @@ export default function LeadListPage() {
   if (dateFrom) params.dateFrom = dateFrom;
   if (dateTo) params.dateTo = dateTo;
   if (stage) params.stage = stage;
+  if (tab === "meta") params.channel = "SOCIAL";
   if (channel) params.channel = channel;
   if (sourceId) params.sourceId = sourceId;
   if (modelId) params.modelId = modelId;

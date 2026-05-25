@@ -20,6 +20,7 @@ import { notificationRoutes } from "./modules/notifications/routes.js";
 import { taskRoutes } from "./modules/tasks/routes.js";
 import { profileRoutes } from "./modules/profile/routes.js";
 import { adminRoutes } from "./modules/admin/routes.js";
+import { webhookRoutes } from "./modules/webhooks/routes.js";
 
 // Connect DB to brand context
 setBrandGetter(() => brandContext.getStore());
@@ -86,6 +87,7 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/webhooks", webhookRoutes);
 
 // Serve uploaded files (avatars)
 app.use("/uploads", express.static("uploads"));
