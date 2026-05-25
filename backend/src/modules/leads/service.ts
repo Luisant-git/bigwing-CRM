@@ -472,6 +472,8 @@ async getByPhoneNumber(phoneNo: string) {
         conditions.push({ nextFollowupAt: { gte: todayEnd } });
         break;
       case "no-followup":
+        conditions.push({ nextFollowupAt: null });
+        break;
       case "booked":
       case "active":
         // Stage filter handled above

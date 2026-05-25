@@ -27,19 +27,27 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Column header → CRM field mapping for auto-detect
 const TELE_HEADERS: Record<string, string> = {
+  "enquiry number": "enquiryNo",
+  "enquiry no": "enquiryNo",
+  "enquiry name": "enquiryNo",
   "enquiry date": "enquiryDate",
   "enq date": "enquiryDate",
   "enquiry created date": "enquiryDate",
   "enq created date": "enquiryDate",
   "created date": "enquiryDate",
   "customer name": "customerName",
+  "customer first name": "firstName",
+  "customer last name": "lastName",
   "mobile number": "mobile",
+  "mobile no.": "mobile",
+  "mobile no": "mobile",
   "alternate mobile number": "altMobile",
   "exchange": "exchangeFlag",
   "enquiry type": "enquiryType",
   "type of enquiry": "enquiryType",
-  "type": "enquiryType",
   "enq type": "enquiryType",
+  "activity type": "activityType",
+  "type": "vehicleType",
   "location": "location",
   "channel": "channel",
   "source of enquiry": "source",
@@ -55,6 +63,7 @@ const TELE_HEADERS: Record<string, string> = {
   "colour": "colourName",
   "executive assigned": "executive",
   "dealer sales executive name": "executive",
+  "dealer sales executive id": "executiveId",
   "sales executive": "executive",
   "executive": "executive",
   "next follow up date": "nextFollowupAt",
@@ -66,17 +75,23 @@ const TELE_HEADERS: Record<string, string> = {
   "enquiry stage": "stage",
   "enquiry sales stage": "stage",
   "sales stage": "stage",
-  "status": "stage",
-  "current status": "stage",
-  "enquiry status": "stage",
   "stage": "stage",
   "interest level": "interestLevel",
   "enquiry closing stage": "closureReason",
+  "purchase type": "purchaseType",
+  "enquiry classification": "interestLevel",
+  "follow up id": "followupId",
+  "follow up remark": "followupRemark",
+  "follow up remarks": "followupRemark",
+  "network type": "referredFromBranch",
+  "enquiry remark": "remark",
+  "closure remarks": "closureRemark",
 };
 
 const WALKIN_HEADERS: Record<string, string> = {
   "enquiry number": "enquiryNo",
   "enquiry no": "enquiryNo",
+  "enquiry name": "enquiryNo",
   "model name": "modelName",
   "model interested": "modelName",
   "model variant": "variantName",
@@ -105,14 +120,12 @@ const WALKIN_HEADERS: Record<string, string> = {
   "enquiry sales stage": "stage",
   "enquiry stage": "stage",
   "sales stage": "stage",
-  "status": "stage",
-  "current status": "stage",
-  "enquiry status": "stage",
   "stage": "stage",
   "enquiry source": "source",
   "source of enquiry": "source",
   "source": "source",
   "dealer sales executive name": "executive",
+  "dealer sales executive id": "executiveId",
   "executive assigned": "executive",
   "sales executive": "executive",
   "executive": "executive",
@@ -121,7 +134,9 @@ const WALKIN_HEADERS: Record<string, string> = {
   "enquiry classification": "interestLevel",
   "enquiry type": "enquiryType",
   "type of enquiry": "enquiryType",
-  "type": "enquiryType",
+  "enq type": "enquiryType",
+  "activity type": "activityType",
+  "type": "vehicleType",
   "real next followup": "realNextFollowup",
   "real next follow up": "realNextFollowup",
   "enq type": "enquiryType",
@@ -540,18 +555,7 @@ export class ImportService {
     const batch = await importRepository.findBatchById(batchId);
     if (!batch) throw new AppError(404, "BATCH_NOT_FOUND", "Import batch not found");
 
-    const errors = await importRepository.getRowErrors(batchId);
-    if (errors.length === 0) {
-      throw new AppError(400, "NO_ERRORS", "No errors found for this batch");
-    }
-
-    // Group errors by row number
-    const errorMap = new Map<number, { column?: string; error: string }[]>();
-    errors.forEach((e) => {
-      const existing = errorMap.get(e.rowNumber) || [];
-      existing.push({ column: e.column ?? undefined, error: e.error });
-      errorMap.set(e.rowNumber, existing);
-    });
+    let dbErrors = await importRepository.getRowErrors(batchId);
 
     const filePath = `uploads/${batch.fileName}`;
     let allRows: ParsedRow[] = [];
@@ -560,6 +564,36 @@ export class ImportService {
     } catch (err) {
       console.error("[Import] Failed to re-parse file for error report:", err);
     }
+
+    // If no DB errors exist yet (e.g. during Preview phase), extract them from parseFile
+    if (dbErrors.length === 0 && allRows.length > 0) {
+      allRows.forEach(r => {
+        r.errors.forEach(e => {
+          dbErrors.push({
+            id: BigInt(0),
+            batchId,
+            rowNumber: r.rowNum,
+            column: e.column,
+            value: e.value,
+            error: e.error,
+            createdAt: new Date()
+          } as any);
+        });
+      });
+    }
+
+    if (dbErrors.length === 0) {
+      throw new AppError(400, "NO_ERRORS", "No errors found for this batch");
+    }
+
+    // Group errors by row number
+    const errorMap = new Map<number, { column?: string; error: string }[]>();
+    dbErrors.forEach((e) => {
+      const existing = errorMap.get(e.rowNumber) || [];
+      existing.push({ column: e.column ?? undefined, error: e.error });
+      errorMap.set(e.rowNumber, existing);
+    });
+
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Fix and Re-upload");
@@ -667,7 +701,7 @@ export class ImportService {
         { header: "Value", key: "val", width: 20 },
         { header: "Error", key: "err", width: 50 },
       ];
-      errors.forEach((e) => {
+      dbErrors.forEach((e) => {
         sheet.addRow({
           row: e.rowNumber,
           col: e.column,
