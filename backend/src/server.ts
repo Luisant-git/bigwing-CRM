@@ -45,7 +45,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: env.CORS_ORIGIN.split(","),
+    origin: true,
     credentials: true,
   })
 );

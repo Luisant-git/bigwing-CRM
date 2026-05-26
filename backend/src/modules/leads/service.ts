@@ -23,11 +23,18 @@ export function ownDataFilter(user?: any): any {
   const isSalesExec = roles.includes("SALES_EXECUTIVE");
 
   if (isTelecaller || isSalesExec) {
-    // Strictly individual data: only what they created OR what is assigned to them
+    // Telecallers and sales executives may see their own leads, assigned leads,
+    // and Meta Facebook leads arriving through the webhook.
     return {
       OR: [
         { createdBy: BigInt(user.userId) },
-        { assignedTo: BigInt(user.userId) }
+        { assignedTo: BigInt(user.userId) },
+        {
+          AND: [
+            { channel: "SOCIAL" },
+            { source: { name: { contains: "facebook", mode: "insensitive" } } },
+          ],
+        },
       ]
     };
   }
