@@ -479,6 +479,8 @@ async getByPhoneNumber(phoneNo: string) {
         conditions.push({ nextFollowupAt: { gte: todayEnd } });
         break;
       case "no-followup":
+        conditions.push({ nextFollowupAt: null });
+        break;
       case "booked":
       case "active":
         // Stage filter handled above
@@ -854,6 +856,26 @@ async getByPhoneNumber(phoneNo: string) {
           changedAt: h.changedAt,
         })) ?? [],
     };
+  }
+
+  async truncateMeta(deletedBy: bigint) {
+    const brand = brandContext.getStore() || "BIGWING";
+    const result = await prisma.lead.updateMany({
+      where: { channel: "SOCIAL", brand },
+      data: { isDeleted: true, updatedBy: deletedBy, rowVersion: { increment: 1 } },
+    });
+    auditService.log({ userId: deletedBy, entityType: "lead", entityId: BigInt(0), action: "DELETE" });
+    return { message: `Truncated ${result.count} Meta leads` };
+  }
+
+  async getMetaForms() {
+    const brand = brandContext.getStore() || "BIGWING";
+    const leads = await prisma.lead.findMany({
+      where: { channel: "SOCIAL", brand, referredFromBranch: { not: null } },
+      select: { referredFromBranch: true },
+      distinct: ['referredFromBranch']
+    });
+    return leads.map(l => l.referredFromBranch).filter(Boolean);
   }
 }
 

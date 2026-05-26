@@ -4,10 +4,11 @@ import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
-  Download, Loader2, MessageCircle
+  Download, Loader2, MessageCircle, Trash2
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
@@ -44,15 +45,27 @@ export default function LeadListPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadingWhatsapp, setDownloadingWhatsapp] = useState(false);
+  const [isTruncating, setIsTruncating] = useState(false);
+  const currentUser = useAuthStore((s) => s.user);
+
+  const { data: metaForms } = useQuery({
+    queryKey: ["meta-forms"],
+    queryFn: () => api.get("/leads/meta/forms").then(r => r.data.data),
+    enabled: tab === "meta",
+  });
 
   // advanced filters
   const [stage, setStage] = useState("");
   const [channel, setChannel] = useState("");
+  const [interestLevel, setInterestLevel] = useState("");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [executiveName, setExecutiveName] = useState("");
+  const [referredFromBranch, setReferredFromBranch] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [modelId, setModelId] = useState("");
-  const [executiveName, setExecutiveName] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+
 
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
@@ -77,6 +90,7 @@ export default function LeadListPage() {
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;
   if (followupSeq) params.followupSeq = followupSeq;
+  if (referredFromBranch) params.referredFromBranch = referredFromBranch;
 
   const handleDownload = async () => {
     try {
@@ -120,6 +134,20 @@ export default function LeadListPage() {
     }
   };
 
+  const handleTruncateMeta = async () => {
+    if (!window.confirm("Are you sure you want to delete ALL Meta Leads? This cannot be undone!")) return;
+    try {
+      setIsTruncating(true);
+      await api.delete("/leads/meta/truncate");
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to truncate", err);
+      alert("Failed to truncate leads");
+    } finally {
+      setIsTruncating(false);
+    }
+  };
+
   const { data, isLoading } = useQuery({
     queryKey: ["leads", tab, params],
     queryFn: () => api.get(activeTab.endpoint, { params }).then((r) => r.data),
@@ -156,10 +184,10 @@ export default function LeadListPage() {
     COLD: countQueries[2].data ?? 0,
   };
 
-  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo;
+  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo || referredFromBranch;
   const clearFilters = () => {
     setStage(""); setChannel(""); setSourceId("");
-    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo("");
+    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo(""); setReferredFromBranch("");
   };
 
   // ─── Column definitions ────────────────────────────────────
@@ -290,6 +318,16 @@ export default function LeadListPage() {
           <p className="text-[12px] text-gray-400">Track and manage all sales enquiries</p>
         </div>
         <div className="flex items-center gap-2">
+          {tab === "meta" && currentUser?.email === "seniordeveloper@bigwing.in" && (
+            <button
+              onClick={handleTruncateMeta}
+              disabled={isTruncating}
+              className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-100 disabled:opacity-50"
+            >
+              {isTruncating ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 
+              Truncate Meta
+            </button>
+          )}
           <Link
             to="/leads/new"
             className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
@@ -416,6 +454,33 @@ export default function LeadListPage() {
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
+          {tab === "meta" && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
+              <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
+                <select
+                  value={referredFromBranch}
+                  onChange={(e) => { setReferredFromBranch(e.target.value); setPage(1); }}
+                  className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
+                >
+                  <option value="">All forms</option>
+                  {(metaForms ?? []).map((formName: string) => (
+                    <option key={formName} value={formName}>
+                      {formName}
+                    </option>
+                  ))}
+                </select>
+                {referredFromBranch && (
+                  <button 
+                    onClick={() => { setReferredFromBranch(""); setPage(1); }}
+                    className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+                  >
+                    <X size={12} strokeWidth={2.5} />
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Date Filter</span>
             <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">

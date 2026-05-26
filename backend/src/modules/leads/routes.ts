@@ -132,4 +132,16 @@ router.use("/:id/followups", followupRoutes);
 // ─── Pipeline sub-routes (quotation, booking, invoice, delivery)
 router.use("/:id", pipelineRoutes);
 
+router.delete(
+  "/meta/truncate",
+  rbac(["SUPER_ADMIN"]),
+  (req, res, next) => leadController.truncateMeta(req, res, next)
+);
+
+router.get(
+  "/meta/forms",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER"]),
+  (req, res, next) => leadController.getMetaForms(req, res, next)
+);
+
 export { router as leadRoutes };

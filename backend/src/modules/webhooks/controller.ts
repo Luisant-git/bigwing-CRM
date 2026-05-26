@@ -40,8 +40,9 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
   try {
     for (const entry of body.entry) {
       for (const change of entry.changes) {
-        if (change.value.item === "leadgen") {
+        if (change.field === "leadgen") {
           const leadgenId = change.value.leadgen_id;
+          const formId = change.value.form_id;
           
           if (!PAGE_ACCESS_TOKEN) {
             logger.error("META_PAGE_ACCESS_TOKEN is not configured");
@@ -62,12 +63,12 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           logger.info(`Received Meta Lead: ${leadgenId}`);
 
           // Extract fields (Facebook usually sends field_data array)
-          let firstName = "Facebook";
-          let lastName = "Lead";
+          let firstName = "";
+          let lastName = "";
           let mobile = "";
           let email = "";
+          let location = "";
           let extractedModelName = "";
-          let extraRemarks: string[] = [];
 
           for (const field of leadData.field_data || []) {
             const value = field.values[0] || "";
@@ -90,13 +91,16 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             } else if (fieldName === "email" || fieldName.includes("email")) {
                 email = value;
             } else {
-                // Handle custom questions from the lead form
-                if (fieldName.includes("motorcycle") || fieldName.includes("interested in") || fieldName.includes("bike")) {
+                if (fieldName.includes("motorcycle") || fieldName.includes("interested in") || fieldName.includes("bike") || fieldName.includes("model")) {
                     extractedModelName = value;
                 }
-                extraRemarks.push(`${field.name}: ${value}`);
+                if (fieldName.includes("bangalore") && value.toLowerCase() === "yes") {
+                    location = "Bangalore";
+                }
             }
           }
+
+          if (!firstName) firstName = "Facebook";
 
           if (!mobile) {
             logger.warn("Meta lead did not contain a valid phone number. Skipping.");
@@ -104,6 +108,18 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           }
 
           // Prepare payload for CRM
+          // 1. Fetch Form Name from Meta to use as Source
+          let formName = formId;
+          try {
+              const formResponse = await fetch(`https://graph.facebook.com/v19.0/${formId}?access_token=${PAGE_ACCESS_TOKEN}`);
+              const formData: any = await formResponse.json();
+              if (formData && formData.name) {
+                  formName = formData.name;
+              }
+          } catch (e) {
+              logger.error("Failed to fetch form name", e);
+          }
+
           // 1. Get or create a Source for 'Facebook'
           let source = await prisma.enquirySource.findFirst({
             where: { name: { contains: "Facebook", mode: "insensitive" } }
@@ -122,31 +138,46 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           // 3. Resolve Model if provided
           let modelId;
           if (extractedModelName) {
-            const model = await prisma.vehicleModel.findFirst({
-              where: { name: { contains: extractedModelName, mode: "insensitive" } }
+            const cleanExtracted = extractedModelName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            const models = await prisma.vehicleModel.findMany({ where: { isActive: true } });
+            const matchedModel = models.find(m => {
+                const cleanModel = m.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                return cleanExtracted === cleanModel || cleanExtracted.includes(cleanModel);
             });
-            if (model) {
-              modelId = model.id;
+            if (matchedModel) {
+              modelId = matchedModel.id;
             }
           }
 
-          // 4. Create lead
-          const remarkText = `Generated from Facebook Lead Ads.\n\nForm Data:\n${extraRemarks.join("\n")}`;
+          // 4. Check if customer already exists
+          const existingCustomer = await prisma.customer.findFirst({
+            where: { mobile }
+          });
 
-          await leadService.create({
-            channel: "SOCIAL",
-            sourceId: source.id,
-            modelId,
-            enquiryTypeId: enquiryType?.id || 1, // fallback to 1 if empty
-            enquiryDate: new Date(leadData.created_time || Date.now()),
-            customer: {
+          // 5. Create lead
+          const leadPayload: any = {
+              channel: "SOCIAL",
+              sourceId: source.id,
+              modelId,
+              enquiryTypeId: enquiryType?.id || 1,
+              enquiryDate: new Date(leadData.created_time || Date.now()),
+              remark: "Generated from Facebook Lead Ads.",
+              referredFromBranch: formName
+            };
+
+          if (existingCustomer) {
+            leadPayload.customerId = Number(existingCustomer.id);
+          } else {
+            leadPayload.customer = {
               firstName,
               lastName,
               mobile,
-              email
-            },
-            remark: remarkText
-          });
+              email,
+              ...(location && { location })
+            };
+          }
+
+          await leadService.create(leadPayload);
         }
       }
     }

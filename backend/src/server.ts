@@ -1,4 +1,4 @@
-import express from "express";
+  import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -26,6 +26,7 @@ import { webhookRoutes } from "./modules/webhooks/routes.js";
 setBrandGetter(() => brandContext.getStore());
 
 const app = express();
+app.set("trust proxy", 1);
 
 
 // ─── Global middleware ──────────────────────────────────────────
