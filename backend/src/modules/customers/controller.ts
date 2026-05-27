@@ -4,11 +4,12 @@ import { customerService } from "./service.js";
 export class CustomerController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, pageSize, q } = req.query as any;
+      const { page, pageSize, q, tab } = req.query as any;
       const result = await customerService.list(
         Number(page) || 1,
         Number(pageSize) || 25,
         q as string,
+        tab as string,
         (req as any).user
       );
       res.json({ success: true, ...result });

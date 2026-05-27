@@ -15,11 +15,12 @@ export default function CustomerListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"all" | "crm" | "meta">("all");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["customers", { page, pageSize, q: search }],
+    queryKey: ["customers", { page, pageSize, q: search, tab }],
     queryFn: () =>
-      api.get("/customers", { params: { page, pageSize, q: search || undefined } }).then((r) => r.data),
+      api.get("/customers", { params: { page, pageSize, q: search || undefined, tab: tab !== "all" ? tab : undefined } }).then((r) => r.data),
   });
 
   const customers = data?.data ?? [];
@@ -59,38 +60,6 @@ export default function CustomerListPage() {
       ),
     },
     {
-      key: "email",
-      label: "Email",
-      render: (c) => c.email ? (
-        <span className="text-gray-600">{c.email}</span>
-      ) : <span className="text-gray-300">—</span>,
-    },
-    {
-      key: "location",
-      label: "Location",
-      sortable: true,
-      render: (c) => c.location ? (
-        <span className="text-gray-600">{c.location}</span>
-      ) : <span className="text-gray-300">—</span>,
-      sortValue: (c) => c.location ?? "",
-    },
-    {
-      key: "type",
-      label: "Type",
-      render: (c) => {
-        if (!c.customerType) return <span className="text-gray-300">—</span>;
-        const color =
-          c.customerType === "FIRST_TIME" ? "bg-blue-100 text-blue-700" :
-          c.customerType === "REPEAT" ? "bg-green-100 text-green-700" :
-          "bg-purple-100 text-purple-700";
-        return (
-          <span className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${color}`}>
-            {c.customerType.replace(/_/g, " ")}
-          </span>
-        );
-      },
-    },
-    {
       key: "createdAt",
       label: "Created",
       sortable: true,
@@ -125,7 +94,28 @@ export default function CustomerListPage() {
       </div>
 
       {/* Search */}
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Tabs */}
+        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+          {[
+            { key: "all", label: "All Customers" },
+            { key: "crm", label: "CRM Customers" },
+            { key: "meta", label: "Meta Customers" },
+          ].map((t) => (
+            <button
+              key={t.key}
+              onClick={() => { setTab(t.key as any); setPage(1); }}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-all ${
+                tab === t.key
+                  ? "bg-white text-[#1F3864] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         <div className="relative">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
