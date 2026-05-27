@@ -198,15 +198,31 @@ async function main() {
     { displayOrder: 10, name: "Gopasandra", branchName: "Gopasandra", networkCode: "KA01AG08", networkType: "ASC", inventoryLocation: "HMSI-PARTS-S-KA-KA01AG08-Gopasandra-ANDHON" },
     { displayOrder: 11, name: "Devarchiknahalli", branchName: "Devarchiknahalli", networkCode: "KA01BE08", networkType: "AD OWNED", inventoryLocation: "HMSI-PARTS-S-KA-KA01BE08-Begur-ANDHON" }
   ];
-  await prisma.referredBranch.deleteMany();
-  for (const b of branches) {
+  const redWingBranches = branches.map(b => ({
+    ...b,
+    brand: "REDWING",
+    name: b.name,
+    branchName: b.branchName
+  }));
+
+  const allBranches = [...branches, ...redWingBranches];
+
+  await prisma.referredBranch.deleteMany({
+    where: {
+      name: {
+        endsWith: "(Red Wing)"
+      }
+    }
+  });
+
+  for (const b of allBranches) {
     await prisma.referredBranch.upsert({
-      where: { name: b.name },
+      where: { brand_name: { brand: b.brand ?? "BIGWING", name: b.name } },
       update: b,
       create: b,
     });
   }
-  console.log(`  ✅ ${branches.length} referred branches seeded`);
+  console.log(`  ✅ ${allBranches.length} referred branches seeded`);
 
   // ─── Dev / Test Users ───────────────────────────────────────────
   const devUsers = [

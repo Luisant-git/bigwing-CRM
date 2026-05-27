@@ -17,14 +17,32 @@ async function main() {
     { displayOrder: 11, name: "Devarchiknahalli", branchName: "Devarchiknahalli", networkCode: "KA01BE08", networkType: "AD OWNED", inventoryLocation: "HMSI-PARTS-S-KA-KA01BE08-Begur-ANDHON", brand: "BIGWING" }
   ];
 
-  for (const b of branches) {
+  const redWingBranches = branches.map(b => ({
+    ...b,
+    brand: "REDWING",
+    name: b.name,
+    branchName: b.branchName
+  }));
+
+  const allBranches = [...branches, ...redWingBranches];
+
+  // Clean up any old ones that got created with the (Red Wing) suffix
+  await prisma.referredBranch.deleteMany({
+    where: {
+      name: {
+        endsWith: "(Red Wing)"
+      }
+    }
+  });
+
+  for (const b of allBranches) {
     await prisma.referredBranch.upsert({
-      where: { brand_name: { brand: "BIGWING", name: b.name } },
+      where: { brand_name: { brand: b.brand, name: b.name } },
       update: b,
       create: b,
     });
   }
-  console.log(`✅ ${branches.length} referred branches seeded with inventory locations`);
+  console.log(`✅ ${allBranches.length} referred branches seeded with inventory locations (BigWing & RedWing)`);
 }
 
 main()
