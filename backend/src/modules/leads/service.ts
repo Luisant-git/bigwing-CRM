@@ -162,7 +162,12 @@ export class LeadService {
       AND: [
         { isDeleted: false },
         ownDataFilter(user),
-        ...(stage ? [{ stage }] : []),
+        ...(stage ? [{
+          OR: [
+            { stage },
+            ...(stage === "QUOTATION_SHARED" ? [{ stage: "Quotation shared" }, { stage: "QUOTATION SHARED" }] : [])
+          ]
+        }] : []),
         ...(channel ? [{ channel }] : [{ channel: { not: "SOCIAL" } }]),
         ...(interestLevel ? [{ interestLevel }] : []),
         ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
@@ -432,7 +437,14 @@ async getByPhoneNumber(phoneNo: string) {
     const where: any = {
       AND: [
         { isDeleted: false },
-        { stage: stage || (view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] }) },
+        ...(stage ? [{
+          OR: [
+            { stage },
+            ...(stage === "QUOTATION_SHARED" ? [{ stage: "Quotation shared" }, { stage: "QUOTATION SHARED" }] : [])
+          ]
+        }] : [{
+          stage: view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] }
+        }]),
         ownDataFilter(user),
         ...(channel ? [{ channel }] : [{ channel: { not: "SOCIAL" } }]),
         ...(interestLevel ? [{ interestLevel }] : []),
@@ -532,7 +544,12 @@ async getByPhoneNumber(phoneNo: string) {
         AND: [
           { isDeleted: false },
           ownDataFilter(user),
-          ...(stage ? [{ stage }] : []),
+          ...(stage ? [{
+          OR: [
+            { stage },
+            ...(stage === "QUOTATION_SHARED" ? [{ stage: "Quotation shared" }, { stage: "QUOTATION SHARED" }] : [])
+          ]
+        }] : []),
           ...(channel ? [{ channel }] : [{ channel: { not: "SOCIAL" } }]),
           ...(interestLevel ? [{ interestLevel }] : []),
           ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),

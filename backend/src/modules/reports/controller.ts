@@ -5,6 +5,7 @@ function dateFilter(req: Request) {
   return {
     dateFrom: req.query.dateFrom as string | undefined,
     dateTo: req.query.dateTo as string | undefined,
+    channel: req.query.channel as string | undefined,
   };
 }
 
@@ -33,6 +34,13 @@ export class ReportController {
   async source(req: Request, res: Response, next: NextFunction) {
     try {
       const data = await reportService.source(dateFilter(req), (req as any).user);
+      res.json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async trends(req: Request, res: Response, next: NextFunction) {
+    try {
+      const data = await reportService.trends(dateFilter(req), (req as any).user);
       res.json({ success: true, data });
     } catch (err) { next(err); }
   }

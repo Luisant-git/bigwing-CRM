@@ -275,6 +275,15 @@ export default function LeadListPage() {
       sortValue: (l: any) => l.stage,
     },
     {
+      key: "referredFromBranch",
+      label: "Branch",
+      sortable: true,
+      render: (l: any) => l.referredFromBranch ? (
+        <span className="text-[11px] font-semibold text-gray-600">{l.referredFromBranch}</span>
+      ) : <span className="text-gray-300">—</span>,
+      sortValue: (l: any) => l.referredFromBranch ?? "",
+    },
+    {
       key: "assignedTo",
       label: "Assigned To",
       render: (l: any) => {
@@ -554,6 +563,7 @@ export default function LeadListPage() {
             <FilterSelect label="Source" value={sourceId} onChange={setSourceId} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
             <FilterSelect label="Assigned To" value={executiveName} onChange={setExecutiveName} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
+            <FilterSelect label="Branch" value={referredFromBranch} onChange={setReferredFromBranch} options={(useLookup("referred-branches").data ?? []).map((b: any) => ({ value: b.name, label: b.name }))} />
           </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} className="mt-3 flex items-center gap-1 text-xs font-medium text-[#2E75B6] hover:underline">
