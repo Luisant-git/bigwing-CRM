@@ -95,7 +95,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
     { label: "Today's Follow-ups", value: kpi?.today, icon: Clock, accent: "#0891B2", bg: "bg-cyan-50", tab: "today" },
     { label: "Overdue", value: kpi?.overdue, icon: AlertTriangle, accent: "#EB5757", bg: "bg-red-50", tab: "overdue" },
     { label: "Upcoming", value: kpi?.upcoming, icon: CalendarClock, accent: "#F2994A", bg: "bg-amber-50", tab: "upcoming" },
-    { label: "No Follow-up", value: kpi?.noFollowup, icon: Ban, accent: "#D97706", bg: "bg-orange-50", tab: "no-followup" },
+    { label: "No next Follow-up", value: kpi?.noFollowup, icon: Ban, accent: "#D97706", bg: "bg-orange-50", tab: "no-followup" },
     { label: "Booked", value: kpi?.booked, icon: Bookmark, accent: "#E8792F", bg: "bg-orange-50", tab: "all" },
     { label: "Invoiced", value: kpi?.invoiced, icon: FileCheck, accent: "#27AE60", bg: "bg-green-50", tab: "all" },
     { label: "Delivered", value: kpi?.delivered, icon: Truck, accent: "#059669", bg: "bg-emerald-50", tab: "all" },
