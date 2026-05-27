@@ -54,6 +54,21 @@ export class LookupController {
       next(err);
     }
   }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const name = req.params.name as string;
+      const id = req.params.id as string;
+      if (!lookupService.isValidLookup(name)) {
+        res.status(404).json({ success: false, error: { code: "INVALID_LOOKUP", message: `Unknown lookup: ${name}` } });
+        return;
+      }
+      await lookupService.delete(name, BigInt(id));
+      res.json({ success: true, data: { success: true } });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const lookupController = new LookupController();

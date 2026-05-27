@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus, GripVertical, Pencil, Check, X, ToggleLeft, ToggleRight, Settings as SettingsIcon,
+  Plus, GripVertical, Pencil, Check, X, ToggleLeft, ToggleRight, Settings as SettingsIcon, Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
@@ -117,6 +117,15 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
       setEditingId(null);
     },
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => api.delete(`/lookups/${apiName}/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["lookups", apiName] });
+      toast.success("Deleted");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to delete item"),
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -374,6 +383,17 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
                   title="Edit"
                 >
                   <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to delete this item?")) {
+                      deleteMut.mutate(item.id);
+                    }
+                  }}
+                  className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
                 </button>
               </div>
             )

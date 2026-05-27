@@ -124,6 +124,29 @@ export class LookupService {
     return this.formatItem(updated, name);
   }
 
+  async delete(name: LookupName, id: bigint) {
+    if (!this.isEditableLookup(name)) {
+      throw new AppError(400, "NOT_EDITABLE", `Lookup '${name}' is managed via its dedicated module`);
+    }
+
+    const model = lookupModels[name]() as any;
+
+    const existing = await model.findUnique({ where: { id } });
+    if (!existing) throw new AppError(404, "NOT_FOUND", "Item not found");
+
+    try {
+      await model.delete({ where: { id } });
+    } catch (err: any) {
+      // Prisma error for foreign key constraint failure
+      if (err.code === 'P2003') {
+        throw new AppError(400, "IN_USE", "Cannot delete item because it is currently in use");
+      }
+      throw err;
+    }
+    
+    return true;
+  }
+
   private formatItem(item: any, name: LookupName) {
     const base = {
       id: Number(item.id),

@@ -30,4 +30,11 @@ router.patch(
   (req, res, next) => lookupController.update(req, res, next)
 );
 
+router.delete(
+  "/:name/:id",
+  authMiddleware,
+  rbac(["SUPER_ADMIN", "ADMIN"]),
+  (req, res, next) => lookupController.delete(req, res, next)
+);
+
 export { router as lookupRoutes };
