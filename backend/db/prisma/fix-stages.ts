@@ -8,7 +8,7 @@ async function main() {
   const result = await prisma.$executeRawUnsafe(`
     UPDATE core.lead 
     SET stage = 'QUOTATION_SHARED' 
-    WHERE stage = 'QUOTATION SHARED' OR stage = 'QUOTATION';
+    WHERE stage = 'Quotation_shared' OR stage = 'QUOTATION SHARED' OR stage = 'QUOTATION';
   `);
   
   console.log(`✅ Update complete. Rows affected: ${result}`);
