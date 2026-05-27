@@ -38,9 +38,10 @@ const INTEREST_LEVELS = ["HOT", "WARM", "COLD"];
 interface Props {
   dateFrom?: string;
   dateTo?: string;
+  isNested?: boolean;
 }
 
-export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: propDateTo }: Props) {
+export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: propDateTo, isNested }: Props) {
   const [internalDateFrom, setInternalDateFrom] = useState("");
   const [internalDateTo, setInternalDateTo] = useState("");
   
@@ -52,7 +53,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
 
   const { data, isLoading } = useQuery({
     queryKey: ["reports", "telecaller-detailed", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/telecaller-detailed", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
+    queryFn: () => api.get("/reports/telecaller-detailed", { params: { dateFrom, dateTo, channel: "TELE" } }).then((r) => r.data.data),
   });
 
   if (isLoading) return <PageLoader message="Generating dashboard..." />;
@@ -143,33 +144,35 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
 
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Tele-caller Dashboard", icon: PhoneCall }]} />
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1F3864]">Tele-caller Performance</h1>
-          <p className="text-[12px] text-gray-400">Date-wise and source-wise enquiry analytics</p>
-        </div>
-
-      {!propDateFrom && !propDateTo && (
-        <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
-          <Calendar size={14} className="text-gray-400" />
-          <input type="date" value={internalDateFrom} onChange={(e) => setInternalDateFrom(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
-          <span className="text-gray-300">→</span>
-          <input type="date" value={internalDateTo} onChange={(e) => setInternalDateTo(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
-          <button 
-            onClick={() => {
-              setInternalDateFrom("");
-              setInternalDateTo("");
-            }}
-            className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
-            title="Clear dates"
-          >
-            <X size={14} />
-          </button>
-        </div>
+      {!isNested && (
+        <>
+          <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Tele-caller Dashboard", icon: PhoneCall }]} />
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-[#1F3864]">Tele-caller Performance</h1>
+              <p className="text-[12px] text-gray-400">Date-wise and source-wise enquiry analytics</p>
+            </div>
+            {!propDateFrom && !propDateTo && (
+              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
+                <Calendar size={14} className="text-gray-400" />
+                <input type="date" value={internalDateFrom} onChange={(e) => setInternalDateFrom(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
+                <span className="text-gray-300">→</span>
+                <input type="date" value={internalDateTo} onChange={(e) => setInternalDateTo(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
+                <button 
+                  onClick={() => {
+                    setInternalDateFrom("");
+                    setInternalDateTo("");
+                  }}
+                  className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  title="Clear dates"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
-      </div>
 
       {/* Admin Pattern KPI Cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

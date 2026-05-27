@@ -24,32 +24,41 @@ export default function DashboardPage() {
   const isTelecaller = roles.includes("TELE_CALLER");
   const isAdmin = roles.includes("ADMIN") || roles.includes("SUPER_ADMIN") || roles.includes("MANAGER");
   
-  const [view, setView] = useState<"general" | "sales">("general");
+  const [view, setView] = useState<"general" | "social" | "tele" | "sales">("general");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
+  const channel = view === "social" ? "SOCIAL" : undefined;
+  const isGeneralView = view === "general" || view === "social";
+
   const { data: kpi, isLoading: kpiLoading } = useQuery({
-    queryKey: ["reports", "dashboard", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/dashboard", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
-    enabled: !isTelecaller && view === "general",
+    queryKey: ["reports", "dashboard", dateFrom, dateTo, channel],
+    queryFn: () => api.get("/reports/dashboard", { params: { dateFrom, dateTo, channel } }).then((r) => r.data.data),
+    enabled: !isTelecaller && isGeneralView,
   });
 
   const { data: funnel } = useQuery({
-    queryKey: ["reports", "funnel", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/funnel", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
-    enabled: !isTelecaller && view === "general",
+    queryKey: ["reports", "funnel", dateFrom, dateTo, channel],
+    queryFn: () => api.get("/reports/funnel", { params: { dateFrom, dateTo, channel } }).then((r) => r.data.data),
+    enabled: !isTelecaller && isGeneralView,
   });
 
   const { data: source } = useQuery({
-    queryKey: ["reports", "source", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/source", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
-    enabled: !isTelecaller && view === "general",
+    queryKey: ["reports", "source", dateFrom, dateTo, channel],
+    queryFn: () => api.get("/reports/source", { params: { dateFrom, dateTo, channel } }).then((r) => r.data.data),
+    enabled: !isTelecaller && isGeneralView,
   });
 
   const { data: executive } = useQuery({
-    queryKey: ["reports", "executive", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/executive", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
-    enabled: !isTelecaller && view === "general",
+    queryKey: ["reports", "executive", dateFrom, dateTo, channel],
+    queryFn: () => api.get("/reports/executive", { params: { dateFrom, dateTo, channel } }).then((r) => r.data.data),
+    enabled: !isTelecaller && isGeneralView,
+  });
+
+  const { data: trends } = useQuery({
+    queryKey: ["reports", "trends", dateFrom, dateTo, channel],
+    queryFn: () => api.get("/reports/trends", { params: { dateFrom, dateTo, channel } }).then((r) => r.data.data),
+    enabled: !isTelecaller && isGeneralView,
   });
 
   if (isTelecaller) {
@@ -84,9 +93,11 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1F3864]">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-[#1F3864]">
+            {view === "social" ? "Social Media Dashboard" : view === "tele" ? "Tele-caller Dashboard" : view === "sales" ? "Sales Dashboard" : "Dashboard"}
+          </h1>
           <p className="text-[12px] text-gray-400">
-            {view === "sales" ? "Sales Performance Metrics" : "General Overview & KPIs"}
+            {view === "social" ? "Meta leads & social media performance" : view === "tele" ? "Tele-calling performance metrics" : view === "sales" ? "Sales Performance Metrics" : "General Overview & KPIs"}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -120,15 +131,27 @@ export default function DashboardPage() {
             <div className="flex rounded-lg bg-gray-100 p-1 shadow-inner">
               <button
                 onClick={() => setView("general")}
-                className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Overview
               </button>
               <button
                 onClick={() => setView("sales")}
-                className={`rounded-md px-4 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Sales Performance
+              </button>
+              <button
+                onClick={() => setView("social")}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "social" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Social Media
+              </button>
+              <button
+                onClick={() => setView("tele")}
+                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "tele" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Tele-caller
               </button>
             </div>
           )}
@@ -137,6 +160,8 @@ export default function DashboardPage() {
 
       {view === "sales" && isAdmin ? (
         <SalesExecutiveDashboard dateFrom={dateFrom} dateTo={dateTo} />
+      ) : view === "tele" && isAdmin ? (
+        <TelecallerDashboard dateFrom={dateFrom} dateTo={dateTo} isNested={true} />
       ) : kpiLoading ? (
         <PageLoader message="Loading dashboard data..." />
       ) : (
@@ -175,6 +200,53 @@ export default function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Monthly Trend Table */}
+      {trends && trends.length > 0 && (
+        <div className="mt-8 rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
+          <div className="flex items-center gap-2 bg-[#27AE60] px-6 py-4">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Monthly Conversion Performance</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead>
+                <tr className="bg-gray-50/50 border-b border-gray-100">
+                  <th className="px-6 py-3 font-bold text-gray-900 uppercase text-[11px]">Month</th>
+                  <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Enquiries</th>
+                  <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Quotation</th>
+                  <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Booking</th>
+                  <th className="px-6 py-3 text-center font-bold text-green-600 uppercase text-[11px]">Invoiced</th>
+                  <th className="px-6 py-3 text-center font-bold text-red-500 uppercase text-[11px]">Lost</th>
+                  <th className="px-6 py-3 text-center font-bold text-gray-900 uppercase text-[11px]">Conversion %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trends.map((t: any) => {
+                  const conv = t.enquiries > 0 ? Math.round((t.invoiced / t.enquiries) * 100) : 0;
+                  return (
+                    <tr key={t.month} className="border-b border-gray-50 hover:bg-green-50/10 transition-colors">
+                      <td className="px-6 py-4 font-bold text-[#1F3864]">{format(new Date(t.month + "-01"), "MMM yyyy")}</td>
+                      <td className="px-6 py-4 text-center font-medium">{t.enquiries}</td>
+                      <td className="px-6 py-4 text-center">{t.quotation}</td>
+                      <td className="px-6 py-4 text-center">{t.booking}</td>
+                      <td className="px-6 py-4 text-center font-bold text-green-600">{t.invoiced}</td>
+                      <td className="px-6 py-4 text-center text-red-500">{t.lost}</td>
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="w-12 bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-green-500 h-full" style={{ width: `${conv}%` }} />
+                          </div>
+                          <span className="font-bold text-gray-700">{conv}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Charts row */}
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
