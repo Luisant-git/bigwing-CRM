@@ -13,10 +13,11 @@ import {
   ClipboardList,
   X,
   Menu,
-  Kanban,
   Settings,
   PanelLeftClose,
   PanelLeft,
+  Megaphone,
+  Kanban,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useBrandStore } from "@/stores/brand";
@@ -28,6 +29,7 @@ import { GlobalSearch } from "@/components/global-search";
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
+  { to: "/meta-leads", label: "Meta Leads", icon: Megaphone },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },
   { to: "/customers", label: "Customers", icon: UserCircle },
   // { to: "/reports", label: "Reports", icon: BarChart3 },
@@ -122,7 +124,7 @@ export default function AppLayout() {
           .filter((item) => {
             const isTele = user?.roles?.includes("TELE_CALLER");
             if (isTele) {
-              return item.to !== "/users";
+              return !["/users", "/import", "/settings"].includes(item.to);
             }
             return true;
           })
