@@ -56,6 +56,7 @@ export const createUserSchema = z.object({
   mobile: mobileSchema.optional(),
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   role: z.nativeEnum(UserRole),
+  branchId: z.coerce.number().optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -63,6 +64,7 @@ export const updateUserSchema = z.object({
   fullName: z.string().min(1).max(160).optional(),
   mobile: mobileSchema.optional(),
   role: z.nativeEnum(UserRole).optional(),
+  branchId: z.coerce.number().optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -214,6 +216,9 @@ export const createDeliverySchema = z.object({
 export const createLookupSchema = z.object({
   name: z.string().min(1).max(120),
   mobile: z.string().max(15).optional(),
+  branchName: z.string().max(120).optional(),
+  networkCode: z.string().max(60).optional(),
+  networkType: z.string().max(60).optional(),
   displayOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
 });

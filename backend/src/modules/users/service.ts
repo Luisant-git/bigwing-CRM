@@ -57,6 +57,7 @@ export class UserService {
     mobile?: string;
     gender?: string;
     role: string;
+    branchId?: number;
     isActive?: boolean;
   }, createdBy?: bigint) {
     // Check email uniqueness
@@ -82,6 +83,7 @@ export class UserService {
         fullName: data.fullName,
         mobile: data.mobile,
         gender: data.gender,
+        branchId: data.branchId ? BigInt(data.branchId) : null,
         isActive: data.isActive ?? true,
         createdBy: createdBy,
         userRoles: {
@@ -100,6 +102,7 @@ export class UserService {
       fullName?: string;
       mobile?: string;
       role?: string;
+      branchId?: number;
       isActive?: boolean;
     },
     updatedBy?: bigint
@@ -126,6 +129,7 @@ export class UserService {
       data: {
         ...(data.fullName && { fullName: data.fullName }),
         ...(data.mobile !== undefined && { mobile: data.mobile }),
+        ...(data.branchId !== undefined && { branchId: data.branchId ? BigInt(data.branchId) : null }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
         updatedBy,
       },
@@ -169,6 +173,7 @@ export class UserService {
       isActive: user.isActive,
       lastLogin: user.lastLogin,
       roles: user.userRoles?.map((ur: any) => ur.role.name) ?? [],
+      branchId: user.branchId ? Number(user.branchId) : null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
