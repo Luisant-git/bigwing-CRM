@@ -136,7 +136,7 @@ export function DataTable<T>({
                   <th
                     key={col.key}
                     onClick={() => toggleSort(col.key, col.sortable)}
-                    className={`border-b border-gray-200/80 px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#64748B] ${alignClass} ${col.sortable ? "cursor-pointer select-none hover:text-[#1F3864] transition-colors" : ""}`}
+                    className={`border-b border-gray-200/80 px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider text-[#64748B] whitespace-nowrap ${alignClass} ${col.sortable ? "cursor-pointer select-none hover:text-[#1F3864] transition-colors" : ""}`}
                     style={{ width: col.width }}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -194,7 +194,7 @@ export function DataTable<T>({
                       return (
                         <td
                           key={col.key}
-                          className={`relative px-4 py-3.5 ${alignClass}`}
+                          className={`relative px-4 py-3.5 whitespace-nowrap ${alignClass}`}
                         >
                           {/* Accent left border — only on first cell, as an absolute inner div */}
                           {ci === 0 && accent && (

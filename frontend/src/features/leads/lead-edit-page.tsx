@@ -28,6 +28,7 @@ export default function LeadEditPage() {
   const { data: models } = useLookup("vehicle-models");
   const { data: colours } = useLookup("vehicle-colours");
   const { data: executives } = useLookup("sales-executives");
+  const { data: branches } = useLookup("referred-branches");
 
   const [form, setForm] = useState<any>({});
   const [dirty, setDirty] = useState(false);
@@ -282,13 +283,28 @@ export default function LeadEditPage() {
 
         {/* Assignment */}
         <Section icon={UserIcon} title="Assignment" subtitle="Who is handling this lead">
-          <SelectField
-            label="Assigned To"
-            value={form.executiveName}
-            onChange={(v) => set("executiveName", v)}
-            options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))}
-            current={lead.executiveName || lead.assignedTo?.fullName}
-          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Branch"
+              value={form.referredFromBranch}
+              onChange={(v) => {
+                set("referredFromBranch", v);
+                set("executiveName", ""); // Reset executive when branch changes
+              }}
+              options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))}
+              current={lead.referredFromBranch}
+            />
+            <SelectField
+              label="Assigned To"
+              value={form.executiveName}
+              onChange={(v) => set("executiveName", v)}
+              options={(executives ?? [])
+                .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
+                .map((ex: any) => ({ value: ex.name, label: ex.name }))}
+              current={lead.executiveName || lead.assignedTo?.fullName}
+              disabled={!form.referredFromBranch}
+            />
+          </div>
         </Section>
 
         {/* Notes */}

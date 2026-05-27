@@ -115,6 +115,18 @@ export class ImportRepository {
     return map;
   }
 
+  async getBranchMap(): Promise<Map<string, string>> {
+    const brand = brandContext.getStore();
+    const branches = await prisma.referredBranch.findMany({ where: { brand } });
+    const map = new Map<string, string>();
+    for (const b of branches) {
+      if (b.networkCode) {
+        map.set(b.networkCode.toUpperCase(), b.name);
+      }
+    }
+    return map;
+  }
+
   async getUserMap(): Promise<Map<string, bigint>> {
     const users = await prisma.user.findMany({
       where: { isActive: true },

@@ -19,6 +19,7 @@ export default function LeadFormPage() {
   const { data: models } = useLookup("vehicle-models");
   const { data: colours } = useLookup("vehicle-colours");
   const { data: executives } = useLookup("sales-executives");
+  const { data: branches } = useLookup("referred-branches");
 
   const [selectedModel, setSelectedModel] = useState("");
   const { data: variants } = useLookup("vehicle-variants", selectedModel ? { modelId: selectedModel } : undefined);
@@ -31,6 +32,7 @@ export default function LeadFormPage() {
     purchaseType: "", exchangeFlag: false,
     enquiryDate: new Date().toISOString().split("T")[0],
     remark: "",
+    referredFromBranch: "",
     // Service fields
     typeOfService: "",
     expectedServiceDate: "",
@@ -87,6 +89,7 @@ export default function LeadFormPage() {
       testRideFlag: false,
       enquiryDate: form.enquiryDate,
       remark: form.remark || undefined,
+      referredFromBranch: form.referredFromBranch || undefined,
       // Service fields
       typeOfService: form.typeOfService || undefined,
       expectedServiceDate: form.expectedServiceDate || undefined,
@@ -336,12 +339,26 @@ export default function LeadFormPage() {
 
         {/* Assignment */}
         <Section icon={UserIcon} title="Assignment">
-          <SelectField
-            label="Assigned To"
-            value={form.executiveName}
-            onChange={(v) => set("executiveName", v)}
-            options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))}
-          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Branch"
+              value={form.referredFromBranch}
+              onChange={(v) => {
+                set("referredFromBranch", v);
+                set("executiveName", ""); // Reset executive when branch changes
+              }}
+              options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))}
+            />
+            <SelectField
+              label="Assigned To"
+              value={form.executiveName}
+              onChange={(v) => set("executiveName", v)}
+              options={(executives ?? [])
+                .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
+                .map((ex: any) => ({ value: ex.name, label: ex.name }))}
+              disabled={!form.referredFromBranch}
+            />
+          </div>
         </Section>
       </form>
 

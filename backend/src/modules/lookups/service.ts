@@ -63,7 +63,7 @@ export class LookupService {
     return items.map((item: any) => this.formatItem(item, name));
   }
 
-  async create(name: LookupName, data: { name: string; mobile?: string; displayOrder?: number; isActive?: boolean }) {
+  async create(name: LookupName, data: { name: string; mobile?: string; branchName?: string; networkCode?: string; networkType?: string; inventoryLocation?: string; displayOrder?: number; isActive?: boolean }) {
     if (!this.isEditableLookup(name)) {
       throw new AppError(400, "NOT_EDITABLE", `Lookup '${name}' is managed via its dedicated module`);
     }
@@ -80,6 +80,10 @@ export class LookupService {
       data: {
         name: data.name,
         ...(data.mobile !== undefined && { mobile: data.mobile }),
+        ...(data.branchName !== undefined && { branchName: data.branchName }),
+        ...(data.networkCode !== undefined && { networkCode: data.networkCode }),
+        ...(data.networkType !== undefined && { networkType: data.networkType }),
+        ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
         displayOrder: data.displayOrder ?? 0,
         isActive: data.isActive ?? true,
       },
@@ -108,12 +112,39 @@ export class LookupService {
       data: {
         ...(data.name !== undefined && { name: data.name }),
         ...(data.mobile !== undefined && { mobile: data.mobile }),
+        ...(data.branchName !== undefined && { branchName: data.branchName }),
+        ...(data.networkCode !== undefined && { networkCode: data.networkCode }),
+        ...(data.networkType !== undefined && { networkType: data.networkType }),
+        ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
         ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
     });
 
     return this.formatItem(updated, name);
+  }
+
+  async delete(name: LookupName, id: bigint) {
+    if (!this.isEditableLookup(name)) {
+      throw new AppError(400, "NOT_EDITABLE", `Lookup '${name}' is managed via its dedicated module`);
+    }
+
+    const model = lookupModels[name]() as any;
+
+    const existing = await model.findUnique({ where: { id } });
+    if (!existing) throw new AppError(404, "NOT_FOUND", "Item not found");
+
+    try {
+      await model.delete({ where: { id } });
+    } catch (err: any) {
+      // Prisma error for foreign key constraint failure
+      if (err.code === 'P2003') {
+        throw new AppError(400, "IN_USE", "Cannot delete item because it is currently in use");
+      }
+      throw err;
+    }
+    
+    return true;
   }
 
   private formatItem(item: any, name: LookupName) {
@@ -138,7 +169,11 @@ export class LookupService {
     }
 
     if (name === "sales-executives") {
-      return { ...base, mobile: item.mobile };
+      return { ...base, mobile: item.mobile, branchName: item.branchName, networkCode: item.networkCode };
+    }
+
+    if (name === "referred-branches") {
+      return { ...base, branchName: item.branchName, networkCode: item.networkCode, networkType: item.networkType, inventoryLocation: item.inventoryLocation };
     }
 
     return base;

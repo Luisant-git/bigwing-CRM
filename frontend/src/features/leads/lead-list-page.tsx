@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueries } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
@@ -22,21 +22,25 @@ const TABS: { key: Tab; label: string; endpoint: string }[] = [
   { key: "today", label: "Today's Follow-ups", endpoint: "/leads/today" },
   { key: "overdue", label: "Overdue", endpoint: "/leads/overdue" },
   { key: "upcoming", label: "Upcoming", endpoint: "/leads/upcoming" },
-  { key: "no-followup", label: "No Follow-up", endpoint: "/leads/no-followup" },
+  { key: "no-followup", label: "No next Follow-up", endpoint: "/leads/no-followup" },
   { key: "booked", label: "Booked", endpoint: "/leads/booked" },
   { key: "meta", label: "Meta Leads", endpoint: "/leads" },
 ];
 
 export default function LeadListPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMetaRoute = location.pathname.startsWith("/meta-leads");
   const searchParams = useSearch({ strict: false }) as any;
-  const [tab, setTab] = useState<Tab>(searchParams.tab || "all");
+  const [tab, setTab] = useState<Tab>(isMetaRoute ? "meta" : (searchParams.tab || "all"));
 
   useEffect(() => {
-    if (searchParams.tab) {
+    if (isMetaRoute) {
+      setTab("meta");
+    } else if (searchParams.tab) {
       setTab(searchParams.tab);
     }
-  }, [searchParams.tab]);
+  }, [searchParams.tab, isMetaRoute]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
@@ -75,8 +79,13 @@ export default function LeadListPage() {
   const { data: sources } = useLookup("enquiry-sources");
   const { data: models } = useLookup("vehicle-models");
   const { data: executives } = useLookup("sales-executives");
+  const { data: branches } = useLookup("referred-branches");
 
-  const activeTab = TABS.find((t) => t.key === tab)!;
+  const visibleTabs = isMetaRoute 
+    ? [{ key: "meta" as Tab, label: "Meta Leads", endpoint: "/leads" }] 
+    : TABS.filter((t) => t.key !== "meta");
+
+  const activeTab = visibleTabs.find((t) => t.key === tab) || visibleTabs[0];
 
   const params: any = { page, pageSize };
   if (search) params.q = search;
@@ -163,6 +172,7 @@ export default function LeadListPage() {
   if (dateFrom) countParams.dateFrom = dateFrom;
   if (dateTo) countParams.dateTo = dateTo;
   if (stage) countParams.stage = stage;
+  if (tab === "meta") countParams.channel = "SOCIAL";
   if (channel) countParams.channel = channel;
   if (sourceId) countParams.sourceId = sourceId;
   if (modelId) countParams.modelId = modelId;
@@ -266,6 +276,15 @@ export default function LeadListPage() {
       sortValue: (l: any) => l.stage,
     },
     {
+      key: "referredFromBranch",
+      label: "Branch",
+      sortable: true,
+      render: (l: any) => l.referredFromBranch ? (
+        <span className="text-[11px] font-semibold text-gray-600">{l.referredFromBranch}</span>
+      ) : <span className="text-gray-300">—</span>,
+      sortValue: (l: any) => l.referredFromBranch ?? "",
+    },
+    {
       key: "assignedTo",
       label: "Assigned To",
       render: (l: any) => {
@@ -309,13 +328,17 @@ export default function LeadListPage() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }]} />
+      <Breadcrumb items={[{ label: "Home", to: "/" }, isMetaRoute ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList } : { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }]} />
 
       {/* Header */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#1F3864]">Leads</h1>
-          <p className="text-[12px] text-gray-400">Track and manage all sales enquiries</p>
+          <h1 className="text-2xl font-bold text-[#1F3864]">
+            {isMetaRoute ? "Meta Leads" : "Leads"}
+          </h1>
+          <p className="text-[12px] text-gray-400">
+            {isMetaRoute ? "Manage incoming Facebook and Instagram leads" : "Track and manage all sales enquiries"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {tab === "meta" && currentUser?.email === "seniordeveloper@bigwing.in" && (
@@ -430,26 +453,28 @@ export default function LeadListPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
-        <div className="flex min-w-max gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => { setTab(t.key); setPage(1); }}
-              className={`relative px-5 py-3 text-sm font-semibold transition-all ${
-                tab === t.key 
-                  ? "text-[#1F3864]" 
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              {t.label}
-              {tab === t.key && (
-                <div className="absolute bottom-0 left-0 h-1 w-full bg-[#2E75B6]" />
-              )}
-            </button>
-          ))}
+      {!isMetaRoute && (
+        <div className="mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
+          <div className="flex min-w-max gap-1">
+            {visibleTabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => { setTab(t.key); setPage(1); }}
+                className={`relative px-5 py-3 text-sm font-semibold transition-all ${
+                  tab === t.key 
+                    ? "text-[#1F3864]" 
+                    : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {t.label}
+                {tab === t.key && (
+                  <div className="absolute bottom-0 left-0 h-1 w-full bg-[#2E75B6]" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
@@ -539,6 +564,7 @@ export default function LeadListPage() {
             <FilterSelect label="Source" value={sourceId} onChange={setSourceId} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
             <FilterSelect label="Assigned To" value={executiveName} onChange={setExecutiveName} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
+            <FilterSelect label="Branch" value={referredFromBranch} onChange={setReferredFromBranch} options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))} />
           </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} className="mt-3 flex items-center gap-1 text-xs font-medium text-[#2E75B6] hover:underline">

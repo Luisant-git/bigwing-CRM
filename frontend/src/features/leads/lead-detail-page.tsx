@@ -189,7 +189,7 @@ export default function LeadDetailPage() {
       </div>
 
       {/* Pipeline progress bar */}
-      <PipelineProgress currentStage={lead.stage} />
+      <PipelineProgress lead={lead} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Left column — Lead info */}
@@ -205,6 +205,11 @@ export default function LeadDetailPage() {
                   {STAGE_LABELS[lead.stage] ?? lead.stage?.replace(/_/g, " ")}
                 </span>
               </Field>
+              {lead.stage === "LOST" && (
+                <Field label="Closure Reason">
+                  {lead.closureReason?.name || lead.remark || "—"}
+                </Field>
+              )}
               {lead.channel === "SERVICE" ? (
                 <>
                   <Field label="Service Type">{lead.typeOfService || "—"}</Field>
@@ -229,6 +234,7 @@ export default function LeadDetailPage() {
               <Field label="Model">{lead.model ?? "—"}</Field>
               <Field label="Variant">{lead.variant ?? "—"}</Field>
               <Field label="Colour">{lead.colour ?? "—"}</Field>
+              <Field label="Branch">{lead.referredFromBranch ?? "—"}</Field>
               <Field label="Enquiry Date">{formatDate(lead.enquiryDate)}</Field>
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
@@ -659,8 +665,8 @@ function Modal({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">{title}</h3>
           <button
@@ -730,7 +736,7 @@ function StageForm({
       <button
         type="submit"
         disabled={!stage || loading}
-        className="w-full rounded-lg bg-primary-600 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+        className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-medium text-white hover:bg-[#245f96] disabled:opacity-50"
       >
         {loading ? "Updating..." : "Update Stage"}
       </button>
@@ -868,7 +874,7 @@ function FollowupForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-primary-600 py-2 text-sm font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+        className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-medium text-white hover:bg-[#245f96] disabled:opacity-50"
       >
         {loading ? "Saving..." : "Add Follow-up"}
       </button>
@@ -890,34 +896,39 @@ const PIPELINE_STAGES = [
   { key: "DELIVERED_CLOSED", label: "Delivered", color: "#1F3864" },
 ];
 
-function PipelineProgress({ currentStage }: { currentStage: string }) {
-  if (currentStage === "LOST") {
-    return (
-      <div className="mb-6 flex items-center gap-2 rounded-xl bg-red-50 p-4 ring-1 ring-red-100">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EB5757] text-xs font-bold text-white">
-          X
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-[#EB5757]">Lead Lost</p>
-          <p className="text-[11px] text-gray-500">This lead has been closed as lost</p>
-        </div>
-      </div>
-    );
+function PipelineProgress({ lead }: { lead: any }) {
+  const currentStage = lead.stage;
+  const isLost = currentStage === "LOST";
+
+  // If lost, determine the last active stage before it was marked as lost
+  let activeStage = currentStage;
+  if (isLost) {
+    const history = lead.stageHistory || [];
+    const sorted = [...history].sort((a: any, b: any) => new Date(a.changedAt).getTime() - new Date(b.changedAt).getTime());
+    const lastActive = sorted.filter((h: any) => h.toStage !== "LOST").pop();
+    activeStage = lastActive ? lastActive.toStage : (sorted.length > 0 ? sorted[0].fromStage : "NEW");
+    if (activeStage === "LOST") activeStage = "NEW";
   }
 
-  const currentIdx = PIPELINE_STAGES.findIndex((s) => s.key === currentStage);
-  // Handle NOT_REACHABLE and TEST_RIDE_COMPLETED as aliases
+  const currentIdx = PIPELINE_STAGES.findIndex((s) => s.key === activeStage);
   const effectiveIdx =
-    currentStage === "NOT_REACHABLE" ? 1 :
-    currentStage === "TEST_RIDE_COMPLETED" ? 3 :
+    activeStage === "NOT_REACHABLE" ? 1 :
+    activeStage === "TEST_RIDE_COMPLETED" ? 2 :
+    (activeStage.toUpperCase() === "QUOTATION SHARED" || activeStage.toUpperCase() === "QUOTATION_SHARED") ? 3 :
     currentIdx;
 
+  const stagesToRender = isLost
+    ? [...PIPELINE_STAGES.slice(0, effectiveIdx + 1), { key: "LOST", label: "Lost", color: "#EB5757" }]
+    : PIPELINE_STAGES;
+
   return (
-    <div className="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center">
-        {PIPELINE_STAGES.map((stage, i) => {
-          const isCompleted = i <= effectiveIdx;
-          const isCurrent = i === effectiveIdx;
+    <div className="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-black/5 overflow-x-auto">
+      <div className="flex items-center min-w-[600px]">
+        {stagesToRender.map((stage, i) => {
+          const isLostNode = stage.key === "LOST";
+          const isCompleted = !isLostNode && i <= effectiveIdx;
+          const isCurrent = isLostNode ? true : i === effectiveIdx;
+          
           return (
             <div key={stage.key} className="flex flex-1 items-center">
               {/* Step circle */}
@@ -931,10 +942,10 @@ function PipelineProgress({ currentStage }: { currentStage: string }) {
                         : "bg-gray-100 text-gray-400"
                   }`}
                   style={{
-                    backgroundColor: isCompleted ? stage.color : undefined,
+                    backgroundColor: isCompleted || isCurrent ? stage.color : undefined,
                   }}
                 >
-                  {isCompleted && !isCurrent ? "✓" : i + 1}
+                  {isCompleted && !isCurrent ? "✓" : isLostNode ? "X" : i + 1}
                 </div>
                 <p
                   className={`mt-1.5 text-[10px] font-medium ${isCurrent ? "font-semibold" : isCompleted ? "text-gray-600" : "text-gray-400"}`}
@@ -944,8 +955,8 @@ function PipelineProgress({ currentStage }: { currentStage: string }) {
                 </p>
               </div>
               {/* Connector line */}
-              {i < PIPELINE_STAGES.length - 1 && (
-                <div className="mx-1 h-[2px] flex-1 rounded" style={{ backgroundColor: i < effectiveIdx ? stage.color : "#E5E7EB" }} />
+              {i < stagesToRender.length - 1 && (
+                <div className="mx-1 h-[2px] flex-1 rounded" style={{ backgroundColor: (i < effectiveIdx) ? stage.color : "#E5E7EB" }} />
               )}
             </div>
           );

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus, GripVertical, Pencil, Check, X, ToggleLeft, ToggleRight, Settings as SettingsIcon,
+  Plus, GripVertical, Pencil, Check, X, ToggleLeft, ToggleRight, Settings as SettingsIcon, Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
+import { FlyingModal } from "@/components/ui";
 
 const LOOKUP_SECTIONS = [
   { key: "enquiry-sources", label: "Enquiry Sources", description: "Lead source channels (Google, Instagram, Walk-in, etc.)" },
@@ -70,6 +71,10 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
   const [newMobile, setNewMobile] = useState("");
+  const [newBranchName, setNewBranchName] = useState("");
+  const [newNetworkCode, setNewNetworkCode] = useState("");
+  const [newNetworkType, setNewNetworkType] = useState("");
+  const [newInventoryLocation, setNewInventoryLocation] = useState("");
   const [newOrder, setNewOrder] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
@@ -77,6 +82,13 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
     queryKey: ["lookups", apiName, { includeInactive: true }],
     queryFn: () =>
       api.get(`/lookups/${apiName}`, { params: { includeInactive: true } }).then((r) => r.data.data),
+  });
+
+  const { data: branchesData } = useQuery({
+    queryKey: ["lookups", "referred-branches", { includeInactive: false }],
+    queryFn: () =>
+      api.get(`/lookups/referred-branches`).then((r) => r.data.data),
+    enabled: apiName === "sales-executives",
   });
 
   const createMut = useMutation({
@@ -87,6 +99,10 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
       setShowForm(false);
       setNewName("");
       setNewMobile("");
+      setNewBranchName("");
+      setNewNetworkCode("");
+      setNewNetworkType("");
+      setNewInventoryLocation("");
       setNewOrder("");
     },
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
@@ -103,12 +119,39 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
   });
 
+  const deleteMut = useMutation({
+    mutationFn: (id: number) => api.delete(`/lookups/${apiName}/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["lookups", apiName] });
+      toast.success("Deleted");
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to delete item"),
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim()) return;
+    if (apiName === "referred-branches") {
+      if (!newBranchName.trim()) return;
+    } else {
+      if (!newName.trim()) return;
+      if (apiName === "sales-executives" && !newBranchName.trim()) {
+        toast.error("Branch Name is required");
+        return;
+      }
+    }
     createMut.mutate({
-      name: newName.trim(),
-      ...(apiName === "sales-executives" && { mobile: newMobile.trim() }),
+      name: apiName === "referred-branches" ? newBranchName.trim() : newName.trim(),
+      ...(apiName === "sales-executives" && { 
+        mobile: newMobile.trim(),
+        branchName: newBranchName.trim(), 
+        networkCode: newNetworkCode.trim(), 
+      }),
+      ...(apiName === "referred-branches" && { 
+        branchName: newBranchName.trim(), 
+        networkCode: newNetworkCode.trim(), 
+        networkType: newNetworkType.trim(),
+        inventoryLocation: newInventoryLocation.trim()
+      }),
       displayOrder: newOrder ? Number(newOrder) : 0,
     });
   };
@@ -128,51 +171,144 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
         </button>
       </div>
 
-      {/* Add form */}
-      {showForm && (
+      {/* Add form Modal */}
+      <FlyingModal open={showForm} onClose={() => setShowForm(false)} title={`Add ${label}`} maxWidth="max-w-md">
         <form
           onSubmit={handleCreate}
-          className="mb-4 flex gap-2 rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200"
+          className="flex flex-col gap-4"
         >
-          <input
-            placeholder="Name *"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            required
-            autoFocus
-            className="flex-1 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
-          />
-          {apiName === "sales-executives" && (
-            <input
-              placeholder="Mobile Number"
-              value={newMobile}
-              onChange={(e) => setNewMobile(e.target.value)}
-              className="w-40 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none"
-            />
+          {apiName !== "referred-branches" && (
+            <div>
+              <label className="mb-1 block text-[13px] font-medium text-gray-700">Name *</label>
+              <input
+                placeholder="Enter name"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+                autoFocus
+                className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+              />
+            </div>
           )}
-          <input
-            type="number"
-            placeholder="Order"
-            value={newOrder}
-            onChange={(e) => setNewOrder(e.target.value)}
-            className="w-24 rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none"
-          />
-          <button
-            type="submit"
-            disabled={createMut.isPending}
-            className="rounded-lg bg-[#27AE60] px-5 py-2 text-sm font-semibold text-white hover:bg-[#219150] disabled:opacity-50"
-          >
-            {createMut.isPending ? "..." : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowForm(false)}
-            className="rounded-lg border px-3 py-2 text-sm text-gray-500 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
+          {apiName === "sales-executives" && (
+            <>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Mobile Number</label>
+                <input
+                  placeholder="Enter mobile number"
+                  value={newMobile}
+                  onChange={(e) => setNewMobile(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Branch Name *</label>
+                <select
+                  value={newBranchName}
+                  onChange={(e) => {
+                    const selectedName = e.target.value;
+                    setNewBranchName(selectedName);
+                    const b = (branchesData || []).find((b: any) => b.branchName === selectedName);
+                    if (b) {
+                      setNewNetworkCode(b.networkCode || "");
+                    } else {
+                      setNewNetworkCode("");
+                    }
+                  }}
+                  required
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                >
+                  <option value="">-- Select Branch --</option>
+                  {(branchesData || []).map((b: any) => (
+                    <option key={b.id} value={b.branchName}>{b.branchName}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Network Code</label>
+                <input
+                  placeholder="Network code"
+                  value={newNetworkCode}
+                  onChange={(e) => setNewNetworkCode(e.target.value)}
+                  readOnly
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm bg-gray-50 focus:outline-none"
+                />
+              </div>
+            </>
+          )}
+          {apiName === "referred-branches" && (
+            <>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Branch Name *</label>
+                <input
+                  placeholder="Enter branch name"
+                  value={newBranchName}
+                  onChange={(e) => setNewBranchName(e.target.value)}
+                  required
+                  autoFocus
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Network Code</label>
+                <input
+                  placeholder="Enter network code"
+                  value={newNetworkCode}
+                  onChange={(e) => setNewNetworkCode(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Network Type</label>
+                <input
+                  placeholder="Enter network type"
+                  value={newNetworkType}
+                  onChange={(e) => setNewNetworkType(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Inventory Location</label>
+                <input
+                  placeholder="Enter inventory location"
+                  value={newInventoryLocation}
+                  onChange={(e) => setNewInventoryLocation(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+            </>
+          )}
+          {apiName !== "referred-branches" && (
+            <div>
+              <label className="mb-1 block text-[13px] font-medium text-gray-700">Display Order</label>
+              <input
+                type="number"
+                placeholder="e.g. 1"
+                value={newOrder}
+                onChange={(e) => setNewOrder(e.target.value)}
+                className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+              />
+            </div>
+          )}
+          
+          <div className="mt-4 flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="rounded-lg border px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createMut.isPending}
+              className="rounded-lg bg-[#2E75B6] px-6 py-2 text-sm font-semibold text-white hover:bg-[#245f96] disabled:opacity-50"
+            >
+              {createMut.isPending ? "Saving..." : "Save"}
+            </button>
+          </div>
         </form>
-      )}
+      </FlyingModal>
 
       {/* Item list */}
       {isLoading ? (
@@ -184,6 +320,8 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
               <EditRow
                 key={item.id}
                 item={item}
+                apiName={apiName}
+                branchesData={branchesData}
                 onSave={(body) => updateMut.mutate({ id: item.id, body })}
                 onCancel={() => setEditingId(null)}
                 saving={updateMut.isPending}
@@ -194,13 +332,43 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
                 className={`flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 transition-shadow hover:shadow-md ${item.isActive ? "ring-gray-100" : "ring-red-100 opacity-70"}`}
               >
                 <GripVertical size={14} className="text-gray-300 cursor-grab" />
-                <span className="flex-1 text-sm font-medium text-gray-700">
-                  {item.name}
-                  {item.mobile && <span className="ml-2 font-normal text-gray-400">({item.mobile})</span>}
-                </span>
-                <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
-                  Order: {item.displayOrder}
-                </span>
+                <div className="flex-1 flex items-center justify-between gap-6 pr-6">
+                  <div className="flex-1 flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm font-semibold text-gray-800 truncate">
+                      {apiName !== "referred-branches" ? item.name : item.branchName}
+                    </span>
+                    {item.mobile && <span className="text-sm text-gray-500 whitespace-nowrap">({item.mobile})</span>}
+                  </div>
+                  {apiName !== "referred-branches" && item.branchName && (
+                    <div className="w-36 flex-shrink-0 flex flex-col">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Branch</span>
+                      <span className="text-[13px] font-medium text-gray-700 truncate">{item.branchName}</span>
+                    </div>
+                  )}
+                  {item.networkCode && (
+                    <div className="w-28 flex-shrink-0 flex flex-col">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Code</span>
+                      <span className="text-[13px] font-medium text-gray-700 truncate">{item.networkCode}</span>
+                    </div>
+                  )}
+                  {item.networkType && (
+                    <div className="w-28 flex-shrink-0 flex flex-col">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Type</span>
+                      <span className="text-[13px] font-medium text-gray-700 truncate" title={item.networkType}>{item.networkType}</span>
+                    </div>
+                  )}
+                  {item.inventoryLocation && (
+                    <div className="w-40 flex-shrink-0 flex flex-col">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Inventory Location</span>
+                      <span className="text-[13px] font-medium text-gray-700 truncate" title={item.inventoryLocation}>{item.inventoryLocation}</span>
+                    </div>
+                  )}
+                </div>
+                {apiName !== "referred-branches" && (
+                  <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
+                    Order: {item.displayOrder}
+                  </span>
+                )}
                 <button
                   onClick={() => updateMut.mutate({ id: item.id, body: { isActive: !item.isActive } })}
                   className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium ${item.isActive ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}
@@ -215,6 +383,17 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
                   title="Edit"
                 >
                   <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => {
+                    if (window.confirm("Are you sure you want to delete this item?")) {
+                      deleteMut.mutate(item.id);
+                    }
+                  }}
+                  className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
                 </button>
               </div>
             )
@@ -233,17 +412,25 @@ function LookupEditor({ label, apiName, description }: { label: string; apiName:
 
 function EditRow({
   item,
+  apiName,
+  branchesData,
   onSave,
   onCancel,
   saving,
 }: {
   item: any;
+  apiName: string;
+  branchesData?: any[];
   onSave: (body: any) => void;
   onCancel: () => void;
   saving: boolean;
 }) {
   const [name, setName] = useState(item.name);
   const [mobile, setMobile] = useState(item.mobile ?? "");
+  const [branchName, setBranchName] = useState(item.branchName ?? "");
+  const [networkCode, setNetworkCode] = useState(item.networkCode ?? "");
+  const [networkType, setNetworkType] = useState(item.networkType ?? "");
+  const [inventoryLocation, setInventoryLocation] = useState(item.inventoryLocation ?? "");
   const [order, setOrder] = useState(String(item.displayOrder ?? 0));
 
   return (
@@ -251,22 +438,28 @@ function EditRow({
       onSubmit={(e) => {
         e.preventDefault();
         onSave({ 
-          name: name.trim(), 
-          ...(item.mobile !== undefined && { mobile: mobile.trim() }),
+          name: apiName === "referred-branches" ? branchName.trim() : name.trim(), 
+          ...(apiName === "sales-executives" && { mobile: mobile.trim() }),
+          ...((apiName === "referred-branches" || apiName === "sales-executives") && { branchName: branchName.trim() }),
+          ...((apiName === "referred-branches" || apiName === "sales-executives") && { networkCode: networkCode.trim() }),
+          ...(apiName === "referred-branches" && { networkType: networkType.trim() }),
+          ...(apiName === "referred-branches" && { inventoryLocation: inventoryLocation.trim() }),
           displayOrder: Number(order) || 0 
         });
       }}
       className="flex items-center gap-2 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-200"
     >
       <GripVertical size={14} className="text-blue-300" />
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        required
-        autoFocus
-        className="flex-1 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
-      />
-      {item.mobile !== undefined && (
+      {apiName !== "referred-branches" && (
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          autoFocus
+          className="flex-1 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+        />
+      )}
+      {apiName === "sales-executives" && (
         <input
           placeholder="Mobile"
           value={mobile}
@@ -274,12 +467,68 @@ function EditRow({
           className="w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
         />
       )}
-      <input
-        type="number"
-        value={order}
-        onChange={(e) => setOrder(e.target.value)}
-        className="w-20 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
-      />
+      {apiName === "referred-branches" && (
+        <input
+          placeholder="Branch Name"
+          value={branchName}
+          onChange={(e) => setBranchName(e.target.value)}
+          className="w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+        />
+      )}
+      {apiName === "sales-executives" && (
+        <select
+          value={branchName}
+          onChange={(e) => {
+            const selectedName = e.target.value;
+            setBranchName(selectedName);
+            const b = (branchesData || []).find((b: any) => b.branchName === selectedName);
+            if (b) {
+              setNetworkCode(b.networkCode || "");
+            } else {
+              setNetworkCode("");
+            }
+          }}
+          className="w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+        >
+          <option value="">-- Branch --</option>
+          {(branchesData || []).map((b: any) => (
+            <option key={b.id} value={b.branchName}>{b.branchName}</option>
+          ))}
+        </select>
+      )}
+      {(apiName === "referred-branches" || apiName === "sales-executives") && (
+        <input
+          placeholder="Network Code"
+          value={networkCode}
+          onChange={(e) => setNetworkCode(e.target.value)}
+          readOnly={apiName === "sales-executives"}
+          className={`w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none ${apiName === "sales-executives" ? "bg-gray-50" : ""}`}
+        />
+      )}
+      {apiName === "referred-branches" && (
+        <>
+          <input
+            placeholder="Network Type"
+            value={networkType}
+            onChange={(e) => setNetworkType(e.target.value)}
+            className="w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+          <input
+            placeholder="Inventory Location"
+            value={inventoryLocation}
+            onChange={(e) => setInventoryLocation(e.target.value)}
+            className="w-32 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+        </>
+      )}
+      {apiName !== "referred-branches" && (
+        <input
+          type="number"
+          value={order}
+          onChange={(e) => setOrder(e.target.value)}
+          className="w-20 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+        />
+      )}
       <button
         type="submit"
         disabled={saving}

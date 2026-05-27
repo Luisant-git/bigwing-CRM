@@ -162,11 +162,22 @@ export default function UserListPage() {
 }
 
 function UserForm({ onSubmit, loading, onCancel }: { onSubmit: (d: any) => void; loading: boolean; onCancel: () => void }) {
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "SALES_EXECUTIVE" });
+  const [form, setForm] = useState({ email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "" });
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
 
+  const { data: branches } = useQuery({
+    queryKey: ["lookups", "referred-branches", { includeInactive: false }],
+    queryFn: () => api.get("/lookups/referred-branches").then((r) => r.data.data),
+  });
+
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(form); }} className="space-y-3">
+    <form onSubmit={(e) => { 
+      e.preventDefault(); 
+      onSubmit({
+        ...form,
+        branchId: form.role !== "ADMIN" && form.branchId ? Number(form.branchId) : undefined,
+      }); 
+    }} className="space-y-3">
       <div>
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Full Name *</label>
         <input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
@@ -193,11 +204,24 @@ function UserForm({ onSubmit, loading, onCancel }: { onSubmit: (d: any) => void;
           </select>
         </div>
       </div>
-      <div>
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Role *</label>
-        <select value={form.role} onChange={(e) => set("role", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
-          {["ADMIN","MANAGER","SALES_EXECUTIVE","TELE_CALLER","SERVICE","VIEWER"].map(r => <option key={r} value={r}>{r.replace(/_/g," ")}</option>)}
-        </select>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Role *</label>
+          <select value={form.role} onChange={(e) => set("role", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
+            {["ADMIN","MANAGER","TELE_CALLER","SERVICE","VIEWER"].map(r => <option key={r} value={r}>{r.replace(/_/g," ")}</option>)}
+          </select>
+        </div>
+        {form.role !== "ADMIN" && (
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Branch</label>
+            <select value={form.branchId} onChange={(e) => set("branchId", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
+              <option value="">-- None --</option>
+              {(branches ?? []).map((b: any) => (
+                <option key={b.id} value={b.id}>{b.branchName}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
       <div className="flex gap-2 pt-2">
         <button type="button" onClick={onCancel} className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>

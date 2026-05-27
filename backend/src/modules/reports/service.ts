@@ -1,17 +1,18 @@
 import { prisma } from "@bigwing/db";
 import { ownDataFilter } from "../leads/service.js";
 
-interface DateFilter {
+interface ReportFilter {
   dateFrom?: string;
   dateTo?: string;
+  channel?: string;
 }
 
-function dateWhere(f: DateFilter) {
+function dateWhere(f: ReportFilter) {
   if (!f.dateFrom && !f.dateTo) return {};
   return {
     enquiryDate: {
       ...(f.dateFrom && { gte: new Date(f.dateFrom) }),
-      ...(f.dateTo && { lte: new Date(f.dateTo) }),
+      ...(f.dateTo && { lte: new Date(new Date(f.dateTo).setHours(23, 59, 59, 999)) }),
     },
   };
 }
@@ -21,8 +22,13 @@ const OPEN_STAGES = { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] 
 export class ReportService {
   // ─── Sales Dashboard KPIs ─────────────────────────────────────
 
-  async dashboard(f: DateFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+  async dashboard(f: ReportFilter, user?: any) {
+    const base = { 
+      isDeleted: false, 
+      ...dateWhere(f), 
+      ...ownDataFilter(user),
+      ...(f.channel ? { channel: f.channel } : {})
+    };
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(todayStart.getTime() + 86400000);
@@ -93,8 +99,8 @@ export class ReportService {
 
   // ─── Funnel (stage-wise counts) ───────────────────────────────
 
-  async funnel(f: DateFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+  async funnel(f: ReportFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : {}) };
 
     const groups = await prisma.lead.groupBy({
       by: ["stage"],
@@ -125,8 +131,8 @@ export class ReportService {
 
   // ─── Executive Performance ────────────────────────────────────
 
-  async executive(f: DateFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+  async executive(f: ReportFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : {}) };
 
     // Get all assigned users' lead stats
     const groups = await prisma.lead.groupBy({
@@ -179,8 +185,8 @@ export class ReportService {
 
   // ─── Source Performance ───────────────────────────────────────
 
-  async source(f: DateFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+  async source(f: ReportFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : {}) };
 
     const groups = await prisma.lead.groupBy({
       by: ["sourceId", "stage"],
@@ -236,9 +242,38 @@ export class ReportService {
     }));
   }
 
+  // ─── Monthly Trends ───────────────────────────────────────────
+
+  async trends(f: ReportFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : {}) };
+
+    const monthlyGroups = await prisma.lead.groupBy({
+      by: ["enquiryDate", "stage"],
+      where: base,
+      _count: { id: true },
+    });
+
+    const monthMap = new Map<string, any>();
+    for (const g of monthlyGroups) {
+      const date = g.enquiryDate;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, { month: monthKey, enquiries: 0, quotation: 0, booking: 0, invoiced: 0, lost: 0 });
+      }
+      const m = monthMap.get(monthKey);
+      m.enquiries += g._count.id;
+      if (g.stage === "QUOTATION_SHARED") m.quotation += g._count.id;
+      if (g.stage === "BOOKED") m.booking += g._count.id;
+      if (g.stage === "INVOICED" || g.stage === "DELIVERED_CLOSED") m.invoiced += g._count.id;
+      if (g.stage === "LOST") m.lost += g._count.id;
+    }
+
+    return [...monthMap.values()].sort((a, b) => a.month.localeCompare(b.month));
+  }
+
   // ─── Model Mix ────────────────────────────────────────────────
 
-  async modelMix(f: DateFilter, user?: any) {
+  async modelMix(f: ReportFilter, user?: any) {
     const base = { isDeleted: false, modelId: { not: null }, ...dateWhere(f), ...ownDataFilter(user) };
 
     const groups = await prisma.lead.groupBy({
@@ -291,7 +326,7 @@ export class ReportService {
 
   // ─── Referred Branch Count ────────────────────────────────────
 
-  async referredBranch(f: DateFilter, user?: any) {
+  async referredBranch(f: ReportFilter, user?: any) {
     const base = {
       isDeleted: false,
       referredFromBranch: { not: null },
@@ -315,7 +350,7 @@ export class ReportService {
 
   // ─── Lost Reason Analysis ────────────────────────────────────
 
-  async lostReasons(f: DateFilter, user?: any) {
+  async lostReasons(f: ReportFilter, user?: any) {
     const base = {
       isDeleted: false,
       stage: "LOST",
@@ -348,7 +383,7 @@ export class ReportService {
 
   // ─── Tele-caller Dashboard (source × stage matrix) ───────────
 
-  async telecallerDashboard(f: DateFilter, user?: any) {
+  async telecallerDashboard(f: ReportFilter, user?: any) {
     const base = { isDeleted: false, channel: "TELE", ...dateWhere(f), ...ownDataFilter(user) };
 
     const groups = await prisma.lead.groupBy({
@@ -386,8 +421,8 @@ export class ReportService {
     return [...matrix.values()].sort((a, b) => b.total - a.total);
   }
 
-  async telecallerDetailedDashboard(f: DateFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+  async telecallerDetailedDashboard(f: ReportFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : {}) };
 
     const [
       sources,
@@ -480,8 +515,8 @@ export class ReportService {
   }
 
   // ─── Sales Executive Detailed Dashboard ────────────────────────
-  async salesExecutiveDetailedDashboard(f: DateFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user) };
+  async salesExecutiveDetailedDashboard(f: ReportFilter, user?: any) {
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : {}) };
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(todayStart.getTime() + 86400000);

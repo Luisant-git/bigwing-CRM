@@ -34,6 +34,12 @@ router.get(
 );
 
 router.get(
+  "/trends",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"]),
+  (req, res, next) => reportController.trends(req, res, next)
+);
+
+router.get(
   "/model-mix",
   rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "VIEWER"]),
   (req, res, next) => reportController.modelMix(req, res, next)

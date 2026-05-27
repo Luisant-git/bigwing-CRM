@@ -244,7 +244,7 @@ export class ImportService {
     const parsed = this.parseFile(filePath, sheetName);
 
     // Load master data lookups
-    const [sourceMap, typeMap, modelMap, variantMap, colourMap, userMap] =
+    const [sourceMap, typeMap, modelMap, variantMap, colourMap, userMap, branchMap] =
       await Promise.all([
         importRepository.getSourceMap(),
         importRepository.getEnquiryTypeMap(),
@@ -252,6 +252,7 @@ export class ImportService {
         importRepository.getVariantMap(),
         importRepository.getColourMap(),
         importRepository.getUserMap(),
+        importRepository.getBranchMap(),
       ]);
 
     let successRows = 0;
@@ -337,6 +338,34 @@ export class ImportService {
             create: { name, brand: batch.brand, isActive: true, displayOrder: 999 }
           });
           colourMap.set(name.toLowerCase(), c.id);
+        }
+      }
+
+      // Pre-create missing branches from DMS Enquiry No
+      const missingBranches = new Set<string>();
+      slice.forEach(r => {
+        if (!r.mapped.referredFromBranch && r.mapped.enquiryNo) {
+          const enqStr = String(r.mapped.enquiryNo).trim();
+          if (enqStr.startsWith("VEHENQ-")) {
+            const parts = enqStr.split("-");
+            if (parts.length >= 2) {
+              const networkCode = parts[1].toUpperCase();
+              if (!branchMap.has(networkCode)) {
+                missingBranches.add(networkCode);
+              }
+            }
+          }
+        }
+      });
+
+      if (missingBranches.size > 0) {
+        for (const networkCode of missingBranches) {
+          const b = await prisma.referredBranch.upsert({
+            where: { brand_name: { name: networkCode, brand: batch.brand } },
+            update: { networkCode },
+            create: { name: networkCode, networkCode: networkCode, brand: batch.brand, isActive: true, displayOrder: 999 }
+          });
+          branchMap.set(networkCode, b.name);
         }
       }
 
@@ -430,6 +459,7 @@ export class ImportService {
               variantMap,
               colourMap,
               userMap,
+              branchMap,
               // Helper to get next enquiry no without a query per row
               getNextEnquiryNo: async (t: any, date: Date) => {
                 const now = date || new Date();
@@ -970,11 +1000,25 @@ export class ImportService {
       variantMap: Map<string, { id: bigint; modelId: bigint }>;
       colourMap: Map<string, bigint>;
       userMap: Map<string, bigint>;
+      branchMap: Map<string, string>;
       getNextEnquiryNo: (tx: any, date: Date) => Promise<string>;
     }
   ) {
-    const { sourceMap, typeMap, modelMap, variantMap, colourMap, userMap, getNextEnquiryNo } = lookups;
+    const { sourceMap, typeMap, modelMap, variantMap, colourMap, userMap, branchMap, getNextEnquiryNo } = lookups;
     const { customerCache, leadCache } = cache;
+
+    // Try to infer referredFromBranch from DMS enquiryNo (e.g. VEHENQ-BWKA0105-...)
+    if (!mapped.referredFromBranch && mapped.enquiryNo) {
+      const enqStr = String(mapped.enquiryNo).trim();
+      if (enqStr.startsWith("VEHENQ-")) {
+        const parts = enqStr.split("-");
+        if (parts.length >= 2) {
+          const networkCode = parts[1].toUpperCase();
+          const branchName = branchMap.get(networkCode) || networkCode;
+          mapped.referredFromBranch = branchName;
+        }
+      }
+    }
 
     // Resolve customer (upsert by mobile)
     let customer = customerCache.get(mapped.mobile);

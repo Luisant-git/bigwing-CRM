@@ -4,7 +4,7 @@ import { auditService } from "../audit/service.js";
 import { ALL_DATA_ROLES } from "../leads/service.js";
 
 export class CustomerService {
-  async list(page: number, pageSize: number, q?: string, user?: any) {
+  async list(page: number, pageSize: number, q?: string, tab?: string, user?: any) {
     const roles = user?.roles || [];
     const canSeeAll = roles.some((r: string) => ALL_DATA_ROLES.includes(r));
 
@@ -19,6 +19,12 @@ export class CustomerService {
         ],
       }),
     };
+
+    if (tab === "meta") {
+      where.leads = { some: { channel: "SOCIAL" } };
+    } else if (tab === "crm") {
+      where.leads = { none: { channel: "SOCIAL" } };
+    }
 
     const [customers, total] = await Promise.all([
       customerRepository.findMany({
