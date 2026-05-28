@@ -5,6 +5,7 @@ import { customerRepository } from "../customers/repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
 import { brandContext } from "../../middlewares/brand.js";
+import { userService } from "../users/service.js";
 
 
 // Roles that can see all leads
@@ -827,20 +828,28 @@ async getByPhoneNumber(phoneNo: string) {
   }
 
 private async formatLeadDetail(l: any) {
-  // ✅ correct service + correct type
-  const customerData = l.customer?.id
-    ? await customerService.getById(BigInt(l.customer.id))
+
+  // 🔥 Fetch createdBy user only
+  const createdByUser = l.createdBy
+    ? await userService.getById(l.createdBy)
     : null;
 
   const leadDetail = {
     ...this.formatLead(l),
 
-    createdBy: l.createdBy ? Number(l.createdBy) : null,
+    // ✅ ONLY USER DATA
+    createdBy: createdByUser
+      ? {
+          id: Number(createdByUser.id),
+          fullName: createdByUser.fullName,
+          roles: createdByUser.userRoles?.map((r: any) => r.role?.name),
+        }
+      : null,
 
     dmsEnquiryNo: l.dmsEnquiryNo,
     closureReason: l.closureReason?.name,
 
-    customer: customerData,
+    // ❌ REMOVED CUSTOMER
 
     assignedTo: l.assignedUser
       ? {
