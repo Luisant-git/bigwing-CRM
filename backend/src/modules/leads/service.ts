@@ -842,7 +842,7 @@ private async formatLeadDetail(l: any) {
       ? {
           id: Number(createdByUser.id),
           fullName: createdByUser.fullName,
-          roles: createdByUser.userRoles?.map((r: any) => r.role?.name),
+         roles: createdByUser.roles,
         }
       : null,
 
