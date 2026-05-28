@@ -826,55 +826,62 @@ async getByPhoneNumber(phoneNo: string) {
     };
   }
 
-  private formatLeadDetail(l: any) {
-    return {
-      ...this.formatLead(l),
-      dmsEnquiryNo: l.dmsEnquiryNo,
-      closureReason: l.closureReason?.name,
-      customer: l.customer
-        ? {
-            id: Number(l.customer.id),
-            firstName: l.customer.firstName,
-            lastName: l.customer.lastName,
-            mobile: l.customer.mobile,
-            altMobile: l.customer.altMobile,
-            email: l.customer.email,
-            location: l.customer.location,
-            customerType: l.customer.customerType,
-          }
-        : undefined,
-      assignedTo: l.assignedUser
-        ? {
-            id: Number(l.assignedUser.id),
-            fullName: l.assignedUser.fullName,
-            email: l.assignedUser.email,
-          }
-        : null,
-      followups:
-        l.followups?.map((f: any) => ({
-          id: Number(f.id),
-          seqNo: f.seqNo,
-          followupDate: f.followupDate,
-          channel: f.channel,
-          remark: f.remark,
-          outcome: f.outcome,
-          nextActionAt: f.nextActionAt,
-          createdBy: f.creator
-            ? { id: Number(f.creator.id), fullName: f.creator.fullName }
-            : null,
-          createdAt: f.createdAt,
-        })) ?? [],
-      stageHistory:
-        l.stageHistory?.map((h: any) => ({
-          id: Number(h.id),
-          fromStage: h.fromStage,
-          toStage: h.toStage,
-          remark: h.remark,
-          changedBy: Number(h.changedBy),
-          changedAt: h.changedAt,
-        })) ?? [],
-    };
-  }
+ private formatLeadDetail(l: any) {
+  return {
+    ...this.formatLead(l),
+
+    createdBy: l.createdBy,   // ✅ ADD THIS
+
+    dmsEnquiryNo: l.dmsEnquiryNo,
+    closureReason: l.closureReason?.name,
+
+    customer: l.customer
+      ? {
+          id: Number(l.customer.id),
+          firstName: l.customer.firstName,
+          lastName: l.customer.lastName,
+          mobile: l.customer.mobile,
+          altMobile: l.customer.altMobile,
+          email: l.customer.email,
+          location: l.customer.location,
+          customerType: l.customer.customerType,
+        }
+      : undefined,
+
+    assignedTo: l.assignedUser
+      ? {
+          id: Number(l.assignedUser.id),
+          fullName: l.assignedUser.fullName,
+          email: l.assignedUser.email,
+        }
+      : null,
+
+    followups:
+      l.followups?.map((f: any) => ({
+        id: Number(f.id),
+        seqNo: f.seqNo,
+        followupDate: f.followupDate,
+        channel: f.channel,
+        remark: f.remark,
+        outcome: f.outcome,
+        nextActionAt: f.nextActionAt,
+        createdBy: f.creator
+          ? { id: Number(f.creator.id), fullName: f.creator.fullName }
+          : null,
+        createdAt: f.createdAt,
+      })) ?? [],
+
+    stageHistory:
+      l.stageHistory?.map((h: any) => ({
+        id: Number(h.id),
+        fromStage: h.fromStage,
+        toStage: h.toStage,
+        remark: h.remark,
+        changedBy: Number(h.changedBy),
+        changedAt: h.changedAt,
+      })) ?? [],
+  };
+}
 
   async truncateMeta(deletedBy: bigint) {
     const brand = brandContext.getStore() || "BIGWING";
