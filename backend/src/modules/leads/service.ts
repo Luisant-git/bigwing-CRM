@@ -226,7 +226,7 @@ export class LeadService {
     if (!lead || lead.isDeleted) {
       throw new AppError(404, "LEAD_NOT_FOUND", "Lead not found");
     }
-    return this.formatLeadDetail(lead);
+     return await this.formatLeadDetail(lead); 
   }
 
   
@@ -234,10 +234,12 @@ async getByPhoneNumber(phoneNo: string) {
   const leads = await leadRepository.findByCustomerPhone(phoneNo);
 
   if (!leads || leads.length === 0) {
-    throw new AppError(404, "LEADS_NOT_FOUND", "No leads found for this phone number");
+    throw new AppError(404, "LEADS_NOT_FOUND", "No leads found");
   }
 
-  return leads.map((lead) => this.formatLeadDetail(lead));
+  return await Promise.all(
+    leads.map((lead) => this.formatLeadDetail(lead))
+  );
 }
 
 
