@@ -826,27 +826,21 @@ async getByPhoneNumber(phoneNo: string) {
     };
   }
 
-private formatLeadDetail(l: any) {
+private async formatLeadDetail(l: any) {
+  // ✅ correct service + correct type
+  const customerData = l.customer?.id
+    ? await customerService.getById(BigInt(l.customer.id))
+    : null;
+
   const leadDetail = {
     ...this.formatLead(l),
 
-      createdBy: l.createdBy ? Number(l.createdBy) : null,
+    createdBy: l.createdBy ? Number(l.createdBy) : null,
 
     dmsEnquiryNo: l.dmsEnquiryNo,
     closureReason: l.closureReason?.name,
 
-    customer: l.customer
-      ? {
-          id: Number(l.customer.id),
-          firstName: l.customer.firstName,
-          lastName: l.customer.lastName,
-          mobile: l.customer.mobile,
-          altMobile: l.customer.altMobile,
-          email: l.customer.email,
-          location: l.customer.location,
-          customerType: l.customer.customerType,
-        }
-      : undefined,
+    customer: customerData,
 
     assignedTo: l.assignedUser
       ? {
@@ -882,12 +876,10 @@ private formatLeadDetail(l: any) {
       })) ?? [],
   };
 
-  // 🔥 LOG HERE
   console.log("Formatted Lead Detail:", leadDetail);
 
   return leadDetail;
 }
-
   async truncateMeta(deletedBy: bigint) {
     const brand = brandContext.getStore() || "BIGWING";
     const result = await prisma.lead.updateMany({
