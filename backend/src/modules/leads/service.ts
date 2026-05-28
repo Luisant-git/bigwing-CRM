@@ -830,7 +830,7 @@ private formatLeadDetail(l: any) {
   const leadDetail = {
     ...this.formatLead(l),
 
-    createdBy: l.createdBy,
+      createdBy: l.createdBy ? Number(l.createdBy) : null,
 
     dmsEnquiryNo: l.dmsEnquiryNo,
     closureReason: l.closureReason?.name,
