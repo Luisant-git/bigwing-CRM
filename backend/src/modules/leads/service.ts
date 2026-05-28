@@ -826,11 +826,11 @@ async getByPhoneNumber(phoneNo: string) {
     };
   }
 
- private formatLeadDetail(l: any) {
-  return {
+private formatLeadDetail(l: any) {
+  const leadDetail = {
     ...this.formatLead(l),
 
-    createdBy: l.createdBy,   // ✅ ADD THIS
+    createdBy: l.createdBy,
 
     dmsEnquiryNo: l.dmsEnquiryNo,
     closureReason: l.closureReason?.name,
@@ -881,6 +881,11 @@ async getByPhoneNumber(phoneNo: string) {
         changedAt: h.changedAt,
       })) ?? [],
   };
+
+  // 🔥 LOG HERE
+  console.log("Formatted Lead Detail:", leadDetail);
+
+  return leadDetail;
 }
 
   async truncateMeta(deletedBy: bigint) {
