@@ -161,8 +161,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
               modelId,
               enquiryTypeId: enquiryType?.id || 1,
               enquiryDate: new Date(leadData.created_time || Date.now()),
-              remark: "Generated from Facebook Lead Ads.",
-              referredFromBranch: formName
+              remark: `Generated from Facebook Lead Ads. Form: ${formName}`,
             };
 
           if (existingCustomer) {
