@@ -57,6 +57,7 @@ export const createUserSchema = z.object({
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   role: z.nativeEnum(UserRole),
   branchId: z.coerce.number().optional(),
+  brandAccess: z.enum(["BOTH", "BIGWING", "REDWING"]).optional(),
   isActive: z.boolean().default(true),
 });
 
@@ -65,6 +66,7 @@ export const updateUserSchema = z.object({
   mobile: mobileSchema.optional(),
   role: z.nativeEnum(UserRole).optional(),
   branchId: z.coerce.number().optional(),
+  brandAccess: z.enum(["BOTH", "BIGWING", "REDWING"]).optional(),
   isActive: z.boolean().optional(),
 });
 
