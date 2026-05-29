@@ -10,15 +10,31 @@ export class CustomerService {
 
     const where: any = {
       isDeleted: false,
-      ...(!canSeeAll && roles.includes("TELE_CALLER") && { createdBy: BigInt(user.userId) }),
-      ...(q && {
+      AND: []
+    };
+
+    if (!canSeeAll && roles.includes("TELE_CALLER")) {
+      where.AND.push({
+        OR: [
+          { createdBy: BigInt(user.userId) },
+          { leads: { some: { assignedTo: BigInt(user.userId) } } }
+        ]
+      });
+    }
+
+    if (q) {
+      where.AND.push({
         OR: [
           { firstName: { contains: q, mode: "insensitive" } },
           { lastName: { contains: q, mode: "insensitive" } },
           { mobile: { contains: q } },
         ],
-      }),
-    };
+      });
+    }
+
+    if (where.AND.length === 0) {
+      delete where.AND;
+    }
 
     if (tab === "meta") {
       where.leads = { some: { channel: "SOCIAL" } };

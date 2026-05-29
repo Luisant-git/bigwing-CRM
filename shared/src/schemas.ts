@@ -154,7 +154,9 @@ export const leadListQuerySchema = paginationSchema.extend({
   followupSeq: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
 });
 
-export const customerListQuerySchema = paginationSchema;
+export const customerListQuerySchema = paginationSchema.extend({
+  tab: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
+});
 
 // ─── Vehicle Catalogue (admin CRUD) ────────────────────────────
 export const createVehicleModelSchema = z.object({

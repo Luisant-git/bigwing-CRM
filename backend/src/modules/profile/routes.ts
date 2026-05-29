@@ -23,6 +23,7 @@ function formatUser(u: any) {
     isActive: u.isActive,
     lastLogin: u.lastLogin,
     roles: u.userRoles?.map((ur: any) => ur.role.name) ?? [],
+    brandAccess: u.brandAccess ?? "BOTH",
     createdAt: u.createdAt,
   };
 }
