@@ -18,7 +18,7 @@ export class CustomerService {
         OR: [
           { createdBy: BigInt(user.userId) },
           { leads: { some: { assignedTo: BigInt(user.userId) } } },
-          { leads: { some: { channel: "SOCIAL" } } }
+          { leads: { some: { channel: "SOCIAL", isDeleted: false } } }
         ]
       });
     }
