@@ -159,7 +159,7 @@ async function syncLeads() {
                             enquiryTypeId: enquiryType?.id || 1,
                             enquiryDate: new Date(lead.created_time || Date.now()),
                             remark: remarkIdentifier,
-                            referredFromBranch: form.name
+                            metaFormName: form.name
                         };
 
                         if (existingCustomer) {

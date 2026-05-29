@@ -121,6 +121,7 @@ export class LeadService {
       ...(data.expectedServiceDate && {
         expectedServiceDate: new Date(data.expectedServiceDate),
       }),
+      ...(data.metaFormName && { metaFormName: data.metaFormName }),
       createdBy,
     });
 
