@@ -18,6 +18,7 @@ import {
   PanelLeft,
   Megaphone,
   Kanban,
+  Rocket,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useBrandStore } from "@/stores/brand";
@@ -27,8 +28,9 @@ import { Avatar, Tooltip } from "@/components/ui";
 import { GlobalSearch } from "@/components/global-search";
 
 const navItems = [
+  { to: "/quick-start", label: "Quick Start", icon: Rocket },
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/reports", label: "Analytics", icon: BarChart3 },
+  // { to: "/reports", label: "Analytics", icon: BarChart3 },
   { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
   { to: "/meta-leads", label: "Meta Leads", icon: Megaphone },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },

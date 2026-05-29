@@ -33,7 +33,7 @@ export default function LoginPage() {
   };
 
   if (showPostLoader) {
-    return <PostLoginLoader onComplete={() => navigate({ to: "/" })} />;
+    return <PostLoginLoader onComplete={() => navigate({ to: "/quick-start" })} />;
   }
 
   return (

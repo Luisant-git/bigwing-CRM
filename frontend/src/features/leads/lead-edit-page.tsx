@@ -41,33 +41,83 @@ export default function LeadEditPage() {
   useEffect(() => {
     if (lead) {
       const val = (v: any) => v?.name ?? v;
+      const findId = (arr: any[], value: string) => {
+        if (!value || !arr) return null;
+        const normalized = value.toLowerCase().trim();
+        return arr.find((item: any) => item.name?.toLowerCase().trim() === normalized)?.id;
+      };
+      const findName = (arr: any[], value: string) => {
+        if (!value || !arr) return null;
+        const normalized = value.toLowerCase().trim();
+        return arr.find((item: any) => item.name?.toLowerCase().trim() === normalized)?.name;
+      };
+
       // Prefill from resolved lead data — we use name→id mappings via lookups
-      const srcId = lead.source?.id ?? sources?.find((s: any) => s.name === val(lead.source))?.id;
-      const typId = lead.enquiryType?.id ?? types?.find((t: any) => t.name === val(lead.enquiryType))?.id;
-      const modId = lead.model?.id ?? models?.find((m: any) => m.name === val(lead.model))?.id;
-      const colId = lead.colour?.id ?? colours?.find((c: any) => c.name === val(lead.colour))?.id;
-      setForm({
-        sourceId: srcId ? String(srcId) : "",
-        enquiryTypeId: typId ? String(typId) : "",
-        modelId: modId ? String(modId) : "",
-        variantId: lead.variant?.id ? String(lead.variant.id) : "",
-        colourId: colId ? String(colId) : "",
-        executiveName: val(lead.executiveName) ?? (lead.assignedTo?.fullName || ""),
-        interestLevel: val(lead.interestLevel) ?? "",
-        purchaseType: val(lead.purchaseType) ?? "",
-        exchangeFlag: lead.exchangeFlag ?? false,
-        testRideFlag: lead.testRideFlag ?? false,
-        remark: lead.remark ?? "",
-        referredFromBranch: val(lead.referredFromBranch) ?? "",
-        // Service fields
-        typeOfService: val(lead.typeOfService) ?? "",
-        expectedServiceDate: lead.expectedServiceDate ? lead.expectedServiceDate.split("T")[0] : "",
-        pickupDropFlag: lead.pickupDropFlag ?? false,
-        location: lead.customer?.location ?? "",
+      const srcId = lead.source?.id ?? findId(sources, val(lead.source));
+      const typId = lead.enquiryType?.id ?? findId(types, val(lead.enquiryType));
+      const modId = lead.model?.id ?? findId(models, val(lead.model));
+      const colId = lead.colour?.id ?? findId(colours, val(lead.colour));
+      const varId = lead.variant?.id ?? findId(variants, val(lead.variant));
+      
+      const exactExecName = findName(executives, val(lead.executiveName) ?? lead.assignedTo?.fullName) || (val(lead.executiveName) ?? (lead.assignedTo?.fullName || ""));
+      const exactBranchName = findName(branches, val(lead.referredFromBranch)) || (val(lead.referredFromBranch) ?? "");
+
+      console.log("DEBUG PREFILL:", {
+        leadVariant: lead.variant,
+        valLeadVariant: val(lead.variant),
+        variantsLength: variants?.length,
+        varIdFound: varId,
+        selectedModel
       });
-      if (modId) setSelectedModel(String(modId));
+
+      setForm((prev: any) => {
+        // If already initialized
+        if (Object.keys(prev).length > 0) {
+           let updated = false;
+           const next = { ...prev };
+           
+           // Force update the form with resolved lookups if they were missing or didn't match,
+           // as long as the user hasn't started manually editing the form (dirty is false).
+           if (!dirty) {
+             if (varId && next.variantId !== String(varId)) {
+                 next.variantId = String(varId);
+                 updated = true;
+             }
+             if (srcId && next.sourceId !== String(srcId)) { next.sourceId = String(srcId); updated = true; }
+             if (modId && next.modelId !== String(modId)) { next.modelId = String(modId); updated = true; }
+             if (colId && next.colourId !== String(colId)) { next.colourId = String(colId); updated = true; }
+             if (exactExecName && next.executiveName !== exactExecName) { next.executiveName = exactExecName; updated = true; }
+             if (exactBranchName && next.referredFromBranch !== exactBranchName) { next.referredFromBranch = exactBranchName; updated = true; }
+           }
+           
+           return updated ? next : prev;
+        }
+
+        return {
+          sourceId: srcId ? String(srcId) : "",
+          enquiryTypeId: typId ? String(typId) : "",
+          modelId: modId ? String(modId) : "",
+          variantId: varId ? String(varId) : "",
+          colourId: colId ? String(colId) : "",
+          // Use find to get the exact case/spacing from the lookup array if available, otherwise use raw
+          executiveName: executives?.find((e: any) => e.name?.toLowerCase().trim() === (val(lead.executiveName) ?? (lead.assignedTo?.fullName || "")).toLowerCase().trim())?.name || (val(lead.executiveName) ?? (lead.assignedTo?.fullName || "")),
+          interestLevel: val(lead.interestLevel) ?? "",
+          purchaseType: val(lead.purchaseType) ?? "",
+          exchangeFlag: lead.exchangeFlag ?? false,
+          testRideFlag: lead.testRideFlag ?? false,
+          remark: lead.remark ?? "",
+          referredFromBranch: branches?.find((b: any) => b.name?.toLowerCase().trim() === (val(lead.referredFromBranch) ?? "").toLowerCase().trim())?.name || (val(lead.referredFromBranch) ?? ""),
+          // Service fields
+          typeOfService: val(lead.typeOfService) ?? "",
+          expectedServiceDate: lead.expectedServiceDate ? lead.expectedServiceDate.split("T")[0] : "",
+          pickupDropFlag: lead.pickupDropFlag ?? false,
+          location: lead.customer?.location ?? "",
+        };
+      });
+
+      if (modId && !selectedModel) setSelectedModel(String(modId));
     }
-  }, [lead, sources, types, models, colours]);
+  }, [lead, sources, types, models, colours, variants]);
 
   const set = (field: string, value: any) => {
     setForm((f: any) => ({ ...f, [field]: value }));
@@ -292,16 +342,28 @@ export default function LeadEditPage() {
                 set("referredFromBranch", v);
                 set("executiveName", ""); // Reset executive when branch changes
               }}
-              options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))}
+              options={(() => {
+                const opts = (branches ?? []).map((b: any) => ({ value: b.name, label: b.name }));
+                if (form.referredFromBranch && !opts.some(o => o.value === form.referredFromBranch)) {
+                  opts.push({ value: form.referredFromBranch, label: form.referredFromBranch });
+                }
+                return opts;
+              })()}
               current={lead.referredFromBranch}
             />
             <SelectField
               label="Assigned To"
               value={form.executiveName}
               onChange={(v) => set("executiveName", v)}
-              options={(executives ?? [])
-                .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
-                .map((ex: any) => ({ value: ex.name, label: ex.name }))}
+              options={(() => {
+                const opts = (executives ?? [])
+                  .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
+                  .map((ex: any) => ({ value: ex.name, label: ex.name }));
+                if (form.executiveName && !opts.some(o => o.value === form.executiveName)) {
+                  opts.push({ value: form.executiveName, label: form.executiveName });
+                }
+                return opts;
+              })()}
               current={lead.executiveName || lead.assignedTo?.fullName}
               disabled={!form.referredFromBranch}
             />

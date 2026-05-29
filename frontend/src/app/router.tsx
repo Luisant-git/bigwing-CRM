@@ -23,7 +23,7 @@ import PipelineBoardPage from "@/features/leads/pipeline-board-page";
 import SettingsPage from "@/features/settings/settings-page";
 import NotFoundPage from "@/features/errors/not-found-page";
 import ProfilePage from "@/features/profile/profile-page";
-
+import QuickStartPage from "@/features/quick-start/quick-start-page";
 // ─── Root ──────────────────────────────────────────────────────
 const rootRoute = createRootRoute();
 
@@ -51,6 +51,12 @@ const dashboardRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: "/",
   component: DashboardPage,
+});
+
+const quickStartRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/quick-start",
+  component: QuickStartPage,
 });
 
 // Leads
@@ -174,6 +180,7 @@ const notFoundRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   layoutRoute.addChildren([
+    quickStartRoute,
     dashboardRoute,
     leadsRoute,
     metaLeadsRoute,

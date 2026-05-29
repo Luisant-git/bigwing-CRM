@@ -159,21 +159,21 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
 
   return (
     <div>
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
-          <button onClick={onBack} className="mt-1 lg:hidden rounded-lg bg-gray-100 p-1.5 text-gray-500 hover:bg-gray-200">
+      <div className="mb-4 flex items-start justify-between gap-2 sm:gap-3">
+        <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+          <button onClick={onBack} className="mt-0.5 sm:mt-1 lg:hidden rounded-lg bg-gray-100 p-1.5 text-gray-500 hover:bg-gray-200 shrink-0">
             <ChevronLeft size={16} />
           </button>
-          <div>
-            <h2 className="text-xl font-bold text-[#1F3864]">{label}</h2>
-            <p className="mt-0.5 text-sm text-gray-500">{description}</p>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold text-[#1F3864] truncate">{label}</h2>
+            <p className="mt-0.5 text-[11px] sm:text-sm text-gray-500 leading-snug line-clamp-2 sm:line-clamp-none">{description}</p>
           </div>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex shrink-0 w-fit items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
+          className="flex shrink-0 items-center gap-1 sm:gap-1.5 rounded-lg bg-[#2E75B6] px-2.5 sm:px-4 py-1.5 sm:py-2 text-[12px] sm:text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
         >
-          <Plus size={16} /> Add Item
+          <Plus size={14} className="sm:h-4 sm:w-4" /> Add Item
         </button>
       </div>
 
