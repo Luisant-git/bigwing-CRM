@@ -288,6 +288,7 @@ model Lead {
   typeOfService       String?            @map("type_of_service") @db.VarChar(60)
   pickupDropFlag      Boolean            @default(false) @map("pickup_drop_flag")
   expectedServiceDate DateTime?          @map("expected_service_date") @db.Date
+  metaFormName        String?            @map("meta_form_name") @db.VarChar(120)
   isDeleted           Boolean            @default(false) @map("is_deleted")
   rowVersion          Int                @default(1) @map("row_version")
   createdAt           DateTime           @default(now()) @map("created_at")

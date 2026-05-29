@@ -84,6 +84,8 @@ const TELE_HEADERS: Record<string, string> = {
   "follow up remark": "followupRemark",
   "follow up remarks": "followupRemark",
   "network type": "referredFromBranch",
+  "meta form name": "metaFormName",
+  "meta form": "metaFormName",
   "enquiry remark": "remark",
   "closure remarks": "closureRemark",
 };
@@ -145,6 +147,8 @@ const WALKIN_HEADERS: Record<string, string> = {
   "account name": "accountName",
   "channel": "channel",
   "network type": "referredFromBranch",
+  "meta form name": "metaFormName",
+  "meta form": "metaFormName",
   "enquiry remark": "remark",
   "closure remarks": "closureRemark",
 };
@@ -1145,7 +1149,8 @@ export class ImportService {
           (mapped.testRideFlag !== undefined && mapped.testRideFlag !== existing.testRideFlag) ||
           shouldUpdateNext ||
           shouldUpdateLast ||
-          (mapped.referredFromBranch && mapped.referredFromBranch !== existing.referredFromBranch);
+          (mapped.referredFromBranch && mapped.referredFromBranch !== existing.referredFromBranch) ||
+          (mapped.metaFormName && mapped.metaFormName !== existing.metaFormName);
 
         if (hasChanged) {
           await tx.lead.update({
@@ -1166,6 +1171,7 @@ export class ImportService {
               enquiryDate: mapped.enquiryDate ?? existing.enquiryDate,
               remark: mapped.remark ?? mapped.closureRemark ?? existing.remark,
               referredFromBranch: mapped.referredFromBranch ?? existing.referredFromBranch,
+              metaFormName: mapped.metaFormName ?? existing.metaFormName,
               updatedBy: createdBy,
               updatedAt: new Date(),
             },
@@ -1203,6 +1209,7 @@ export class ImportService {
         enquiryDate: mapped.enquiryDate || new Date(),
         remark: mapped.remark ?? mapped.closureRemark,
         referredFromBranch: mapped.referredFromBranch,
+        metaFormName: mapped.metaFormName,
         closedAt: targetStage === "DELIVERED_CLOSED" || targetStage === "LOST" ? new Date() : undefined,
         createdBy,
       },

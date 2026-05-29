@@ -191,7 +191,7 @@ export class LeadService {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
-        ...(metaForm ? [{ remark: { contains: metaForm } }] : []),
+        ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(q ? [{
           OR: [
             { enquiryNo: { contains: q, mode: "insensitive" } },
@@ -473,7 +473,7 @@ async getByPhoneNumber(phoneNo: string) {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
-        ...(metaForm ? [{ remark: { contains: metaForm } }] : []),
+        ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(q ? [{
           OR: [
             { enquiryNo: { contains: q, mode: "insensitive" } },
@@ -573,7 +573,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
-          ...(metaForm ? [{ remark: { contains: metaForm } }] : []),
+          ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...((filters.dateFrom || filters.dateTo) ? [{
             enquiryDate: {
               ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
@@ -917,19 +917,12 @@ private async formatLeadDetail(l: any) {
   async getMetaForms() {
     const brand = brandContext.getStore() || "BIGWING";
     const leads = await prisma.lead.findMany({
-      where: { channel: "SOCIAL", brand, remark: { contains: "Form:" } },
-      select: { remark: true },
-      distinct: ['remark']
+      where: { channel: "SOCIAL", brand, metaFormName: { not: null } },
+      select: { metaFormName: true },
+      distinct: ['metaFormName']
     });
 
-    const forms = new Set<string>();
-    for (const l of leads) {
-      if (l.remark && l.remark.includes("Form: ")) {
-        const formName = l.remark.split("Form: ")[1].trim();
-        if (formName) forms.add(formName);
-      }
-    }
-    return Array.from(forms);
+    return leads.map(l => l.metaFormName).filter(Boolean);
   }
 }
 
