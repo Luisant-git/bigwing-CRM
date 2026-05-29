@@ -269,9 +269,7 @@ export default function LeadDetailPage() {
                   )}
                 </div>
               </Field>
-              {lead.referredFromBranch && (
-                <Field label="Referred From">{lead.referredFromBranch?.name ?? lead.referredFromBranch}</Field>
-              )}
+
               {lead.remark && (
                 <div className="col-span-2">
                   <Field label="Remark">{lead.remark}</Field>

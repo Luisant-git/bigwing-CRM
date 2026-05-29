@@ -13,11 +13,12 @@ export class CustomerService {
       AND: []
     };
 
-    if (!canSeeAll && roles.includes("TELE_CALLER")) {
+    if (!canSeeAll && (roles.includes("TELE_CALLER") || roles.includes("SALES_EXECUTIVE"))) {
       where.AND.push({
         OR: [
           { createdBy: BigInt(user.userId) },
-          { leads: { some: { assignedTo: BigInt(user.userId) } } }
+          { leads: { some: { assignedTo: BigInt(user.userId) } } },
+          { leads: { some: { channel: "SOCIAL" } } }
         ]
       });
     }
@@ -37,9 +38,9 @@ export class CustomerService {
     }
 
     if (tab === "meta") {
-      where.leads = { some: { channel: "SOCIAL" } };
+      where.leads = { some: { channel: "SOCIAL", isDeleted: false } };
     } else if (tab === "crm") {
-      where.leads = { none: { channel: "SOCIAL" } };
+      where.leads = { none: { channel: "SOCIAL", isDeleted: false } };
     }
 
     const [customers, total] = await Promise.all([
