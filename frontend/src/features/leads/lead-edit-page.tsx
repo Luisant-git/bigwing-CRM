@@ -344,7 +344,7 @@ export default function LeadEditPage() {
               }}
               options={(() => {
                 const opts = (branches ?? []).map((b: any) => ({ value: b.name, label: b.name }));
-                if (form.referredFromBranch && !opts.some(o => o.value === form.referredFromBranch)) {
+                if (form.referredFromBranch && !opts.some((o: any) => o.value === form.referredFromBranch)) {
                   opts.push({ value: form.referredFromBranch, label: form.referredFromBranch });
                 }
                 return opts;
@@ -359,7 +359,7 @@ export default function LeadEditPage() {
                 const opts = (executives ?? [])
                   .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
                   .map((ex: any) => ({ value: ex.name, label: ex.name }));
-                if (form.executiveName && !opts.some(o => o.value === form.executiveName)) {
+                if (form.executiveName && !opts.some((o: any) => o.value === form.executiveName)) {
                   opts.push({ value: form.executiveName, label: form.executiveName });
                 }
                 return opts;
