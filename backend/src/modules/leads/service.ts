@@ -156,6 +156,7 @@ export class LeadService {
       referredFromBranch,
       executiveName,
       followupSeq,
+      metaForm,
       q,
     } = filters;
 
@@ -175,11 +176,7 @@ export class LeadService {
         ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
         ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
         ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
-        ...(referredFromBranch
-          ? channel === "SOCIAL"
-            ? [{ remark: { contains: `Form: ${referredFromBranch}` } }]
-            : [{ referredFromBranch }]
-          : []),
+        ...(referredFromBranch ? [{ referredFromBranch }] : []),
         ...((dateFrom || dateTo) ? [{
           enquiryDate: {
             ...(dateFrom && { gte: new Date(dateFrom) }),
@@ -194,6 +191,7 @@ export class LeadService {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
+        ...(metaForm ? [{ remark: { contains: metaForm } }] : []),
         ...(q ? [{
           OR: [
             { enquiryNo: { contains: q, mode: "insensitive" } },
@@ -438,6 +436,7 @@ async getByPhoneNumber(phoneNo: string) {
       dateFrom,
       dateTo,
       followupSeq,
+      metaForm,
       q,
     } = filters;
 
@@ -459,11 +458,7 @@ async getByPhoneNumber(phoneNo: string) {
         ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
         ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
         ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
-        ...(referredFromBranch
-          ? channel === "SOCIAL"
-            ? [{ remark: { contains: `Form: ${referredFromBranch}` } }]
-            : [{ referredFromBranch }]
-          : []),
+        ...(referredFromBranch ? [{ referredFromBranch }] : []),
         ...((dateFrom || dateTo) ? [{
           enquiryDate: {
             ...(dateFrom && { gte: new Date(dateFrom) }),
@@ -478,6 +473,7 @@ async getByPhoneNumber(phoneNo: string) {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
+        ...(metaForm ? [{ remark: { contains: metaForm } }] : []),
         ...(q ? [{
           OR: [
             { enquiryNo: { contains: q, mode: "insensitive" } },
@@ -548,6 +544,7 @@ async getByPhoneNumber(phoneNo: string) {
         referredFromBranch,
         executiveName,
         followupSeq,
+        metaForm,
         q,
       } = filters;
 
@@ -567,11 +564,7 @@ async getByPhoneNumber(phoneNo: string) {
           ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
           ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
           ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
-          ...(referredFromBranch
-            ? channel === "SOCIAL"
-              ? [{ remark: { contains: `Form: ${referredFromBranch}` } }]
-              : [{ referredFromBranch }]
-            : []),
+          ...(referredFromBranch ? [{ referredFromBranch }] : []),
           ...(followupSeq ? [{
             followups: followupSeq === "gt5"
               ? { some: { seqNo: { gt: 5 } } }
@@ -580,6 +573,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
+          ...(metaForm ? [{ remark: { contains: metaForm } }] : []),
           ...((filters.dateFrom || filters.dateTo) ? [{
             enquiryDate: {
               ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
@@ -923,14 +917,16 @@ private async formatLeadDetail(l: any) {
   async getMetaForms() {
     const brand = brandContext.getStore() || "BIGWING";
     const leads = await prisma.lead.findMany({
-      where: { channel: "SOCIAL", brand, remark: { contains: "Form: " } },
-      select: { remark: true }
+      where: { channel: "SOCIAL", brand, remark: { contains: "Form:" } },
+      select: { remark: true },
+      distinct: ['remark']
     });
-    
+
     const forms = new Set<string>();
     for (const l of leads) {
       if (l.remark && l.remark.includes("Form: ")) {
-        forms.add(l.remark.split("Form: ")[1].trim());
+        const formName = l.remark.split("Form: ")[1].trim();
+        if (formName) forms.add(formName);
       }
     }
     return Array.from(forms);

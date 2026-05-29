@@ -4,27 +4,26 @@ const prisma = new PrismaClient();
 
 async function main() {
   const metaLeads = await prisma.lead.findMany({
-    where: { channel: 'SOCIAL', referredFromBranch: { not: null } }
+    where: { channel: 'SOCIAL' }
   });
 
-  let totalReverted = 0;
+  let totalUpdated = 0;
 
   for (const lead of metaLeads) {
     if (lead.remark && lead.remark.includes('Form: ')) {
       const formName = lead.remark.split('Form: ')[1].trim();
       
-      // If the referredFromBranch is identical to the form name, it means it was populated by our previous logic.
-      if (lead.referredFromBranch === formName) {
+      if (formName && lead.referredFromBranch !== formName) {
         await prisma.lead.update({
           where: { id: lead.id },
-          data: { referredFromBranch: null }
+          data: { referredFromBranch: formName }
         });
-        totalReverted++;
+        totalUpdated++;
       }
     }
   }
 
-  console.log(`Successfully cleared branch field for ${totalReverted} Meta leads to allow manual entry.`);
+  console.log(`Successfully migrated ${totalUpdated} Meta leads to use referredFromBranch for forms.`);
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

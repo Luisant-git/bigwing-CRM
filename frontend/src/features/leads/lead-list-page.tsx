@@ -65,6 +65,7 @@ export default function LeadListPage() {
   const [assignedTo, setAssignedTo] = useState("");
   const [executiveName, setExecutiveName] = useState("");
   const [referredFromBranch, setReferredFromBranch] = useState("");
+  const [metaForm, setMetaForm] = useState("");
   const [sourceId, setSourceId] = useState("");
   const [modelId, setModelId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -74,7 +75,7 @@ export default function LeadListPage() {
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
     setPage(1);
-  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo, followupSeq]);
+  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo, followupSeq, metaForm]);
 
   const { data: sources } = useLookup("enquiry-sources");
   const { data: models } = useLookup("vehicle-models");
@@ -100,6 +101,7 @@ export default function LeadListPage() {
   if (executiveName) params.executiveName = executiveName;
   if (followupSeq) params.followupSeq = followupSeq;
   if (referredFromBranch) params.referredFromBranch = referredFromBranch;
+  if (metaForm) params.metaForm = metaForm;
 
   const handleDownload = async () => {
     try {
@@ -482,8 +484,8 @@ export default function LeadListPage() {
               <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
               <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
                 <select
-                  value={referredFromBranch}
-                  onChange={(e) => { setReferredFromBranch(e.target.value); setPage(1); }}
+                  value={metaForm}
+                  onChange={(e) => { setMetaForm(e.target.value); setPage(1); }}
                   className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
                 >
                   <option value="">All forms</option>
@@ -493,9 +495,9 @@ export default function LeadListPage() {
                     </option>
                   ))}
                 </select>
-                {referredFromBranch && (
+                {metaForm && (
                   <button 
-                    onClick={() => { setReferredFromBranch(""); setPage(1); }}
+                    onClick={() => { setMetaForm(""); setPage(1); }}
                     className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
                   >
                     <X size={12} strokeWidth={2.5} />
