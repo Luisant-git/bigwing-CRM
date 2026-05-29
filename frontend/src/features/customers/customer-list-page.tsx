@@ -72,17 +72,21 @@ export default function CustomerListPage() {
     <div>
       <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Customers", icon: UserCircle }]} />
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1F3864]">Customers</h1>
-          <p className="text-[12px] text-gray-400">Master list of all customers</p>
+      <div className="mb-5 flex items-start justify-between gap-3 sm:items-center">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#1F3864] truncate">Customers</h1>
+          <p className="text-[11px] sm:text-[12px] text-gray-400 line-clamp-1 sm:line-clamp-none">
+            Master list of all customers
+          </p>
         </div>
-        <Link
-          to="/customers/new"
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
-        >
-          <Plus size={16} /> New Customer
-        </Link>
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          <Link
+            to="/customers/new"
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
+          >
+            <Plus size={16} /> <span>New Customer</span>
+          </Link>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -96,7 +100,7 @@ export default function CustomerListPage() {
       {/* Search */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Tabs */}
-        <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+        <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-1 rounded-lg bg-gray-100 p-1">
           {[
             { key: "all", label: "All Customers" },
             { key: "crm", label: "CRM Customers" },
@@ -105,7 +109,7 @@ export default function CustomerListPage() {
             <button
               key={t.key}
               onClick={() => { setTab(t.key as any); setPage(1); }}
-              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-all ${
+              className={`shrink-0 rounded-md px-3 py-1.5 text-sm font-semibold transition-all ${
                 tab === t.key
                   ? "bg-white text-[#1F3864] shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -116,14 +120,14 @@ export default function CustomerListPage() {
           ))}
         </div>
 
-        <div className="relative">
+        <div className="relative w-full sm:w-auto">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Search by name or mobile..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-72 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+            className="w-full sm:w-72 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
           />
         </div>
       </div>

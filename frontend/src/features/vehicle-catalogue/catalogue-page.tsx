@@ -222,10 +222,10 @@ function ModelsTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void })
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <button
           onClick={() => setShowInactive(!showInactive)}
-          className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${showInactive ? "border-[#2E75B6] bg-blue-50 text-[#2E75B6]" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+          className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${showInactive ? "border-[#2E75B6] bg-blue-50 text-[#2E75B6]" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
         >
           {showInactive ? <Eye size={14} /> : <EyeOff size={14} />}
           {showInactive ? "Showing inactive" : "Show inactive"}
@@ -235,17 +235,17 @@ function ModelsTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void })
             </span>
           )}
         </button>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
           >
             <Plus size={16} /> Add Model
           </button>
           <button
             onClick={() => document.getElementById("stock-upload")?.click()}
             disabled={importStockMut.isPending}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             {importStockMut.isPending ? <Loader2 size={16} className="animate-spin" /> : <Package size={16} />} 
             Update Stock
@@ -547,9 +547,9 @@ function ColoursTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void }
           e.preventDefault();
           if (newColour.trim()) createMut.mutate(newColour.trim());
         }}
-        className="mb-6 flex gap-2"
+        className="mb-6 flex flex-col sm:flex-row gap-2"
       >
-        <div className="relative max-w-sm flex-1">
+        <div className="relative w-full sm:max-w-sm sm:flex-1">
           <Palette size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             placeholder="New colour name..."
@@ -561,7 +561,7 @@ function ColoursTab({ setConfirmDelete }: { setConfirmDelete: (v: any) => void }
         <button
           type="submit"
           disabled={createMut.isPending}
-          className="flex items-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] disabled:opacity-50"
+          className="flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#2E75B6] px-4 py-2 text-sm font-semibold text-white hover:bg-[#245f96] disabled:opacity-50"
         >
           <Plus size={14} /> Add Colour
         </button>

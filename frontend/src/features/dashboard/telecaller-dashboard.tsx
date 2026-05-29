@@ -147,23 +147,23 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
       {!isNested && (
         <>
           <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Tele-caller Dashboard", icon: PhoneCall }]} />
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between max-w-full overflow-hidden">
             <div>
               <h1 className="text-2xl font-bold text-[#1F3864]">Tele-caller Performance</h1>
               <p className="text-[12px] text-gray-400">Date-wise and source-wise enquiry analytics</p>
             </div>
             {!propDateFrom && !propDateTo && (
-              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
-                <Calendar size={14} className="text-gray-400" />
-                <input type="date" value={internalDateFrom} onChange={(e) => setInternalDateFrom(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
-                <span className="text-gray-300">→</span>
-                <input type="date" value={internalDateTo} onChange={(e) => setInternalDateTo(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none" />
+              <div className="flex w-full sm:w-auto items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm overflow-x-auto no-scrollbar">
+                <Calendar size={14} className="text-gray-400 shrink-0" />
+                <input type="date" value={internalDateFrom} onChange={(e) => setInternalDateFrom(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none shrink-0" />
+                <span className="text-gray-300 shrink-0">→</span>
+                <input type="date" value={internalDateTo} onChange={(e) => setInternalDateTo(e.target.value)} className="border-0 bg-transparent text-sm focus:outline-none shrink-0" />
                 <button 
                   onClick={() => {
                     setInternalDateFrom("");
                     setInternalDateTo("");
                   }}
-                  className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+                  className="ml-1 shrink-0 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
                   title="Clear dates"
                 >
                   <X size={14} />
@@ -181,7 +181,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
             key={card.label}
             to="/leads"
             search={{ tab: card.tab }}
-            className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md hover:ring-[#2E75B6]/20`}
+            className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md hover:ring-[#2E75B6]/20 active:scale-95 cursor-pointer touch-manipulation`}
           >
             <div
               className="absolute left-0 top-0 h-full w-1 rounded-l-xl"

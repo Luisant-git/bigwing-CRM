@@ -100,27 +100,27 @@ export default function DashboardPage() {
             {view === "social" ? "Meta leads & social media performance" : view === "tele" ? "Tele-calling performance metrics" : view === "sales" ? "Sales Performance Metrics" : "General Overview & KPIs"}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 max-w-full overflow-hidden">
+          <div className="flex w-full sm:w-auto items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 shadow-sm overflow-x-auto no-scrollbar">
             <input 
               type="date" 
               value={dateFrom} 
               onChange={(e) => setDateFrom(e.target.value)} 
-              className="border-0 bg-transparent text-sm focus:outline-none" 
+              className="border-0 bg-transparent text-sm focus:outline-none shrink-0" 
             />
-            <span className="text-gray-300">→</span>
+            <span className="text-gray-300 shrink-0">→</span>
             <input 
               type="date" 
               value={dateTo} 
               onChange={(e) => setDateTo(e.target.value)} 
-              className="border-0 bg-transparent text-sm focus:outline-none" 
+              className="border-0 bg-transparent text-sm focus:outline-none shrink-0" 
             />
             <button 
               onClick={() => {
                 setDateFrom("");
                 setDateTo("");
               }}
-              className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+              className="ml-1 shrink-0 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
               title="Clear dates"
             >
               <X size={14} />
@@ -128,28 +128,28 @@ export default function DashboardPage() {
           </div>
 
           {isAdmin && (
-            <div className="flex rounded-lg bg-gray-100 p-1 shadow-inner">
+            <div className="flex w-full sm:w-auto overflow-x-auto rounded-lg bg-gray-100 p-1 shadow-inner no-scrollbar">
               <button
                 onClick={() => setView("general")}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "general" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Overview
               </button>
               <button
                 onClick={() => setView("sales")}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "sales" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Sales Performance
               </button>
               <button
                 onClick={() => setView("social")}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "social" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "social" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Social Media
               </button>
               <button
                 onClick={() => setView("tele")}
-                className={`rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "tele" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "tele" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
                 Tele-caller
               </button>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
             key={card.label}
             to="/leads"
             search={{ tab: card.tab }}
-            className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md`}
+            className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md active:scale-95 cursor-pointer touch-manipulation`}
           >
             {/* Accent bar */}
             <div
@@ -280,27 +280,29 @@ export default function DashboardPage() {
           <h2 className="mb-1 text-[15px] font-semibold text-[#1F3864]">Enquiries by Source</h2>
           <p className="mb-4 text-[12px] text-gray-400">Distribution of lead sources</p>
           {sourceData.length > 0 ? (
-            <div className="flex items-center gap-4">
-              <ResponsiveContainer width="60%" height={240}>
-                <PieChart>
-                  <Pie
-                    data={sourceData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={95}
-                    strokeWidth={2}
-                    stroke="#fff"
-                  >
-                    {sourceData.map((_: any, i: number) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E8EBF0", fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <div className="w-full sm:w-[60%] h-[240px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={sourceData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={95}
+                      strokeWidth={2}
+                      stroke="#fff"
+                    >
+                      {sourceData.map((_: any, i: number) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ borderRadius: 8, border: "1px solid #E8EBF0", fontSize: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
               {/* Legend */}
               <div className="flex flex-col gap-2">
                 {sourceData.slice(0, 7).map((s: any, i: number) => (

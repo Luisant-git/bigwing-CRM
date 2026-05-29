@@ -219,6 +219,7 @@ export const createLookupSchema = z.object({
   branchName: z.string().max(120).optional(),
   networkCode: z.string().max(60).optional(),
   networkType: z.string().max(60).optional(),
+  inventoryLocation: z.string().max(120).optional(),
   displayOrder: z.number().int().default(0),
   isActive: z.boolean().default(true),
 });

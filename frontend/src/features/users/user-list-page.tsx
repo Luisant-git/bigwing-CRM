@@ -103,17 +103,21 @@ export default function UserListPage() {
     <div>
       <Breadcrumb items={[{ label: "Home", to: "/" }, { label: "Users", icon: UsersIcon }]} />
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1F3864]">Users</h1>
-          <p className="text-[12px] text-gray-400">Manage team members and their access</p>
+      <div className="mb-5 flex items-start justify-between gap-3 sm:items-center">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#1F3864] truncate">Users</h1>
+          <p className="text-[11px] sm:text-[12px] text-gray-400 line-clamp-1 sm:line-clamp-none">
+            Manage team members and their access
+          </p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg"
-        >
-          <Plus size={16} /> Add User
-        </button>
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
+          >
+            <Plus size={16} /> <span>Add User</span>
+          </button>
+        </div>
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -331,31 +331,31 @@ export default function LeadListPage() {
       <Breadcrumb items={[{ label: "Home", to: "/" }, isMetaRoute ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList } : { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }]} />
 
       {/* Header */}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1F3864]">
+      <div className="mb-5 flex items-start justify-between gap-3 sm:items-center">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#1F3864] truncate">
             {isMetaRoute ? "Meta Leads" : "Leads"}
           </h1>
-          <p className="text-[12px] text-gray-400">
+          <p className="text-[11px] sm:text-[12px] text-gray-400 line-clamp-1 sm:line-clamp-none">
             {isMetaRoute ? "Manage incoming Facebook and Instagram leads" : "Track and manage all sales enquiries"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center justify-end gap-2">
           {tab === "meta" && currentUser?.email === "seniordeveloper@bigwing.in" && (
             <button
               onClick={handleTruncateMeta}
               disabled={isTruncating}
-              className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-100 disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-lg bg-red-50 border border-red-200 px-3 sm:px-4 py-2 text-sm font-semibold text-red-600 shadow-sm transition-all hover:bg-red-100 disabled:opacity-50"
             >
               {isTruncating ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />} 
-              Truncate Meta
+              <span className="hidden sm:inline">Truncate Meta</span>
             </button>
           )}
           <Link
             to="/leads/new"
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
+            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
           >
-            <Plus size={16} /> New Lead
+            <Plus size={16} /> <span>New Lead</span>
           </Link>
         </div>
       </div>
@@ -430,21 +430,19 @@ export default function LeadListPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search leads..."
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                className="w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-              />
-            </div>
+          <div className="relative flex-1 sm:flex-none">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search leads..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="w-full sm:w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+            />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${hasActiveFilters ? "border-[#2E75B6] bg-blue-50 text-[#2E75B6]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${hasActiveFilters ? "border-[#2E75B6] bg-blue-50 text-[#2E75B6]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
           >
             <Filter size={14} /> Filters
             {hasActiveFilters && <span className="ml-0.5 h-2 w-2 rounded-full bg-[#2E75B6]" />}
@@ -538,18 +536,18 @@ export default function LeadListPage() {
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex items-center gap-2 rounded-xl bg-[#2E75B6] px-5 py-2 text-[13px] font-semibold text-white shadow-md transition-all hover:bg-[#245f96] hover:shadow-lg active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-[#2E75B6] px-4 py-2 sm:px-5 sm:py-2 text-[12px] sm:text-[13px] font-semibold text-white shadow-md transition-all hover:bg-[#245f96] hover:shadow-lg active:scale-95 disabled:opacity-50"
           >
-            {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+            {downloading ? <Loader2 size={16} className="animate-spin" /> : <Download size={15} className="sm:w-4 sm:h-4" />}
             Excel Report
           </button>
           
           <button
             onClick={handleDownloadWhatsapp}
             disabled={downloadingWhatsapp}
-            className="flex items-center gap-2 rounded-xl bg-[#25D366] px-5 py-2 text-[13px] font-semibold text-white shadow-md transition-all hover:bg-[#128C7E] hover:shadow-lg active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 sm:gap-2 rounded-xl bg-[#25D366] px-4 py-2 sm:px-5 sm:py-2 text-[12px] sm:text-[13px] font-semibold text-white shadow-md transition-all hover:bg-[#128C7E] hover:shadow-lg active:scale-95 disabled:opacity-50"
           >
-            {downloadingWhatsapp ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={16} />}
+            {downloadingWhatsapp ? <Loader2 size={16} className="animate-spin" /> : <MessageCircle size={15} className="sm:w-4 sm:h-4" />}
             Campaign report
           </button>
         </div>

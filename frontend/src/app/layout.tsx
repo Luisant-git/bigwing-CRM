@@ -28,11 +28,11 @@ import { GlobalSearch } from "@/components/global-search";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/reports", label: "Analytics", icon: BarChart3 },
   { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
   { to: "/meta-leads", label: "Meta Leads", icon: Megaphone },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },
   { to: "/customers", label: "Customers", icon: UserCircle },
-  // { to: "/reports", label: "Reports", icon: BarChart3 },
   { to: "/users", label: "Users", icon: Users },
   { to: "/import", label: "Import", icon: FileSpreadsheet },
   { to: "/vehicle-catalogue", label: "Catalogue", icon: Bike },
@@ -98,7 +98,7 @@ export default function AppLayout() {
                 {brand === "bigwing" ? "BW" : "RW"}
               </div>
               <span className="text-[15px] font-bold text-white tracking-tight uppercase">
-                {brand === "bigwing" ? "Bigwing" : "Redwing"} <span className="font-normal opacity-60">CRM</span>
+                {brand === "bigwing" ? "Bigwing" : "Redwing"} <span className="hidden sm:inline font-normal opacity-60">CRM</span>
               </span>
             </div>
             {/* Close button — mobile only */}
@@ -293,7 +293,7 @@ export default function AppLayout() {
 
           {/* Mobile: show app name */}
           <span className="text-sm font-bold uppercase tracking-tight text-[var(--brand-dark)] sm:hidden">
-            {brand === "bigwing" ? "Bigwing" : "Redwing"} CRM
+            {brand === "bigwing" ? "Bigwing" : "Redwing"}
           </span>
 
         <div className="flex items-center gap-2 sm:gap-4">

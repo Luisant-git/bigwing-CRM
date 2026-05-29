@@ -38,31 +38,31 @@ export default function SalesExecutiveDashboard({ dateFrom: propDateFrom, dateTo
     <div className="space-y-6">
       {/* Date Filter Header */}
       {!propDateFrom && !propDateTo && (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 max-w-full overflow-hidden">
           <div>
             <h1 className="text-xl font-bold text-[#1F3864]">Sales Performance Dashboard</h1>
             <p className="text-sm text-gray-500">Comprehensive executive and follow-up metrics</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto no-scrollbar">
             <input
               type="date"
               value={internalDateFrom}
               onChange={(e) => setInternalDateFrom(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
             />
-            <span className="text-gray-400">to</span>
+            <span className="text-gray-400 shrink-0">to</span>
             <input
               type="date"
               value={internalDateTo}
               onChange={(e) => setInternalDateTo(e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
             />
             <button 
               onClick={() => {
                 setInternalDateFrom("");
                 setInternalDateTo("");
               }}
-              className="ml-1 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
+              className="ml-1 shrink-0 rounded-full p-1 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
               title="Clear dates"
             >
               <X size={14} />
@@ -241,7 +241,7 @@ function KPICard({ label, value, icon: Icon, color, onClick }: any) {
   return (
     <div 
       onClick={onClick}
-      className={`bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 active:scale-95" : "hover:shadow-md"}`}
+      className={`bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex flex-col justify-center transition-all ${onClick ? "cursor-pointer hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 active:scale-95 touch-manipulation" : "hover:shadow-md"}`}
     >
       <div className="flex items-center justify-between mb-1">
         <div className="p-1.5 rounded-lg opacity-80" style={{ backgroundColor: `${color}15`, color }}>
