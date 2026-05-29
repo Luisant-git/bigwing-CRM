@@ -63,6 +63,15 @@ export default function AppLayout() {
     queryClient.invalidateQueries();
   }, [brand, queryClient]);
 
+  // Force brand based on user's brand access
+  useEffect(() => {
+    if (user?.brandAccess === "REDWING" && brand !== "redwing") {
+      setBrand("redwing");
+    } else if (user?.brandAccess === "BIGWING" && brand !== "bigwing") {
+      setBrand("bigwing");
+    }
+  }, [user, brand, setBrand]);
+
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -300,24 +309,26 @@ export default function AppLayout() {
 
         <div className="flex items-center gap-2 sm:gap-4">
           {/* Brand Switcher Toggle */}
-          <div className="flex items-center bg-gray-50/80 border border-gray-200/50 rounded-lg p-0.5 scale-90 sm:scale-100 shadow-sm">
-            <button
-              onClick={() => setBrand("bigwing")}
-              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
-                brand === "bigwing" ? "bg-white text-[#1F3864] shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
-              }`}
-            >
-              Bigwing
-            </button>
-            <button
-              onClick={() => setBrand("redwing")}
-              className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
-                brand === "redwing" ? "bg-[#DC2626] text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
-              }`}
-            >
-              Redwing
-            </button>
-          </div>
+          {user?.brandAccess === "BOTH" && (
+            <div className="flex items-center bg-gray-50/80 border border-gray-200/50 rounded-lg p-0.5 scale-90 sm:scale-100 shadow-sm">
+              <button
+                onClick={() => setBrand("bigwing")}
+                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                  brand === "bigwing" ? "bg-white text-[#1F3864] shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                }`}
+              >
+                Bigwing
+              </button>
+              <button
+                onClick={() => setBrand("redwing")}
+                className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${
+                  brand === "redwing" ? "bg-[#DC2626] text-white shadow-sm" : "text-gray-400 hover:text-gray-600 hover:bg-gray-100/50"
+                }`}
+              >
+                Redwing
+              </button>
+            </div>
+          )}
 
           <div className="flex items-center gap-1 sm:gap-2">
             <Tooltip content="Notifications">

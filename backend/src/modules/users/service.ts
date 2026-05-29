@@ -59,6 +59,7 @@ export class UserService {
     role: string;
     branchId?: number;
     isActive?: boolean;
+    brandAccess?: string;
   }, createdBy?: bigint) {
     // Check email uniqueness
     const existing = await prisma.user.findUnique({
@@ -85,6 +86,7 @@ export class UserService {
         gender: data.gender,
         branchId: data.branchId ? BigInt(data.branchId) : null,
         isActive: data.isActive ?? true,
+        brandAccess: data.brandAccess ?? "BOTH",
         createdBy: createdBy,
         userRoles: {
           create: { roleId: role.id },
@@ -104,6 +106,7 @@ export class UserService {
       role?: string;
       branchId?: number;
       isActive?: boolean;
+      brandAccess?: string;
     },
     updatedBy?: bigint
   ) {
@@ -131,6 +134,7 @@ export class UserService {
         ...(data.mobile !== undefined && { mobile: data.mobile }),
         ...(data.branchId !== undefined && { branchId: data.branchId ? BigInt(data.branchId) : null }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
+        ...(data.brandAccess !== undefined && { brandAccess: data.brandAccess }),
         updatedBy,
       },
       include: { userRoles: { include: { role: true } } },
@@ -174,6 +178,7 @@ export class UserService {
       lastLogin: user.lastLogin,
       roles: user.userRoles?.map((ur: any) => ur.role.name) ?? [],
       branchId: user.branchId ? Number(user.branchId) : null,
+      brandAccess: user.brandAccess ?? "BOTH",
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

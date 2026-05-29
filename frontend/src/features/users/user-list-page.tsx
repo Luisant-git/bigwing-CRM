@@ -159,14 +159,14 @@ export default function UserListPage() {
       />
 
       <FlyingModal open={showForm} onClose={() => setShowForm(false)} title="Create New User">
-        <UserForm onSubmit={(d) => createMut.mutate(d)} loading={createMut.isPending} onCancel={() => setShowForm(false)} />
+        <UserForm onSubmit={(d) => createMut.mutate(d)} loading={createMut.isPending} onCancel={() => setShowForm(false)} isSuperAdmin={user?.roles?.includes("SUPER_ADMIN") ?? false} />
       </FlyingModal>
     </div>
   );
 }
 
-function UserForm({ onSubmit, loading, onCancel }: { onSubmit: (d: any) => void; loading: boolean; onCancel: () => void }) {
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "" });
+function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d: any) => void; loading: boolean; onCancel: () => void; isSuperAdmin: boolean }) {
+  const [form, setForm] = useState({ email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "", brandAccess: "BOTH" });
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
 
   const { data: branches } = useQuery({
@@ -227,6 +227,16 @@ function UserForm({ onSubmit, loading, onCancel }: { onSubmit: (d: any) => void;
           </div>
         )}
       </div>
+      {isSuperAdmin && (
+        <div>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Brand Access *</label>
+          <select value={form.brandAccess} onChange={(e) => set("brandAccess", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
+            <option value="BOTH">Both (Bigwing & Redwing)</option>
+            <option value="BIGWING">Bigwing Only</option>
+            <option value="REDWING">Redwing Only</option>
+          </select>
+        </div>
+      )}
       <div className="flex gap-2 pt-2">
         <button type="button" onClick={onCancel} className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
         <button type="submit" disabled={loading} className="flex-1 rounded-lg bg-[#2E75B6] py-2 text-sm font-semibold text-white hover:bg-[#245f96] disabled:opacity-50">{loading ? "Creating..." : "Create User"}</button>

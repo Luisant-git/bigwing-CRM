@@ -29,6 +29,7 @@ model User {
   assignedLeads Lead[]         @relation("AssignedTo")
   followups     LeadFollowup[] @relation("FollowupCreatedBy")
   branchId      BigInt?        @map("branch_id")
+  brandAccess   String         @default("BOTH") @map("brand_access") @db.VarChar(20)
   branch        ReferredBranch? @relation(fields: [branchId], references: [id])
 
   @@map("user")

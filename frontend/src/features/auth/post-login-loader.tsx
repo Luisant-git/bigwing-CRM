@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuthStore } from "@/stores/auth";
 
 // 3-second post-login animation
 // 0.0 - 1.0s: Bike appears, wheels spin up, ignition smoke
@@ -7,6 +8,8 @@ import { useEffect, useState } from "react";
 
 export default function PostLoginLoader({ onComplete }: { onComplete: () => void }) {
   const [phase, setPhase] = useState<"start" | "middle" | "end" | "fadeout">("start");
+  const { user } = useAuthStore();
+  const isRedwing = user?.brandAccess === "REDWING";
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("middle"), 1000);
@@ -219,11 +222,17 @@ export default function PostLoginLoader({ onComplete }: { onComplete: () => void
             style={{ animation: "logoReveal 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards" }}
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#E8792F] text-lg font-bold text-white shadow-[0_0_30px_rgba(232,121,47,0.5)]">
-                BW
+              <div 
+                className="flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold text-white"
+                style={{ 
+                  backgroundColor: isRedwing ? "#DC2626" : "#E8792F",
+                  boxShadow: isRedwing ? "0 0 30px rgba(220, 38, 38, 0.5)" : "0 0 30px rgba(232,121,47,0.5)" 
+                }}
+              >
+                {isRedwing ? "RW" : "BW"}
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">Bigwing CRM</p>
+                <p className="text-2xl font-bold text-white">{isRedwing ? "Redwing CRM" : "Bigwing CRM"}</p>
                 <p className="text-xs font-medium text-white/50">
                   Revving up your dashboard...
                 </p>

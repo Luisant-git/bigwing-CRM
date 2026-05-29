@@ -55,6 +55,7 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         roles,
+        brandAccess: user.brandAccess ?? "BOTH",
       },
     };
   }
@@ -92,6 +93,7 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName,
         roles,
+        brandAccess: user.brandAccess ?? "BOTH",
       },
     };
   }
