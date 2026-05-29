@@ -851,6 +851,13 @@ private async formatLeadDetail(l: any) {
     dmsEnquiryNo: l.dmsEnquiryNo,
     closureReason: l.closureReason?.name,
 
+     colour: l.colour
+    ? {
+        id: Number(l.colour.id),
+        name: l.colour.name,
+      }
+    : null,
+
     // ❌ REMOVED CUSTOMER
 
     assignedTo: l.assignedUser

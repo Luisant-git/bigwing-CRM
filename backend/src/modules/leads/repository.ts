@@ -103,6 +103,7 @@ async findByCustomerPhone(phoneNo: string) {
       source: true,
       enquiryType: true,
       assignedUser: true,
+      colour: true,
     },
     orderBy: {
       createdAt: "desc",
