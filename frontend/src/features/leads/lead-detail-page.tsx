@@ -212,7 +212,7 @@ export default function LeadDetailPage() {
               )}
               {lead.channel === "SERVICE" ? (
                 <>
-                  <Field label="Service Type">{lead.typeOfService || "—"}</Field>
+                  <Field label="Service Type">{lead.typeOfService?.name ?? lead.typeOfService ?? "—"}</Field>
                   <Field label="Expected Date">{formatDate(lead.expectedServiceDate)}</Field>
                   <Field label="Pick-up & Drop">{lead.pickupDropFlag ? "Yes" : "No"}</Field>
                 </>
@@ -221,20 +221,20 @@ export default function LeadDetailPage() {
                   <Field label="Interest">
                     <InterestBadge level={lead.interestLevel} />
                   </Field>
-                  <Field label="Purchase Type">{lead.purchaseType ?? "—"}</Field>
+                  <Field label="Purchase Type">{lead.purchaseType?.name ?? lead.purchaseType ?? "—"}</Field>
                   <Field label="Exchange">{lead.exchangeFlag ? "Yes" : "No"}</Field>
                   <Field label="Test Ride">
                     {lead.testRideFlag ? "Yes" : "No"}
                   </Field>
                 </>
               )}
-              <Field label="Channel">{lead.channel}</Field>
-              <Field label="Source">{lead.source}</Field>
-              <Field label="Enquiry Type">{lead.enquiryType}</Field>
-              <Field label="Model">{lead.model ?? "—"}</Field>
-              <Field label="Variant">{lead.variant ?? "—"}</Field>
-              <Field label="Colour">{lead.colour ?? "—"}</Field>
-              <Field label="Branch">{lead.referredFromBranch ?? "—"}</Field>
+              <Field label="Channel">{lead.channel?.name ?? lead.channel}</Field>
+              <Field label="Source">{lead.source?.name ?? lead.source}</Field>
+              <Field label="Enquiry Type">{lead.enquiryType?.name ?? lead.enquiryType}</Field>
+              <Field label="Model">{lead.model?.name ?? lead.model ?? "—"}</Field>
+              <Field label="Variant">{lead.variant?.name ?? lead.variant ?? "—"}</Field>
+              <Field label="Colour">{lead.colour?.name ?? lead.colour ?? "—"}</Field>
+              <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
               <Field label="Enquiry Date">{formatDate(lead.enquiryDate)}</Field>
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
@@ -270,7 +270,7 @@ export default function LeadDetailPage() {
                 </div>
               </Field>
               {lead.referredFromBranch && (
-                <Field label="Referred From">{lead.referredFromBranch}</Field>
+                <Field label="Referred From">{lead.referredFromBranch?.name ?? lead.referredFromBranch}</Field>
               )}
               {lead.remark && (
                 <div className="col-span-2">
@@ -278,7 +278,7 @@ export default function LeadDetailPage() {
                 </div>
               )}
               {lead.closureReason && (
-                <Field label="Closure Reason">{lead.closureReason}</Field>
+                <Field label="Closure Reason">{lead.closureReason?.name ?? lead.closureReason}</Field>
               )}
               {lead.closedAt && (
                 <Field label="Closed At">{formatDateTime(lead.closedAt)}</Field>

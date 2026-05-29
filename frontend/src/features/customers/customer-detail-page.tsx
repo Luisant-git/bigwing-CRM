@@ -104,7 +104,7 @@ export default function CustomerDetailPage() {
                           {l.enquiryNo}
                         </Link>
                       </td>
-                      <td className="px-4 py-3">{l.model ?? "—"}</td>
+                      <td className="px-4 py-3">{l.model?.name ?? l.model ?? "—"}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2 py-0.5 text-xs font-medium ${STAGE_COLORS[l.stage] ?? ""}`}
@@ -112,7 +112,7 @@ export default function CustomerDetailPage() {
                           {l.stage?.replace(/_/g, " ")}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{l.source}</td>
+                      <td className="px-4 py-3 text-gray-500">{l.source?.name ?? l.source ?? "—"}</td>
                       <td className="px-4 py-3 text-gray-400">
                         {formatDate(l.enquiryDate)}
                       </td>

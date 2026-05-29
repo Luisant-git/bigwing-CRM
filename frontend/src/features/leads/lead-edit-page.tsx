@@ -40,26 +40,27 @@ export default function LeadEditPage() {
 
   useEffect(() => {
     if (lead) {
+      const val = (v: any) => v?.name ?? v;
       // Prefill from resolved lead data — we use name→id mappings via lookups
-      const srcId = sources?.find((s: any) => s.name === lead.source)?.id;
-      const typId = types?.find((t: any) => t.name === lead.enquiryType)?.id;
-      const modId = models?.find((m: any) => m.name === lead.model)?.id;
-      const colId = colours?.find((c: any) => c.name === lead.colour)?.id;
+      const srcId = lead.source?.id ?? sources?.find((s: any) => s.name === val(lead.source))?.id;
+      const typId = lead.enquiryType?.id ?? types?.find((t: any) => t.name === val(lead.enquiryType))?.id;
+      const modId = lead.model?.id ?? models?.find((m: any) => m.name === val(lead.model))?.id;
+      const colId = lead.colour?.id ?? colours?.find((c: any) => c.name === val(lead.colour))?.id;
       setForm({
         sourceId: srcId ? String(srcId) : "",
         enquiryTypeId: typId ? String(typId) : "",
         modelId: modId ? String(modId) : "",
-        variantId: "",
+        variantId: lead.variant?.id ? String(lead.variant.id) : "",
         colourId: colId ? String(colId) : "",
-        executiveName: lead.executiveName ?? (lead.assignedTo?.fullName || ""),
-        interestLevel: lead.interestLevel ?? "",
-        purchaseType: lead.purchaseType ?? "",
+        executiveName: val(lead.executiveName) ?? (lead.assignedTo?.fullName || ""),
+        interestLevel: val(lead.interestLevel) ?? "",
+        purchaseType: val(lead.purchaseType) ?? "",
         exchangeFlag: lead.exchangeFlag ?? false,
         testRideFlag: lead.testRideFlag ?? false,
         remark: lead.remark ?? "",
-        referredFromBranch: lead.referredFromBranch ?? "",
+        referredFromBranch: val(lead.referredFromBranch) ?? "",
         // Service fields
-        typeOfService: lead.typeOfService ?? "",
+        typeOfService: val(lead.typeOfService) ?? "",
         expectedServiceDate: lead.expectedServiceDate ? lead.expectedServiceDate.split("T")[0] : "",
         pickupDropFlag: lead.pickupDropFlag ?? false,
         location: lead.customer?.location ?? "",
@@ -151,8 +152,8 @@ export default function LeadEditPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${lead.channel === "SERVICE" ? "bg-purple-500/20 text-purple-200 border border-purple-500/30" : STAGE_COLORS[lead.stage] ?? "bg-white/20"}`}>
-              {lead.channel === "SERVICE" ? "SERVICE" : STAGE_LABELS[lead.stage] ?? lead.stage?.replace(/_/g, " ")}
+            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${(lead.channel?.name ?? lead.channel) === "SERVICE" ? "bg-purple-500/20 text-purple-200 border border-purple-500/30" : STAGE_COLORS[lead.stage] ?? "bg-white/20"}`}>
+              {(lead.channel?.name ?? lead.channel) === "SERVICE" ? "SERVICE" : STAGE_LABELS[lead.stage] ?? lead.stage?.replace(/_/g, " ")}
             </span>
             {lead.interestLevel && <InterestBadge level={lead.interestLevel} />}
           </div>
@@ -160,7 +161,7 @@ export default function LeadEditPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {lead.channel === "SERVICE" && (
+        {(lead.channel?.name ?? lead.channel) === "SERVICE" && (
           <Section icon={Bike} title="Service Details" subtitle="Specifics for the service visit">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <InputField 
@@ -239,7 +240,7 @@ export default function LeadEditPage() {
         </Section>
 
         {/* Interest & Purchase */}
-        {lead.channel !== "SERVICE" && (
+        {(lead.channel?.name ?? lead.channel) !== "SERVICE" && (
           <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <SelectField
@@ -397,13 +398,14 @@ function SelectField({
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
-  current?: string | null;
+  current?: any;
   disabled?: boolean;
   icon?: any;
 }) {
   // Find the label of the currently selected option
   const selectedLabel = options.find((o) => o.value === value)?.label;
-  const hasCurrent = current && current !== "—";
+  const displayCurrent = current?.name ?? current;
+  const hasCurrent = displayCurrent && displayCurrent !== "—";
   const Icon = icon;
 
   return (
@@ -415,7 +417,7 @@ function SelectField({
         </label>
         {hasCurrent && (
           <span className="text-[10px] text-gray-400">
-            Current: <span className="font-semibold text-gray-600">{current}</span>
+            Current: <span className="font-semibold text-gray-600">{displayCurrent}</span>
           </span>
         )}
       </div>
