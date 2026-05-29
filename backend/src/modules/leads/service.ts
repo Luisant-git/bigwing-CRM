@@ -175,7 +175,11 @@ export class LeadService {
         ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
         ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
         ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
-        ...(referredFromBranch ? [{ referredFromBranch }] : []),
+        ...(referredFromBranch
+          ? channel === "SOCIAL"
+            ? [{ remark: { contains: `Form: ${referredFromBranch}` } }]
+            : [{ referredFromBranch }]
+          : []),
         ...((dateFrom || dateTo) ? [{
           enquiryDate: {
             ...(dateFrom && { gte: new Date(dateFrom) }),
@@ -455,7 +459,11 @@ async getByPhoneNumber(phoneNo: string) {
         ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
         ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
         ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
-        ...(referredFromBranch ? [{ referredFromBranch }] : []),
+        ...(referredFromBranch
+          ? channel === "SOCIAL"
+            ? [{ remark: { contains: `Form: ${referredFromBranch}` } }]
+            : [{ referredFromBranch }]
+          : []),
         ...((dateFrom || dateTo) ? [{
           enquiryDate: {
             ...(dateFrom && { gte: new Date(dateFrom) }),
@@ -559,7 +567,11 @@ async getByPhoneNumber(phoneNo: string) {
           ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
           ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
           ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
-          ...(referredFromBranch ? [{ referredFromBranch }] : []),
+          ...(referredFromBranch
+            ? channel === "SOCIAL"
+              ? [{ remark: { contains: `Form: ${referredFromBranch}` } }]
+              : [{ referredFromBranch }]
+            : []),
           ...(followupSeq ? [{
             followups: followupSeq === "gt5"
               ? { some: { seqNo: { gt: 5 } } }
@@ -911,11 +923,17 @@ private async formatLeadDetail(l: any) {
   async getMetaForms() {
     const brand = brandContext.getStore() || "BIGWING";
     const leads = await prisma.lead.findMany({
-      where: { channel: "SOCIAL", brand, referredFromBranch: { not: null } },
-      select: { referredFromBranch: true },
-      distinct: ['referredFromBranch']
+      where: { channel: "SOCIAL", brand, remark: { contains: "Form: " } },
+      select: { remark: true }
     });
-    return leads.map(l => l.referredFromBranch).filter(Boolean);
+    
+    const forms = new Set<string>();
+    for (const l of leads) {
+      if (l.remark && l.remark.includes("Form: ")) {
+        forms.add(l.remark.split("Form: ")[1].trim());
+      }
+    }
+    return Array.from(forms);
   }
 }
 
