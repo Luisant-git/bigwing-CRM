@@ -106,6 +106,7 @@ export default function LeadEditPage() {
           exchangeFlag: lead.exchangeFlag ?? false,
           testRideFlag: lead.testRideFlag ?? false,
           remark: lead.remark ?? "",
+          telecallerRemark: lead.telecallerRemark ?? "",
           referredFromBranch: branches?.find((b: any) => b.name?.toLowerCase().trim() === (val(lead.referredFromBranch) ?? "").toLowerCase().trim())?.name || (val(lead.referredFromBranch) ?? ""),
           // Service fields
           typeOfService: val(lead.typeOfService) ?? "",
@@ -155,6 +156,7 @@ export default function LeadEditPage() {
     if (form.purchaseType) body.purchaseType = form.purchaseType;
     body.exchangeFlag = form.exchangeFlag;
     if (form.remark !== undefined) body.remark = form.remark;
+    if (form.telecallerRemark !== undefined) body.telecallerRemark = form.telecallerRemark;
     if (form.referredFromBranch !== undefined) body.referredFromBranch = form.referredFromBranch;
     
     // Service fields
@@ -210,7 +212,7 @@ export default function LeadEditPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="lead-form" onSubmit={handleSubmit} className="space-y-5">
         {(lead.channel?.name ?? lead.channel) === "SERVICE" && (
           <Section icon={Bike} title="Service Details" subtitle="Specifics for the service visit">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -372,17 +374,31 @@ export default function LeadEditPage() {
 
         {/* Notes */}
         <Section icon={Sparkles} title="Notes & Remarks">
-          <div>
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-              Remark
-            </label>
-            <textarea
-              value={form.remark ?? ""}
-              onChange={(e) => set("remark", e.target.value)}
-              rows={3}
-              placeholder="Add a note about this lead..."
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Remark
+              </label>
+              <textarea
+                value={form.remark ?? ""}
+                onChange={(e) => set("remark", e.target.value)}
+                rows={3}
+                placeholder="Add a note about this lead..."
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Telecaller Follow Ups Remarks
+              </label>
+              <textarea
+                value={form.telecallerRemark ?? ""}
+                onChange={(e) => set("telecallerRemark", e.target.value)}
+                rows={3}
+                placeholder="Telecaller to customer remarks..."
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+              />
+            </div>
           </div>
         </Section>
       </form>
@@ -413,7 +429,8 @@ export default function LeadEditPage() {
               </button>
             </Tooltip>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="lead-form"
               disabled={mut.isPending || !dirty}
               className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -111,6 +111,7 @@ export class LeadService {
       }),
       enquiryDate: new Date(data.enquiryDate),
       ...(data.remark && { remark: data.remark }),
+      ...(data.telecallerRemark && { telecallerRemark: data.telecallerRemark }),
       ...(data.referredFromBranch && {
         referredFromBranch: data.referredFromBranch,
       }),
@@ -290,6 +291,7 @@ async getByPhoneNumber(phoneNo: string) {
       }),
       ...(data.enquiryDate && { enquiryDate: new Date(data.enquiryDate) }),
       ...(data.remark !== undefined && { remark: data.remark }),
+      ...(data.telecallerRemark !== undefined && { telecallerRemark: data.telecallerRemark }),
       ...(data.referredFromBranch !== undefined && {
         referredFromBranch: data.referredFromBranch,
       }),
@@ -826,6 +828,7 @@ async getByPhoneNumber(phoneNo: string) {
       enquiryDate: l.enquiryDate,
       closedAt: l.closedAt,
       remark: l.remark,
+      telecallerRemark: l.telecallerRemark,
       executiveName: l.executiveName,
       referredFromBranch: l.referredFromBranch,
       typeOfService: l.typeOfService,

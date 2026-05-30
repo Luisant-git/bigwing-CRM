@@ -275,6 +275,11 @@ export default function LeadDetailPage() {
                   <Field label="Remark">{lead.remark}</Field>
                 </div>
               )}
+              {lead.telecallerRemark && (
+                <div className="col-span-2">
+                  <Field label="Telecaller Follow Ups Remarks">{lead.telecallerRemark}</Field>
+                </div>
+              )}
               {lead.closureReason && (
                 <Field label="Closure Reason">{lead.closureReason?.name ?? lead.closureReason}</Field>
               )}

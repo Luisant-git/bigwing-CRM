@@ -284,6 +284,7 @@ model Lead {
   enquiryDate         DateTime           @map("enquiry_date") @db.Date
   closedAt            DateTime?          @map("closed_at")
   remark              String?
+  telecallerRemark    String?            @map("telecaller_remark")
   referredFromBranch  String?            @map("referred_from_branch") @db.VarChar(80)
   typeOfService       String?            @map("type_of_service") @db.VarChar(60)
   pickupDropFlag      Boolean            @default(false) @map("pickup_drop_flag")

@@ -27,11 +27,12 @@ export default function LeadFormPage() {
   const [enquiryFor, setEnquiryFor] = useState<"SALES" | "SERVICE">("SALES");
   const [form, setForm] = useState({
     firstName: "", lastName: "", mobile: "",
-    channel: "WALKIN", sourceId: "", enquiryTypeId: "", modelId: "",
+    channel: "TELE", sourceId: "", enquiryTypeId: "", modelId: "",
     variantId: "", colourId: "", executiveName: "", interestLevel: "",
     purchaseType: "", exchangeFlag: false,
     enquiryDate: new Date().toISOString().split("T")[0],
     remark: "",
+    telecallerRemark: "",
     referredFromBranch: "",
     // Service fields
     typeOfService: "",
@@ -89,6 +90,7 @@ export default function LeadFormPage() {
       testRideFlag: false,
       enquiryDate: form.enquiryDate,
       remark: form.remark || undefined,
+      telecallerRemark: form.telecallerRemark || undefined,
       referredFromBranch: form.referredFromBranch || undefined,
       // Service fields
       typeOfService: form.typeOfService || undefined,
@@ -132,7 +134,7 @@ export default function LeadFormPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form id="lead-form" onSubmit={handleSubmit} className="space-y-5">
         {/* Enquiry For Selection */}
         <div className="overflow-hidden rounded-2xl bg-white p-1 shadow-sm ring-1 ring-black/5">
           <div className="flex">
@@ -168,7 +170,7 @@ export default function LeadFormPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <InputField label="First Name *" icon={UserIcon} value={form.firstName} onChange={(v) => set("firstName", v)} required placeholder="Suresh" />
             <InputField label="Last Name" value={form.lastName} onChange={(v) => set("lastName", v)} placeholder="Kumar" />
-            <InputField label="Mobile *" icon={Phone} value={form.mobile} onChange={(v) => set("mobile", v)} required placeholder="10-digit" />
+            <InputField label="Mobile *" icon={Phone} value={form.mobile} onChange={(v) => set("mobile", v.replace(/\D/g, ''))} required placeholder="10-digit" maxLength={10} type="tel" />
             <InputField label="Location" icon={MapPin} value={form.location} onChange={(v) => set("location", v)} placeholder="HSR Layout" />
           </div>
         </Section>
@@ -182,7 +184,7 @@ export default function LeadFormPage() {
                   Channel *
                 </label>
                 <div className="flex flex-wrap gap-1.5">
-                  {CHANNELS.filter(c => c.value !== "SERVICE").map((c) => (
+                  {CHANNELS.filter(c => c.value === "TELE").map((c) => (
                     <button
                       key={c.value}
                       type="button"
@@ -319,21 +321,35 @@ export default function LeadFormPage() {
 
         {/* Notes */}
         <Section icon={Sparkles} title="Notes & Remarks">
-          <div>
-            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-              Remark (min 300 characters)
-            </label>
-            <textarea
-              value={form.remark}
-              onChange={(e) => set("remark", e.target.value)}
-              rows={3}
-              minLength={300}
-              placeholder="Add any additional notes about this lead... (minimum 300 characters required)"
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              {form.remark.length} / 300 characters
-            </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Remark (min 300 characters)
+              </label>
+              <textarea
+                value={form.remark}
+                onChange={(e) => set("remark", e.target.value)}
+                rows={3}
+                minLength={300}
+                placeholder="Add any additional notes about this lead... (minimum 300 characters required)"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                {form.remark.length} / 300 characters
+              </p>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                Telecaller Follow Ups Remarks
+              </label>
+              <textarea
+                value={form.telecallerRemark}
+                onChange={(e) => set("telecallerRemark", e.target.value)}
+                rows={3}
+                placeholder="Telecaller to customer remarks..."
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+              />
+            </div>
           </div>
         </Section>
 
@@ -374,7 +390,8 @@ export default function LeadFormPage() {
               <X size={14} /> Cancel
             </button>
             <button
-              onClick={handleSubmit}
+              type="submit"
+              form="lead-form"
               disabled={mut.isPending}
               className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-6 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg disabled:opacity-50"
             >
