@@ -185,7 +185,9 @@ export default function LeadListPage() {
   if (dateTo) countParams.dateTo = dateTo;
   if (stage) countParams.stage = stage;
   if (tab.startsWith("meta")) countParams.channel = "SOCIAL";
-  if (channel) countParams.channel = channel;
+  else if (tab === "service") countParams.channel = "SERVICE";
+  else if (isTeleRoute) countParams.channel = "TELE,SERVICE";
+  else if (channel) countParams.channel = channel;
   if (sourceId) countParams.sourceId = sourceId;
   if (modelId) countParams.modelId = modelId;
   if (executiveName) countParams.executiveName = executiveName;
