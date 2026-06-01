@@ -291,15 +291,6 @@ export default function LeadEditPage() {
               onChange={(v: string) => set("location", v)} 
               placeholder="e.g. HSR Layout" 
             />
-            {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
-              <SelectField
-                label="Meta Status"
-                value={form.metaStatus}
-                onChange={(v) => set("metaStatus", v)}
-                options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
-                current={lead.metaStatus}
-              />
-            )}
           </div>
         </Section>
 
@@ -411,6 +402,17 @@ export default function LeadEditPage() {
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
               />
             </div>
+            {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
+              <div className="col-span-1 sm:col-span-2">
+                <SelectField
+                  label="Call Outcome"
+                  value={form.metaStatus}
+                  onChange={(v) => set("metaStatus", v)}
+                  options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
+                  current={lead.metaStatus}
+                />
+              </div>
+            )}
           </div>
         </Section>
       </form>

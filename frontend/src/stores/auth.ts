@@ -55,8 +55,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             user: {
               id: payload.userId,
               email: payload.email,
-              fullName: "",
+              fullName: payload.fullName || "",
               roles: payload.roles,
+              brandAccess: payload.brandAccess || "BOTH",
             },
             isAuthenticated: true,
             isLoading: false,

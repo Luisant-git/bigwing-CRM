@@ -44,7 +44,7 @@ export class AuthService {
     });
 
     const roles = user.userRoles.map((ur) => ur.role.name);
-    const accessToken = this.generateAccessToken(user.id, user.email, roles);
+    const accessToken = this.generateAccessToken(user.id, user.email, roles, user.fullName, user.brandAccess ?? "BOTH");
     const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
@@ -76,7 +76,7 @@ export class AuthService {
     }
 
     const roles = user.userRoles.map((ur) => ur.role.name);
-    const accessToken = this.generateAccessToken(user.id, user.email, roles);
+    const accessToken = this.generateAccessToken(user.id, user.email, roles, user.fullName, user.brandAccess ?? "BOTH");
     const refreshToken = await this.generateRefreshToken(user.id);
 
     // Update last login
@@ -124,7 +124,9 @@ export class AuthService {
     const accessToken = this.generateAccessToken(
       storedToken.user.id,
       storedToken.user.email,
-      roles
+      roles,
+      storedToken.user.fullName,
+      storedToken.user.brandAccess ?? "BOTH"
     );
     const newRefreshToken = await this.generateRefreshToken(storedToken.user.id);
 
@@ -158,8 +160,8 @@ export class AuthService {
 
   // ─── Private helpers ────────────────────────────────────────────
 
-  private generateAccessToken(userId: bigint, email: string, roles: string[]): string {
-    const payload = { userId: Number(userId), email, roles };
+  private generateAccessToken(userId: bigint, email: string, roles: string[], fullName: string, brandAccess: string): string {
+    const payload = { userId: Number(userId), email, roles, fullName, brandAccess };
     return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
   }
 
