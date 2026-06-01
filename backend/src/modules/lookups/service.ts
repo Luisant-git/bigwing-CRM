@@ -13,6 +13,7 @@ const lookupModels = {
   "vehicle-colours": () => prisma.vehicleColour,
   "referred-branches": () => prisma.referredBranch,
   "sales-executives": () => prisma.salesExecutive,
+  "meta-statuses": () => prisma.metaStatusLookup,
   "active-stages": () => ({} as any), // Dummy for mapping
 } as const;
 
@@ -24,6 +25,7 @@ const EDITABLE_LOOKUPS = new Set([
   "closure-reasons",
   "referred-branches",
   "sales-executives",
+  "meta-statuses",
 ]);
 
 type LookupName = keyof typeof lookupModels;

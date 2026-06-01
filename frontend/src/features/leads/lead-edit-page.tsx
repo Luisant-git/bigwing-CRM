@@ -29,6 +29,7 @@ export default function LeadEditPage() {
   const { data: colours } = useLookup("vehicle-colours");
   const { data: executives } = useLookup("sales-executives");
   const { data: branches } = useLookup("referred-branches");
+  const { data: metaStatuses } = useLookup("meta-statuses");
 
   const [form, setForm] = useState<any>({});
   const [dirty, setDirty] = useState(false);
@@ -108,6 +109,7 @@ export default function LeadEditPage() {
           remark: lead.remark ?? "",
           telecallerRemark: lead.telecallerRemark ?? "",
           referredFromBranch: branches?.find((b: any) => b.name?.toLowerCase().trim() === (val(lead.referredFromBranch) ?? "").toLowerCase().trim())?.name || (val(lead.referredFromBranch) ?? ""),
+          metaStatus: lead.metaStatus ?? "",
           // Service fields
           typeOfService: val(lead.typeOfService) ?? "",
           expectedServiceDate: lead.expectedServiceDate ? lead.expectedServiceDate.split("T")[0] : "",
@@ -158,6 +160,7 @@ export default function LeadEditPage() {
     if (form.remark !== undefined) body.remark = form.remark;
     if (form.telecallerRemark !== undefined) body.telecallerRemark = form.telecallerRemark;
     if (form.referredFromBranch !== undefined) body.referredFromBranch = form.referredFromBranch;
+    if (form.metaStatus !== undefined) body.metaStatus = form.metaStatus;
     
     // Service fields
     if (form.typeOfService !== undefined) body.typeOfService = form.typeOfService;
@@ -288,6 +291,15 @@ export default function LeadEditPage() {
               onChange={(v: string) => set("location", v)} 
               placeholder="e.g. HSR Layout" 
             />
+            {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
+              <SelectField
+                label="Meta Status"
+                value={form.metaStatus}
+                onChange={(v) => set("metaStatus", v)}
+                options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
+                current={lead.metaStatus}
+              />
+            )}
           </div>
         </Section>
 

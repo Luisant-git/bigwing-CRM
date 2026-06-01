@@ -53,7 +53,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
 
   const { data, isLoading } = useQuery({
     queryKey: ["reports", "telecaller-detailed", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/telecaller-detailed", { params: { dateFrom, dateTo, channel: "TELE" } }).then((r) => r.data.data),
+    queryFn: () => api.get("/reports/telecaller-detailed", { params: { dateFrom, dateTo, channel: "TELE,SERVICE" } }).then((r) => r.data.data),
   });
 
   if (isLoading) return <PageLoader message="Generating dashboard..." />;

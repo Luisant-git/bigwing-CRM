@@ -231,6 +231,9 @@ export default function LeadDetailPage() {
               <Field label="Channel">{lead.channel?.name ?? lead.channel}</Field>
               <Field label="Source">{lead.source?.name ?? lead.source}</Field>
               <Field label="Enquiry Type">{lead.enquiryType?.name ?? lead.enquiryType}</Field>
+              {(lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus && (
+                <Field label="Meta Status">{lead.metaStatus}</Field>
+              )}
               <Field label="Model">{lead.model?.name ?? lead.model ?? "—"}</Field>
               <Field label="Variant">{lead.variant?.name ?? lead.variant ?? "—"}</Field>
               <Field label="Colour">{lead.colour?.name ?? lead.colour ?? "—"}</Field>

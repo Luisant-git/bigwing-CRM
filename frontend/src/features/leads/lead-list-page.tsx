@@ -13,7 +13,7 @@ import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
 
-type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked" | "meta";
+type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked" | "meta" | "meta-contacted" | "meta-non-contacted" | "service";
 type InterestFilter = "ALL" | "HOT" | "WARM" | "COLD";
 
 const TABS: { key: Tab; label: string; endpoint: string }[] = [
@@ -24,6 +24,7 @@ const TABS: { key: Tab; label: string; endpoint: string }[] = [
   { key: "upcoming", label: "Upcoming", endpoint: "/leads/upcoming" },
   { key: "no-followup", label: "No next Follow-up", endpoint: "/leads/no-followup" },
   { key: "booked", label: "Booked", endpoint: "/leads/booked" },
+  { key: "service", label: "Service Leads", endpoint: "/leads" },
   { key: "meta", label: "Meta Leads", endpoint: "/leads" },
 ];
 
@@ -31,13 +32,14 @@ export default function LeadListPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMetaRoute = location.pathname.startsWith("/meta-leads");
+  const isTeleRoute = location.pathname.startsWith("/tele-leads");
   const searchParams = useSearch({ strict: false }) as any;
   const [tab, setTab] = useState<Tab>(isMetaRoute ? "meta" : (searchParams.tab || "all"));
 
   useEffect(() => {
-    if (isMetaRoute) {
+    if (isMetaRoute && !tab.startsWith("meta")) {
       setTab("meta");
-    } else if (searchParams.tab) {
+    } else if (!isMetaRoute && searchParams.tab) {
       setTab(searchParams.tab);
     }
   }, [searchParams.tab, isMetaRoute]);
@@ -55,7 +57,7 @@ export default function LeadListPage() {
   const { data: metaForms } = useQuery({
     queryKey: ["meta-forms"],
     queryFn: () => api.get("/leads/meta/forms").then(r => r.data.data),
-    enabled: tab === "meta",
+    enabled: tab.startsWith("meta"),
   });
 
   // advanced filters
@@ -83,7 +85,11 @@ export default function LeadListPage() {
   const { data: branches } = useLookup("referred-branches");
 
   const visibleTabs = isMetaRoute 
-    ? [{ key: "meta" as Tab, label: "Meta Leads", endpoint: "/leads" }] 
+    ? [
+        { key: "meta" as Tab, label: "All Meta Leads", endpoint: "/leads" },
+        { key: "meta-contacted" as Tab, label: "Contacted", endpoint: "/leads" },
+        { key: "meta-non-contacted" as Tab, label: "Non Contacted", endpoint: "/leads" }
+      ] 
     : TABS.filter((t) => t.key !== "meta");
 
   const activeTab = visibleTabs.find((t) => t.key === tab) || visibleTabs[0];
@@ -94,8 +100,12 @@ export default function LeadListPage() {
   if (dateFrom) params.dateFrom = dateFrom;
   if (dateTo) params.dateTo = dateTo;
   if (stage) params.stage = stage;
-  if (tab === "meta") params.channel = "SOCIAL";
-  if (channel) params.channel = channel;
+  if (tab.startsWith("meta")) params.channel = "SOCIAL";
+  if (tab === "meta-contacted") params.contactStatus = "CONTACTED";
+  if (tab === "meta-non-contacted") params.contactStatus = "NON_CONTACTED";
+  if (tab === "service") params.channel = "SERVICE";
+  else if (isTeleRoute) params.channel = "TELE,SERVICE";
+  else if (channel) params.channel = channel;
   if (sourceId) params.sourceId = sourceId;
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;
@@ -174,7 +184,7 @@ export default function LeadListPage() {
   if (dateFrom) countParams.dateFrom = dateFrom;
   if (dateTo) countParams.dateTo = dateTo;
   if (stage) countParams.stage = stage;
-  if (tab === "meta") countParams.channel = "SOCIAL";
+  if (tab.startsWith("meta")) countParams.channel = "SOCIAL";
   if (channel) countParams.channel = channel;
   if (sourceId) countParams.sourceId = sourceId;
   if (modelId) countParams.modelId = modelId;
@@ -240,7 +250,7 @@ export default function LeadListPage() {
       ) : <span className="text-gray-300">—</span>,
       sortValue: (l) => l.model ?? "",
     },
-    ...(channel === "SERVICE" ? [
+    ...((channel === "SERVICE" || tab === "service") ? [
       {
         key: "expectedServiceDate",
         label: "Service Date",
@@ -330,20 +340,32 @@ export default function LeadListPage() {
 
   return (
     <div>
-      <Breadcrumb items={[{ label: "Home", to: "/" }, isMetaRoute ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList } : { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }]} />
+      <Breadcrumb items={[
+        { label: "Home", to: "/" },
+        isMetaRoute 
+          ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList }
+          : isTeleRoute 
+            ? { label: "Tele Leads", to: "/tele-leads", search: { tab: "all" }, icon: ClipboardList }
+            : { label: "Highrise Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }
+      ]} />
 
       {/* Header */}
-      <div className="mb-5 flex items-start justify-between gap-3 sm:items-center">
-        <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl font-bold text-[#1F3864] truncate">
-            {isMetaRoute ? "Meta Leads" : "Leads"}
-          </h1>
-          <p className="text-[11px] sm:text-[12px] text-gray-400 line-clamp-1 sm:line-clamp-none">
-            {isMetaRoute ? "Manage incoming Facebook and Instagram leads" : "Track and manage all sales enquiries"}
-          </p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1F3864] text-white">
+            <ClipboardList size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#1F3864] truncate">
+              {isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : "Highrise Leads"}
+            </h1>
+            <p className="text-[11px] sm:text-[12px] text-gray-400 line-clamp-1 sm:line-clamp-none">
+              {isMetaRoute ? "Manage incoming Facebook and Instagram leads" : "Track and manage all sales enquiries"}
+            </p>
+          </div>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2">
-          {tab === "meta" && currentUser?.email === "seniordeveloper@bigwing.in" && (
+          {tab.startsWith("meta") && currentUser?.email === "seniordeveloper@bigwing.in" && (
             <button
               onClick={handleTruncateMeta}
               disabled={isTruncating}
@@ -453,33 +475,31 @@ export default function LeadListPage() {
       </div>
 
       {/* Navigation Tabs */}
-      {!isMetaRoute && (
-        <div className="mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
-          <div className="flex min-w-max gap-1">
-            {visibleTabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => { setTab(t.key); setPage(1); }}
-                className={`relative px-5 py-3 text-sm font-semibold transition-all ${
-                  tab === t.key 
-                    ? "text-[#1F3864]" 
-                    : "text-gray-400 hover:text-gray-600"
-                }`}
-              >
-                {t.label}
-                {tab === t.key && (
-                  <div className="absolute bottom-0 left-0 h-1 w-full bg-[#2E75B6]" />
-                )}
-              </button>
-            ))}
-          </div>
+      <div className="mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
+        <div className="flex min-w-max gap-1">
+          {visibleTabs.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => { setTab(t.key); setPage(1); }}
+              className={`relative px-5 py-3 text-sm font-semibold transition-all ${
+                tab === t.key 
+                  ? "text-[#1F3864]" 
+                  : "text-gray-400 hover:text-gray-600"
+              }`}
+            >
+              {t.label}
+              {tab === t.key && (
+                <div className="absolute bottom-0 left-0 h-1 w-full bg-[#2E75B6]" />
+              )}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
-          {tab === "meta" && (
+          {tab.startsWith("meta") && (
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
               <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">

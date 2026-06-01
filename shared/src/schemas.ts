@@ -110,6 +110,7 @@ export const createLeadSchema = z.object({
   telecallerRemark: z.string().max(2000).nullable().optional(),
   referredFromBranch: z.string().max(80).nullable().optional(),
   metaFormName: z.string().max(120).nullable().optional(),
+  metaStatus: z.string().max(120).nullable().optional(),
   // Service enquiry attributes (when channel=SERVICE)
   typeOfService: z.string().max(60).nullable().optional(),
   pickupDropFlag: z.boolean().default(false),
@@ -144,7 +145,7 @@ export const createFollowupSchema = z.object({
 // ─── Lead List Filters ──────────────────────────────────────────
 export const leadListQuerySchema = paginationSchema.extend({
   stage: z.preprocess((v) => v === "" ? undefined : v, z.nativeEnum(EnquiryStage).optional()),
-  channel: z.preprocess((v) => v === "" ? undefined : v, z.nativeEnum(LeadChannel).optional()),
+  channel: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
   interestLevel: z.preprocess((v) => v === "" ? undefined : v, z.nativeEnum(InterestLevel).optional()),
   assignedTo: z.preprocess((v) => v === "" ? undefined : v, z.coerce.number().int().positive().optional()),
   executiveName: z.string().optional(),
@@ -155,6 +156,7 @@ export const leadListQuerySchema = paginationSchema.extend({
   referredFromBranch: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
   metaForm: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
   followupSeq: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
+  contactStatus: z.enum(["CONTACTED", "NON_CONTACTED"]).optional(),
 });
 
 export const customerListQuerySchema = paginationSchema.extend({

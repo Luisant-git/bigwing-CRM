@@ -15,6 +15,7 @@ const LOOKUP_SECTIONS = [
   { key: "closure-reasons", label: "Closure Reasons", description: "Why a lead was lost or closed" },
   { key: "referred-branches", label: "Referred Branches", description: "Other Honda branches that refer enquiries" },
   { key: "sales-executives", label: "Sales Executives", description: "Manage names and contact numbers of Sales Executives" },
+  { key: "meta-statuses", label: "Meta Statuses", description: "Status tags specifically for Meta leads (Completed, Not Answered, etc.)" },
 ];
 
 export default function SettingsPage() {

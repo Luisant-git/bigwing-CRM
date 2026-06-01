@@ -123,6 +123,7 @@ export class LeadService {
         expectedServiceDate: new Date(data.expectedServiceDate),
       }),
       ...(data.metaFormName && { metaFormName: data.metaFormName }),
+      ...(data.metaStatus && { metaStatus: data.metaStatus }),
       createdBy,
     });
 
@@ -159,6 +160,7 @@ export class LeadService {
       executiveName,
       followupSeq,
       metaForm,
+      contactStatus,
       q,
     } = filters;
 
@@ -172,7 +174,7 @@ export class LeadService {
             ...(stage === "QUOTATION_SHARED" ? [{ stage: "Quotation shared" }, { stage: "QUOTATION SHARED" }] : [])
           ]
         }] : []),
-        ...(channel ? [{ channel }] : [{ channel: { not: "SOCIAL" } }]),
+        ...(channel ? [{ channel: { in: channel.split(",") } }] : [{ channel: { not: "SOCIAL" } }]),
         ...(interestLevel ? [{ interestLevel }] : []),
         ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
         ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
@@ -193,6 +195,7 @@ export class LeadService {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
+        ...(contactStatus === "CONTACTED" ? [{ stage: { not: "NEW" } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW" }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(q ? [{
           OR: [
@@ -307,6 +310,7 @@ async getByPhoneNumber(phoneNo: string) {
           ? new Date(data.expectedServiceDate)
           : null,
       }),
+      ...(data.metaStatus !== undefined && { metaStatus: data.metaStatus }),
       updatedBy,
       rowVersion: { increment: 1 },
     };
@@ -455,7 +459,7 @@ async getByPhoneNumber(phoneNo: string) {
           stage: view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] }
         }]),
         ownDataFilter(user),
-        ...(channel ? [{ channel }] : [{ channel: { not: "SOCIAL" } }]),
+        ...(channel ? [{ channel: { in: channel.split(",") } }] : [{ channel: { not: "SOCIAL" } }]), // Trigger reload
         ...(interestLevel ? [{ interestLevel }] : []),
         ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
         ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
@@ -548,6 +552,7 @@ async getByPhoneNumber(phoneNo: string) {
         executiveName,
         followupSeq,
         metaForm,
+        contactStatus,
         q,
       } = filters;
 
@@ -561,7 +566,7 @@ async getByPhoneNumber(phoneNo: string) {
             ...(stage === "QUOTATION_SHARED" ? [{ stage: "Quotation shared" }, { stage: "QUOTATION SHARED" }] : [])
           ]
         }] : []),
-          ...(channel ? [{ channel }] : [{ channel: { not: "SOCIAL" } }]),
+          ...(channel ? [{ channel: { in: channel.split(",") } }] : [{ channel: { not: "SOCIAL" } }]),
           ...(interestLevel ? [{ interestLevel }] : []),
           ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
           ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
@@ -576,6 +581,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
+          ...(contactStatus === "CONTACTED" ? [{ stage: { not: "NEW" } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW" }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...((filters.dateFrom || filters.dateTo) ? [{
             enquiryDate: {
@@ -834,6 +840,9 @@ async getByPhoneNumber(phoneNo: string) {
       typeOfService: l.typeOfService,
       pickupDropFlag: l.pickupDropFlag,
       expectedServiceDate: l.expectedServiceDate,
+      metaFormName: l.metaFormName,
+      metaStatus: l.metaStatus,
+      isDeleted: l.isDeleted,
       createdAt: l.createdAt,
       updatedAt: l.updatedAt,
     };

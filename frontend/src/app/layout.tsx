@@ -32,6 +32,7 @@ const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   // { to: "/reports", label: "Analytics", icon: BarChart3 },
   { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
+  { to: "/tele-leads", label: "Tele Leads", icon: ClipboardList, search: { tab: "all" } },
   { to: "/meta-leads", label: "Meta Leads", icon: Megaphone },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },
   { to: "/customers", label: "Customers", icon: UserCircle },
@@ -131,19 +132,27 @@ export default function AppLayout() {
       </div>
 
       <nav className={`flex-1 space-y-0.5 overflow-y-auto ${isCollapsed ? "p-2" : "p-3"}`}>
-        {navItems
-          .filter((item) => {
-            const isTele = user?.roles?.includes("TELE_CALLER");
-            if (isTele) {
-              return !["/users", "/import", "/settings"].includes(item.to);
-            }
-            return true;
-          })
-          .map((item) =>
-          isCollapsed ? (
-            <Tooltip key={item.to} content={item.label} side="right">
-              <Link
-                to={item.to}
+        {(() => {
+          const isTele = user?.roles?.includes("TELE_CALLER");
+          const isAdmin = user?.roles?.some(r => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r));
+          return navItems
+            .filter((item) => {
+              if (isTele) {
+                if (item.to === "/leads") return false;
+                return !["/users", "/import", "/settings"].includes(item.to);
+              }
+              return true;
+            })
+            .map((item) => {
+              let dynamicLabel = item.label;
+              if (item.to === "/leads" && isAdmin) {
+                 dynamicLabel = "Highrise Leads";
+              }
+              
+              return isCollapsed ? (
+                <Tooltip key={item.to} content={dynamicLabel} side="right">
+                  <Link
+                    to={item.to}
                 search={(item as any).search}
                 onClick={() => setMobileOpen(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/5 hover:text-white"
@@ -189,12 +198,13 @@ export default function AppLayout() {
                     className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`} 
                     style={{ color: isActive ? "var(--brand-primary)" : "inherit" }}
                   />
-                  {item.label}
+                  {dynamicLabel}
                 </>
               )}
             </Link>
-          )
-        )}
+          );
+        });
+      })()}
       </nav>
 
       <div className={`border-t border-white/10 ${isCollapsed ? "p-2" : "p-3"}`}>

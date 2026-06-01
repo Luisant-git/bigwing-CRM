@@ -27,7 +27,7 @@ export class ReportService {
       isDeleted: false, 
       ...dateWhere(f), 
       ...ownDataFilter(user),
-      ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } })
+      ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } })
     };
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -100,7 +100,7 @@ export class ReportService {
   // ─── Funnel (stage-wise counts) ───────────────────────────────
 
   async funnel(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     const groups = await prisma.lead.groupBy({
       by: ["stage"],
@@ -132,7 +132,7 @@ export class ReportService {
   // ─── Executive Performance ────────────────────────────────────
 
   async executive(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     // Get all assigned users' lead stats
     const groups = await prisma.lead.groupBy({
@@ -186,7 +186,7 @@ export class ReportService {
   // ─── Source Performance ───────────────────────────────────────
 
   async source(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     const groups = await prisma.lead.groupBy({
       by: ["sourceId", "stage"],
@@ -245,7 +245,7 @@ export class ReportService {
   // ─── Monthly Trends ───────────────────────────────────────────
 
   async trends(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     const monthlyGroups = await prisma.lead.groupBy({
       by: ["enquiryDate", "stage"],
@@ -274,7 +274,7 @@ export class ReportService {
   // ─── Model Mix ────────────────────────────────────────────────
 
   async modelMix(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, modelId: { not: null }, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, modelId: { not: null }, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     const groups = await prisma.lead.groupBy({
       by: ["modelId", "stage"],
@@ -332,7 +332,7 @@ export class ReportService {
       referredFromBranch: { not: null },
       ...dateWhere(f),
       ...ownDataFilter(user),
-      ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }),
+      ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }),
     };
 
     const groups = await prisma.lead.groupBy({
@@ -358,7 +358,7 @@ export class ReportService {
       closureReasonId: { not: null },
       ...dateWhere(f),
       ...ownDataFilter(user),
-      ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }),
+      ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }),
     };
 
     const groups = await prisma.lead.groupBy({
@@ -386,7 +386,7 @@ export class ReportService {
   // ─── Tele-caller Dashboard (source × stage matrix) ───────────
 
   async telecallerDashboard(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, channel: "TELE", ...dateWhere(f), ...ownDataFilter(user) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     const groups = await prisma.lead.groupBy({
       by: ["sourceId", "stage"],
@@ -424,7 +424,7 @@ export class ReportService {
   }
 
   async telecallerDetailedDashboard(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
 
     const [
       sources,
@@ -518,7 +518,7 @@ export class ReportService {
 
   // ─── Sales Executive Detailed Dashboard ────────────────────────
   async salesExecutiveDetailedDashboard(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: f.channel } : { channel: { not: "SOCIAL" } }) };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(todayStart.getTime() + 86400000);
