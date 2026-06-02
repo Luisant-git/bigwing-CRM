@@ -157,6 +157,8 @@ export const leadListQuerySchema = paginationSchema.extend({
   metaForm: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
   followupSeq: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
   contactStatus: z.enum(["CONTACTED", "NON_CONTACTED"]).optional(),
+  hiriseStatus: z.preprocess((v) => v === "" ? undefined : v, z.enum(["ENTERED", "NOT_ENTERED"]).optional()),
+  metaStatus: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
 });
 
 export const customerListQuerySchema = paginationSchema.extend({

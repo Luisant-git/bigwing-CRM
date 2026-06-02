@@ -377,7 +377,7 @@ export default function LeadEditPage() {
 
         {/* Notes */}
         <Section icon={Sparkles} title="Notes & Remarks">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                 Remark
@@ -390,20 +390,8 @@ export default function LeadEditPage() {
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
               />
             </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Telecaller Follow Ups Remarks
-              </label>
-              <textarea
-                value={form.telecallerRemark ?? ""}
-                onChange={(e) => set("telecallerRemark", e.target.value)}
-                rows={3}
-                placeholder="Telecaller to customer remarks..."
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition-colors focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-              />
-            </div>
             {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
-              <div className="col-span-1 sm:col-span-2">
+              <div>
                 <SelectField
                   label="Call Status"
                   value={form.metaStatus}

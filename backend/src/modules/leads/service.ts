@@ -161,6 +161,8 @@ export class LeadService {
       followupSeq,
       metaForm,
       contactStatus,
+      hiriseStatus,
+      metaStatus,
       q,
     } = filters;
 
@@ -197,6 +199,16 @@ export class LeadService {
         }] : []),
         ...(contactStatus === "CONTACTED" ? [{ stage: { not: "NEW" } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW" }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
+        ...(metaStatus ? [{ metaStatus }] : []),
+        ...(hiriseStatus === "ENTERED" ? [{
+          OR: [
+            { dmsEnquiryNo: { not: null } },
+            { customer: { leads: { some: { dmsEnquiryNo: { not: null }, isDeleted: false } } } }
+          ]
+        }] : hiriseStatus === "NOT_ENTERED" ? [{
+          dmsEnquiryNo: null,
+          customer: { leads: { none: { dmsEnquiryNo: { not: null }, isDeleted: false } } }
+        }] : []),
         ...(q ? [{
           OR: [
             { enquiryNo: { contains: q, mode: "insensitive" } },
@@ -444,6 +456,8 @@ async getByPhoneNumber(phoneNo: string) {
       dateTo,
       followupSeq,
       metaForm,
+      hiriseStatus,
+      metaStatus,
       q,
     } = filters;
 
@@ -481,6 +495,16 @@ async getByPhoneNumber(phoneNo: string) {
               }
         }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
+        ...(metaStatus ? [{ metaStatus }] : []),
+        ...(hiriseStatus === "ENTERED" ? [{
+          OR: [
+            { dmsEnquiryNo: { not: null } },
+            { customer: { leads: { some: { dmsEnquiryNo: { not: null }, isDeleted: false } } } }
+          ]
+        }] : hiriseStatus === "NOT_ENTERED" ? [{
+          dmsEnquiryNo: null,
+          customer: { leads: { none: { dmsEnquiryNo: { not: null }, isDeleted: false } } }
+        }] : []),
         ...(q ? [{
           OR: [
             { enquiryNo: { contains: q, mode: "insensitive" } },
@@ -553,6 +577,8 @@ async getByPhoneNumber(phoneNo: string) {
         followupSeq,
         metaForm,
         contactStatus,
+        hiriseStatus,
+        metaStatus,
         q,
       } = filters;
 
@@ -583,6 +609,16 @@ async getByPhoneNumber(phoneNo: string) {
           }] : []),
           ...(contactStatus === "CONTACTED" ? [{ stage: { not: "NEW" } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW" }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
+          ...(metaStatus ? [{ metaStatus }] : []),
+          ...(hiriseStatus === "ENTERED" ? [{
+            OR: [
+              { dmsEnquiryNo: { not: null } },
+              { customer: { leads: { some: { dmsEnquiryNo: { not: null }, isDeleted: false } } } }
+            ]
+          }] : hiriseStatus === "NOT_ENTERED" ? [{
+            dmsEnquiryNo: null,
+            customer: { leads: { none: { dmsEnquiryNo: { not: null }, isDeleted: false } } }
+          }] : []),
           ...((filters.dateFrom || filters.dateTo) ? [{
             enquiryDate: {
               ...(filters.dateFrom && { gte: new Date(filters.dateFrom) }),
@@ -617,6 +653,8 @@ async getByPhoneNumber(phoneNo: string) {
         followupSeq,
         metaForm,
         contactStatus,
+        hiriseStatus,
+        metaStatus,
         dateFrom,
         dateTo,
         q,
@@ -651,6 +689,16 @@ async getByPhoneNumber(phoneNo: string) {
           }] : []),
           ...(contactStatus === "CONTACTED" ? [{ stage: { not: "NEW" } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW" }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
+          ...(metaStatus ? [{ metaStatus }] : []),
+          ...(hiriseStatus === "ENTERED" ? [{
+            OR: [
+              { dmsEnquiryNo: { not: null } },
+              { customer: { leads: { some: { dmsEnquiryNo: { not: null }, isDeleted: false } } } }
+            ]
+          }] : hiriseStatus === "NOT_ENTERED" ? [{
+            dmsEnquiryNo: null,
+            customer: { leads: { none: { dmsEnquiryNo: { not: null }, isDeleted: false } } }
+          }] : []),
           ...((dateFrom || dateTo) ? [{
             enquiryDate: {
               ...(dateFrom && { gte: new Date(dateFrom) }),
@@ -848,6 +896,11 @@ async getByPhoneNumber(phoneNo: string) {
   }
 
   private formatLead(l: any) {
+    let linkedDmsEnquiryNo = null;
+    if (!l.dmsEnquiryNo && l.customer?.leads?.length > 0) {
+      linkedDmsEnquiryNo = l.customer.leads[0].dmsEnquiryNo;
+    }
+
     return {
       id: Number(l.id),
       enquiryNo: l.enquiryNo,
@@ -887,6 +940,8 @@ async getByPhoneNumber(phoneNo: string) {
       expectedServiceDate: l.expectedServiceDate,
       metaFormName: l.metaFormName,
       metaStatus: l.metaStatus,
+      dmsEnquiryNo: l.dmsEnquiryNo,
+      linkedDmsEnquiryNo: linkedDmsEnquiryNo,
       isDeleted: l.isDeleted,
       createdAt: l.createdAt,
       updatedAt: l.updatedAt,

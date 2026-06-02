@@ -72,12 +72,13 @@ export default function LeadListPage() {
   const [modelId, setModelId] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-
+  const [hiriseStatus, setHiriseStatus] = useState("");
+  const [metaStatus, setMetaStatus] = useState("");
 
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
     setPage(1);
-  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo, followupSeq, metaForm]);
+  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo, followupSeq, metaForm, hiriseStatus, metaStatus]);
 
   const { data: sources } = useLookup("enquiry-sources");
   const { data: models } = useLookup("vehicle-models");
@@ -114,6 +115,8 @@ export default function LeadListPage() {
   if (followupSeq) params.followupSeq = followupSeq;
   if (referredFromBranch) params.referredFromBranch = referredFromBranch;
   if (metaForm) params.metaForm = metaForm;
+  if (hiriseStatus) params.hiriseStatus = hiriseStatus;
+  if (metaStatus) params.metaStatus = metaStatus;
 
   const handleDownload = async () => {
     try {
@@ -200,6 +203,8 @@ export default function LeadListPage() {
   if (modelId) countParams.modelId = modelId;
   if (executiveName) countParams.executiveName = executiveName;
   if (followupSeq) countParams.followupSeq = followupSeq;
+  if (hiriseStatus) countParams.hiriseStatus = hiriseStatus;
+  if (metaStatus) countParams.metaStatus = metaStatus;
   const countQueries = useQueries({
     queries: ["HOT", "WARM", "COLD"].map((lvl) => ({
       queryKey: ["leads-count", tab, lvl, countParams],
@@ -216,10 +221,10 @@ export default function LeadListPage() {
     COLD: countQueries[2].data ?? 0,
   };
 
-  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo || referredFromBranch;
+  const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo || referredFromBranch || hiriseStatus || metaStatus;
   const clearFilters = () => {
     setStage(""); setChannel(""); setSourceId("");
-    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo(""); setReferredFromBranch("");
+    setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo(""); setReferredFromBranch(""); setHiriseStatus(""); setMetaStatus("");
   };
 
   // ─── Column definitions ────────────────────────────────────
@@ -229,7 +234,15 @@ export default function LeadListPage() {
       label: "Enquiry No",
       sortable: true,
       width: "180px",
-      render: (l) => <span className="whitespace-nowrap font-bold text-[#2E75B6]">{l.enquiryNo}</span>,
+      render: (l) => {
+        if (isTeleRoute) {
+          const entered = Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo);
+          if (entered) {
+            return <span className="whitespace-nowrap font-bold text-[#10B981]">{l.enquiryNo}</span>;
+          }
+        }
+        return <span className="whitespace-nowrap font-bold text-[#2E75B6]">{l.enquiryNo}</span>;
+      },
       sortValue: (l) => l.enquiryNo,
     },
     {
@@ -339,6 +352,7 @@ export default function LeadListPage() {
         sortValue: (l: any) => l.nextFollowupAt ? new Date(l.nextFollowupAt).getTime() : 0,
       }
     ] : []),
+
     {
       key: "enquiryDate",
       label: "Enquiry Date",
@@ -511,8 +525,8 @@ export default function LeadListPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="mb-6 border-b border-gray-100 overflow-x-auto no-scrollbar">
-        <div className="flex min-w-max gap-1">
+      <div className="mb-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0">
+        <div className="flex min-w-max gap-1 overflow-x-auto no-scrollbar">
           {visibleTabs.map((t) => (
             <button
               key={t.key}
@@ -530,35 +544,65 @@ export default function LeadListPage() {
             </button>
           ))}
         </div>
+        
+        {tab.startsWith("meta") && (
+          <div className="flex items-center gap-2 pb-2 sm:pb-0 pr-2">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">Call Status</span>
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1">
+              <select
+                value={metaStatus}
+                onChange={(e) => { setMetaStatus(e.target.value); setPage(1); }}
+                className="border-0 bg-transparent py-1 text-xs font-medium text-gray-700 focus:outline-none w-36"
+              >
+                <option value="">All statuses</option>
+                {(metaStatuses ?? []).map((status: any) => (
+                  <option key={status.id} value={status.name}>
+                    {status.name}
+                  </option>
+                ))}
+              </select>
+              {metaStatus && (
+                <button 
+                  onClick={() => { setMetaStatus(""); setPage(1); }}
+                  className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+                >
+                  <X size={12} strokeWidth={2.5} />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Action Bar: Dates & Exports */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between bg-white p-4 rounded-2xl border-2 border-gray-100 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
           {tab.startsWith("meta") && (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
-              <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
-                <select
-                  value={metaForm}
-                  onChange={(e) => { setMetaForm(e.target.value); setPage(1); }}
-                  className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
-                >
-                  <option value="">All forms</option>
-                  {(metaForms ?? []).map((formName: string) => (
-                    <option key={formName} value={formName}>
-                      {formName}
-                    </option>
-                  ))}
-                </select>
-                {metaForm && (
-                  <button 
-                    onClick={() => { setMetaForm(""); setPage(1); }}
-                    className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-[#1F3864]">Forms</span>
+                <div className="flex items-center gap-2 rounded-xl border-2 border-gray-200 bg-gray-50 px-2 py-1">
+                  <select
+                    value={metaForm}
+                    onChange={(e) => { setMetaForm(e.target.value); setPage(1); }}
+                    className="border-0 bg-transparent py-1 text-xs font-medium text-[#1F3864] focus:outline-none w-48"
                   >
-                    <X size={12} strokeWidth={2.5} />
-                  </button>
-                )}
+                    <option value="">All forms</option>
+                    {(metaForms ?? []).map((formName: string) => (
+                      <option key={formName} value={formName}>
+                        {formName}
+                      </option>
+                    ))}
+                  </select>
+                  {metaForm && (
+                    <button 
+                      onClick={() => { setMetaForm(""); setPage(1); }}
+                      className="ml-1 rounded-full bg-gray-200 p-1 text-gray-500 hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <X size={12} strokeWidth={2.5} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -621,6 +665,9 @@ export default function LeadListPage() {
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
             <FilterSelect label="Assigned To" value={executiveName} onChange={setExecutiveName} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
             <FilterSelect label="Branch" value={referredFromBranch} onChange={setReferredFromBranch} options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))} />
+            {isTeleRoute && (
+              <FilterSelect label="Hirise Status" value={hiriseStatus} onChange={setHiriseStatus} options={[{ value: "ENTERED", label: "Entered" }, { value: "NOT_ENTERED", label: "Not Entered" }]} />
+            )}
           </div>
           {hasActiveFilters && (
             <button onClick={clearFilters} className="mt-3 flex items-center gap-1 text-xs font-medium text-[#2E75B6] hover:underline">

@@ -133,15 +133,23 @@ export default function LeadDetailPage() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {(lead.channel?.name ?? lead.channel) === "SOCIAL" ? (
-            <Link to="/meta-leads" search={{ tab: "meta" }} className="rounded-lg p-1.5 hover:bg-gray-200">
-              <ArrowLeft size={18} />
-            </Link>
-          ) : (
-            <Link to="/leads" search={{ tab: "all" }} className="rounded-lg p-1.5 hover:bg-gray-200">
-              <ArrowLeft size={18} />
-            </Link>
-          )}
+          <button
+            onClick={() => {
+              if (window.history.length > 2) {
+                window.history.back();
+              } else {
+                const isMeta = (lead.channel?.name ?? lead.channel) === "SOCIAL";
+                if (isMeta) {
+                  navigate({ to: "/meta-leads", search: { tab: "meta" } });
+                } else {
+                  navigate({ to: "/leads", search: { tab: "all" } });
+                }
+              }
+            }}
+            className="rounded-lg p-1.5 hover:bg-gray-200"
+          >
+            <ArrowLeft size={18} />
+          </button>
           <div>
             <h1 className="text-xl font-bold">{lead.enquiryNo}</h1>
             <p className="text-sm text-gray-500">
@@ -205,17 +213,6 @@ export default function LeadDetailPage() {
           {/* Lead details card */}
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Lead Details</h2>
-            {(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
-              <div className="mb-5 rounded-lg border border-[#27AE60]/20 bg-[#27AE60]/5 p-3">
-                <div className="flex items-center gap-2 text-[#27AE60]">
-                  <CheckCircle2 size={18} />
-                  <span className="font-bold text-[13px]">Hirise Honda System Entered</span>
-                </div>
-                <div className="mt-1 pl-6 text-xs font-medium text-gray-600">
-                  DMS Ref: {lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo}
-                </div>
-              </div>
-            )}
             <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <Field label="Stage">
                 <span
@@ -399,7 +396,7 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          <HiriseStatusCard dmsEnquiryNo={lead.dmsEnquiryNo} />
+          <HiriseStatusCard dmsEnquiryNo={lead.dmsEnquiryNo} linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} />
         </div>
       </div>
 
@@ -517,8 +514,9 @@ function AssignForm({
 // Presence of `dmsEnquiryNo` means this lead was imported from the Hirise Honda
 // DMS export (VEHENQ* enquiry number). Absence means it was created in the CRM
 // directly and has not yet been pushed into Hirise.
-function HiriseStatusCard({ dmsEnquiryNo }: { dmsEnquiryNo?: string | null }) {
-  const entered = Boolean(dmsEnquiryNo);
+function HiriseStatusCard({ dmsEnquiryNo, linkedDmsEnquiryNo }: { dmsEnquiryNo?: string | null; linkedDmsEnquiryNo?: string | null }) {
+  const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
+  const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
   return (
     <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
       <h2 className="mb-3 font-semibold">Hirise Honda System</h2>
@@ -531,7 +529,7 @@ function HiriseStatusCard({ dmsEnquiryNo }: { dmsEnquiryNo?: string | null }) {
         </span>
       </div>
       {entered && (
-        <p className="mt-2 text-xs text-gray-500">DMS Ref: {dmsEnquiryNo}</p>
+        <p className="mt-2 text-xs text-gray-500">DMS Ref: {refNo}</p>
       )}
     </div>
   );

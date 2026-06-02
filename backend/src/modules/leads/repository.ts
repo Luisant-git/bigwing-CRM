@@ -4,7 +4,19 @@ import { brandContext } from "../../middlewares/brand.js";
 
 
 const listIncludes = {
-  customer: { select: { id: true, firstName: true, lastName: true, mobile: true } },
+  customer: { 
+    select: { 
+      id: true, 
+      firstName: true, 
+      lastName: true, 
+      mobile: true,
+      leads: {
+        where: { dmsEnquiryNo: { not: null }, isDeleted: false },
+        select: { dmsEnquiryNo: true },
+        take: 1
+      }
+    } 
+  },
   source: { select: { id: true, name: true } },
   enquiryType: { select: { id: true, name: true } },
   model: { select: { id: true, name: true } },

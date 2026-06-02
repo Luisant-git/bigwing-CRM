@@ -120,7 +120,13 @@ export default function LeadFormPage() {
       {/* Header card */}
       <div className="mb-6 overflow-hidden rounded-2xl bg-gradient-to-br from-[#1F3864] via-[#2E4974] to-[#2E75B6] p-6 text-white shadow-lg">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate({ to: "/leads", search: { tab: "all" } })} className="rounded-lg bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors">
+          <button onClick={() => {
+            if (window.history.length > 2) {
+              window.history.back();
+            } else {
+              navigate({ to: "/leads", search: { tab: "all" } });
+            }
+          }} className="rounded-lg bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors">
             <ArrowLeft size={18} />
           </button>
           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
@@ -321,7 +327,7 @@ export default function LeadFormPage() {
 
         {/* Notes */}
         <Section icon={Sparkles} title="Notes & Remarks">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4">
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                 Remark (min 300 characters)
@@ -337,18 +343,6 @@ export default function LeadFormPage() {
               <p className="mt-1 text-xs text-gray-500">
                 {form.remark.length} / 300 characters
               </p>
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
-                Telecaller Follow Ups Remarks
-              </label>
-              <textarea
-                value={form.telecallerRemark}
-                onChange={(e) => set("telecallerRemark", e.target.value)}
-                rows={3}
-                placeholder="Telecaller to customer remarks..."
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-              />
             </div>
           </div>
         </Section>
@@ -384,7 +378,14 @@ export default function LeadFormPage() {
           <p className="text-[12px] text-gray-500">Fill in the details to create a new lead</p>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate({ to: "/leads", search: { tab: "all" } })}
+              type="button"
+              onClick={() => {
+                if (window.history.length > 2) {
+                  window.history.back();
+                } else {
+                  navigate({ to: "/leads", search: { tab: "all" } });
+                }
+              }}
               className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
             >
               <X size={14} /> Cancel
