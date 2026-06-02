@@ -126,7 +126,7 @@ export default function LeadDetailPage() {
       <Breadcrumb items={[
         { label: "Home", to: "/" },
         (lead.channel?.name ?? lead.channel) === "SOCIAL"
-          ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList }
+          ? { label: "Meta Leads", to: "/meta-leads", search: { tab: "meta" }, icon: ClipboardList }
           : { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
         { label: lead.enquiryNo },
       ]} />
@@ -134,7 +134,7 @@ export default function LeadDetailPage() {
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {(lead.channel?.name ?? lead.channel) === "SOCIAL" ? (
-            <Link to="/meta-leads" className="rounded-lg p-1.5 hover:bg-gray-200">
+            <Link to="/meta-leads" search={{ tab: "meta" }} className="rounded-lg p-1.5 hover:bg-gray-200">
               <ArrowLeft size={18} />
             </Link>
           ) : (
