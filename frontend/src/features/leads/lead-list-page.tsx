@@ -291,19 +291,6 @@ export default function LeadListPage() {
       ),
       sortValue: (l: any) => l.stage,
     },
-    ...(tab.startsWith("meta") ? [
-      {
-        key: "metaStatus",
-        label: "Call Status",
-        sortable: true,
-        render: (l: any) => l.metaStatus ? (
-          <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-sm uppercase tracking-wider">
-            {l.metaStatus}
-          </span>
-        ) : <span className="text-gray-300">—</span>,
-        sortValue: (l: any) => l.metaStatus ?? "",
-      }
-    ] : []),
     {
       key: "referredFromBranch",
       label: "Branch",
@@ -353,6 +340,19 @@ export default function LeadListPage() {
       render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
       sortValue: (l: any) => l.enquiryDate,
     },
+    ...(tab.startsWith("meta") ? [
+      {
+        key: "metaStatus",
+        label: "Call Status",
+        sortable: true,
+        render: (l: any) => l.metaStatus ? (
+          <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-sm uppercase tracking-wider">
+            {l.metaStatus}
+          </span>
+        ) : <span className="text-gray-300">—</span>,
+        sortValue: (l: any) => l.metaStatus ?? "",
+      }
+    ] : []),
   ];
 
   return (
