@@ -900,6 +900,17 @@ private async formatLeadDetail(l: any) {
     ? await userService.getById(l.createdBy)
     : null;
 
+  let linkedDmsEnquiryNo: string | null = null;
+  if (!l.dmsEnquiryNo && l.customerId) {
+    const dmsLead = await prisma.lead.findFirst({
+      where: { customerId: l.customerId, dmsEnquiryNo: { not: null }, id: { not: l.id }, isDeleted: false },
+      select: { dmsEnquiryNo: true }
+    });
+    if (dmsLead) {
+      linkedDmsEnquiryNo = dmsLead.dmsEnquiryNo;
+    }
+  }
+
   const leadDetail = {
     ...this.formatLead(l),
 
@@ -913,6 +924,7 @@ private async formatLeadDetail(l: any) {
       : null,
 
     dmsEnquiryNo: l.dmsEnquiryNo,
+    linkedDmsEnquiryNo,
     closureReason: l.closureReason?.name,
 
      colour: l.colour

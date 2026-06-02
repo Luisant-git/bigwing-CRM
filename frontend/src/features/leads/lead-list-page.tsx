@@ -107,6 +107,7 @@ export default function LeadListPage() {
   if (tab === "service") params.channel = "SERVICE";
   else if (isTeleRoute) params.channel = "TELE,SERVICE";
   else if (channel) params.channel = channel;
+  else if (!isMetaRoute) params.channel = "WALKIN,DIGITAL,REFERENCE,WEBSITE";
   if (sourceId) params.sourceId = sourceId;
   if (modelId) params.modelId = modelId;
   if (executiveName) params.executiveName = executiveName;

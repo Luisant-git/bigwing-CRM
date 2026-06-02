@@ -16,7 +16,7 @@ import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useU
 import { InterestBadge } from "@/components/interest-badge";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal, Timeline, Breadcrumb, Tooltip, ConfirmModal, type TimelineEvent } from "@/components/ui";
-import { History, ClipboardList, Trash2 } from "lucide-react";
+import { History, ClipboardList, Trash2, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 
 export default function LeadDetailPage() {
@@ -205,6 +205,17 @@ export default function LeadDetailPage() {
           {/* Lead details card */}
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Lead Details</h2>
+            {(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
+              <div className="mb-5 rounded-lg border border-[#27AE60]/20 bg-[#27AE60]/5 p-3">
+                <div className="flex items-center gap-2 text-[#27AE60]">
+                  <CheckCircle2 size={18} />
+                  <span className="font-bold text-[13px]">Hirise Honda System Entered</span>
+                </div>
+                <div className="mt-1 pl-6 text-xs font-medium text-gray-600">
+                  DMS Ref: {lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <Field label="Stage">
                 <span
