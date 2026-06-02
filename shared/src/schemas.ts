@@ -224,6 +224,7 @@ export const createDeliverySchema = z.object({
 // ─── Lookup (master table) ──────────────────────────────────────
 export const createLookupSchema = z.object({
   name: z.string().min(1).max(120),
+  color: z.string().max(20).optional(),
   mobile: z.string().max(15).optional(),
   branchName: z.string().max(120).optional(),
   networkCode: z.string().max(60).optional(),
