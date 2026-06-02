@@ -72,6 +72,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState("");
   const [newMobile, setNewMobile] = useState("");
   const [newBranchName, setNewBranchName] = useState("");
   const [newNetworkCode, setNewNetworkCode] = useState("");
@@ -100,6 +101,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
       toast.success(`${label} item added`);
       setShowForm(false);
       setNewName("");
+      setNewColor("");
       setNewMobile("");
       setNewBranchName("");
       setNewNetworkCode("");
@@ -143,6 +145,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
     }
     createMut.mutate({
       name: apiName === "referred-branches" ? newBranchName.trim() : newName.trim(),
+      ...(apiName === "meta-statuses" && { color: newColor.trim() }),
       ...(apiName === "sales-executives" && { 
         mobile: newMobile.trim(),
         branchName: newBranchName.trim(), 
@@ -195,6 +198,25 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
                 autoFocus
                 className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
               />
+            </div>
+          )}
+          {apiName === "meta-statuses" && (
+            <div>
+              <label className="mb-1 block text-[13px] font-medium text-gray-700">Color</label>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="color"
+                  value={newColor || "#4F46E5"}
+                  onChange={(e) => setNewColor(e.target.value)}
+                  className="h-9 w-9 shrink-0 rounded border border-[#D4D9E0] cursor-pointer"
+                />
+                <input
+                  placeholder="e.g. #4F46E5"
+                  value={newColor}
+                  onChange={(e) => setNewColor(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
             </div>
           )}
           {apiName === "sales-executives" && (
@@ -352,6 +374,12 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
                         {item.mobile && <span className="text-sm text-gray-500 whitespace-nowrap">({item.mobile})</span>}
                       </div>
                     </div>
+                    {apiName === "meta-statuses" && item.color && (
+                      <div className="w-16 flex-shrink-0 flex flex-col items-center">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Color</span>
+                        <div className="w-5 h-5 rounded mt-0.5 border" style={{ backgroundColor: item.color }} title={item.color} />
+                      </div>
+                    )}
                     {apiName !== "referred-branches" && item.branchName && (
                       <div className="w-36 flex-shrink-0 flex flex-col">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Branch</span>
@@ -442,6 +470,7 @@ function EditRow({
   saving: boolean;
 }) {
   const [name, setName] = useState(item.name);
+  const [color, setColor] = useState(item.color ?? "");
   const [mobile, setMobile] = useState(item.mobile ?? "");
   const [branchName, setBranchName] = useState(item.branchName ?? "");
   const [networkCode, setNetworkCode] = useState(item.networkCode ?? "");
@@ -455,6 +484,7 @@ function EditRow({
         e.preventDefault();
         onSave({ 
           name: apiName === "referred-branches" ? branchName.trim() : name.trim(), 
+          ...(apiName === "meta-statuses" && { color: color.trim() }),
           ...(apiName === "sales-executives" && { mobile: mobile.trim() }),
           ...((apiName === "referred-branches" || apiName === "sales-executives") && { branchName: branchName.trim() }),
           ...((apiName === "referred-branches" || apiName === "sales-executives") && { networkCode: networkCode.trim() }),
@@ -474,6 +504,15 @@ function EditRow({
           autoFocus
           placeholder="Name"
           className="flex-1 min-w-[200px] rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+        />
+      )}
+      {apiName === "meta-statuses" && (
+        <input
+          type="color"
+          value={color || "#4F46E5"}
+          onChange={(e) => setColor(e.target.value)}
+          className="w-9 h-8 shrink-0 rounded border border-[#2E75B6] cursor-pointer p-0.5 bg-white"
+          title="Status Color"
         />
       )}
       {apiName === "sales-executives" && (

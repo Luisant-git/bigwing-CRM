@@ -83,6 +83,7 @@ export default function LeadListPage() {
   const { data: models } = useLookup("vehicle-models");
   const { data: executives } = useLookup("sales-executives");
   const { data: branches } = useLookup("referred-branches");
+  const { data: metaStatuses } = useLookup("meta-statuses");
 
   const visibleTabs = isMetaRoute 
     ? [
@@ -345,11 +346,24 @@ export default function LeadListPage() {
         key: "metaStatus",
         label: "Call Status",
         sortable: true,
-        render: (l: any) => l.metaStatus ? (
-          <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700 shadow-sm uppercase tracking-wider">
-            {l.metaStatus}
-          </span>
-        ) : <span className="text-gray-300">—</span>,
+        render: (l: any) => {
+          if (!l.metaStatus) return <span className="text-gray-300">—</span>;
+          const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
+          const color = statusConfig?.color || "#4F46E5";
+          return (
+            <span
+              className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
+              style={{
+                color: color,
+                backgroundColor: `${color}1A`,
+                borderColor: `${color}40`,
+                borderWidth: '1px'
+              }}
+            >
+              {l.metaStatus}
+            </span>
+          );
+        },
         sortValue: (l: any) => l.metaStatus ?? "",
       }
     ] : []),

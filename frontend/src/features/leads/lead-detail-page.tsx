@@ -125,15 +125,23 @@ export default function LeadDetailPage() {
     <div className="mx-auto max-w-5xl">
       <Breadcrumb items={[
         { label: "Home", to: "/" },
-        { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
+        (lead.channel?.name ?? lead.channel) === "SOCIAL"
+          ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList }
+          : { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
         { label: lead.enquiryNo },
       ]} />
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link to="/leads" search={{ tab: "all" }} className="rounded-lg p-1.5 hover:bg-gray-200">
-            <ArrowLeft size={18} />
-          </Link>
+          {(lead.channel?.name ?? lead.channel) === "SOCIAL" ? (
+            <Link to="/meta-leads" className="rounded-lg p-1.5 hover:bg-gray-200">
+              <ArrowLeft size={18} />
+            </Link>
+          ) : (
+            <Link to="/leads" search={{ tab: "all" }} className="rounded-lg p-1.5 hover:bg-gray-200">
+              <ArrowLeft size={18} />
+            </Link>
+          )}
           <div>
             <h1 className="text-xl font-bold">{lead.enquiryNo}</h1>
             <p className="text-sm text-gray-500">

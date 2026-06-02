@@ -65,7 +65,7 @@ export class LookupService {
     return items.map((item: any) => this.formatItem(item, name));
   }
 
-  async create(name: LookupName, data: { name: string; mobile?: string; branchName?: string; networkCode?: string; networkType?: string; inventoryLocation?: string; displayOrder?: number; isActive?: boolean }) {
+  async create(name: LookupName, data: { name: string; color?: string; mobile?: string; branchName?: string; networkCode?: string; networkType?: string; inventoryLocation?: string; displayOrder?: number; isActive?: boolean }) {
     if (!this.isEditableLookup(name)) {
       throw new AppError(400, "NOT_EDITABLE", `Lookup '${name}' is managed via its dedicated module`);
     }
@@ -86,6 +86,7 @@ export class LookupService {
         ...(data.networkCode !== undefined && { networkCode: data.networkCode }),
         ...(data.networkType !== undefined && { networkType: data.networkType }),
         ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
+        ...(data.color !== undefined && { color: data.color }),
         displayOrder: data.displayOrder ?? 0,
         isActive: data.isActive ?? true,
       },
@@ -118,6 +119,7 @@ export class LookupService {
         ...(data.networkCode !== undefined && { networkCode: data.networkCode }),
         ...(data.networkType !== undefined && { networkType: data.networkType }),
         ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
+        ...(data.color !== undefined && { color: data.color }),
         ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
@@ -176,6 +178,10 @@ export class LookupService {
 
     if (name === "referred-branches") {
       return { ...base, branchName: item.branchName, networkCode: item.networkCode, networkType: item.networkType, inventoryLocation: item.inventoryLocation };
+    }
+
+    if (name === "meta-statuses") {
+      return { ...base, color: item.color };
     }
 
     return base;
