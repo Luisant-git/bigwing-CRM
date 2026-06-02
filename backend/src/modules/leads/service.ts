@@ -605,20 +605,65 @@ async getByPhoneNumber(phoneNo: string) {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-      const { assignedTo, dateFrom, dateTo } = filters;
+      const {
+        stage,
+        channel,
+        interestLevel,
+        assignedTo,
+        sourceId,
+        modelId,
+        referredFromBranch,
+        executiveName,
+        followupSeq,
+        metaForm,
+        contactStatus,
+        dateFrom,
+        dateTo,
+        q,
+      } = filters;
 
       const where: any = {
         AND: [
           { isDeleted: false },
-          { stage: view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] } },
+          ...(stage ? [{
+            OR: [
+              { stage },
+              ...(stage === "QUOTATION_SHARED" ? [{ stage: "Quotation shared" }, { stage: "QUOTATION SHARED" }] : [])
+            ]
+          }] : [{
+            stage: view === "booked" ? "BOOKED" : { notIn: ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"] }
+          }]),
           ownDataFilter(user),
-          { channel: { not: "SOCIAL" } },
+          ...(channel ? [{ channel: { in: channel.split(",") } }] : [{ channel: { not: "SOCIAL" } }]),
+          ...(interestLevel ? [{ interestLevel }] : []),
           ...(assignedTo ? [{ assignedTo: BigInt(assignedTo) }] : []),
+          ...(executiveName ? [{ executiveName: { contains: executiveName, mode: "insensitive" } }] : []),
+          ...(sourceId ? [{ sourceId: BigInt(sourceId) }] : []),
+          ...(modelId ? [{ modelId: BigInt(modelId) }] : []),
+          ...(referredFromBranch ? [{ referredFromBranch }] : []),
+          ...(followupSeq ? [{
+            followups: followupSeq === "gt5"
+              ? { some: { seqNo: { gt: 5 } } }
+              : {
+                  some: { seqNo: parseInt(followupSeq) },
+                  none: { seqNo: { gt: parseInt(followupSeq) } }
+                }
+          }] : []),
+          ...(contactStatus === "CONTACTED" ? [{ stage: { not: "NEW" } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW" }] : []),
+          ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...((dateFrom || dateTo) ? [{
             enquiryDate: {
               ...(dateFrom && { gte: new Date(dateFrom) }),
               ...(dateTo && { lte: new Date(new Date(dateTo).setHours(23, 59, 59, 999)) }),
             },
+          }] : []),
+          ...(q ? [{
+            OR: [
+              { enquiryNo: { contains: q, mode: "insensitive" } },
+              { customer: { firstName: { contains: q, mode: "insensitive" } } },
+              { customer: { lastName: { contains: q, mode: "insensitive" } } },
+              { customer: { mobile: { contains: q } } },
+            ],
           }] : []),
         ]
       };
