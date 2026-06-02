@@ -283,7 +283,7 @@ export default function LeadDetailPage() {
               )}
               {(lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus && (
                 <div className="col-span-2">
-                  <Field label="Call Outcome">{lead.metaStatus}</Field>
+                  <Field label="Call Status">{lead.metaStatus}</Field>
                 </div>
               )}
               {lead.closureReason && (

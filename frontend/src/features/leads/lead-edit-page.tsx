@@ -405,7 +405,7 @@ export default function LeadEditPage() {
             {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
               <div className="col-span-1 sm:col-span-2">
                 <SelectField
-                  label="Call Outcome"
+                  label="Call Status"
                   value={form.metaStatus}
                   onChange={(v) => set("metaStatus", v)}
                   options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
