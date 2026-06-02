@@ -124,7 +124,9 @@ export default function LeadListPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `leads-${tab}-${new Date().toISOString().split("T")[0]}.xlsx`);
+      const modulePrefix = isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : "Highrise Leads";
+      const currentTabLabel = visibleTabs.find(t => t.key === tab)?.label || tab;
+      link.setAttribute("download", `${modulePrefix} - ${currentTabLabel}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -145,7 +147,9 @@ export default function LeadListPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `campaign-report-${tab}-${new Date().toISOString().split("T")[0]}.xlsx`);
+      const modulePrefix = isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : "Highrise Leads";
+      const currentTabLabel = visibleTabs.find(t => t.key === tab)?.label || tab;
+      link.setAttribute("download", `Campaign Report - ${modulePrefix} - ${currentTabLabel}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.remove();
