@@ -540,7 +540,7 @@ async getByPhoneNumber(phoneNo: string) {
   ) {
     let leads: any[] = [];
     
-    if (view === "all") {
+    if (view === "all" || view.startsWith("meta") || view === "service") {
       const {
         stage,
         channel,
@@ -694,7 +694,7 @@ async getByPhoneNumber(phoneNo: string) {
         "Assigned To": l.assignedTo?.fullName || l.executiveName || "Unassigned",
       };
 
-      if (view === "all") {
+      if (view === "all" || view.startsWith("meta") || view === "service") {
         return {
           ...common,
           "Enquiry Date": l.enquiryDate ? new Date(l.enquiryDate).toLocaleDateString() : "",
@@ -725,7 +725,7 @@ async getByPhoneNumber(phoneNo: string) {
         { wch: 35 }, // Customer Name
         { wch: 20 }, // Phone Number
       ];
-    } else if (view === "all") {
+    } else if (view === "all" || view.startsWith("meta") || view === "service") {
       widths = [
         { wch: 15 }, // Enquiry No
         { wch: 25 }, // Customer Name
