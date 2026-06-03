@@ -16,7 +16,7 @@ import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useU
 import { InterestBadge } from "@/components/interest-badge";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal, Timeline, Breadcrumb, Tooltip, ConfirmModal, type TimelineEvent } from "@/components/ui";
-import { History, ClipboardList, Trash2, CheckCircle2 } from "lucide-react";
+import { History, ClipboardList, Trash2, CheckCircle2, X } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 
 export default function LeadDetailPage() {
@@ -25,6 +25,7 @@ export default function LeadDetailPage() {
   const qc = useQueryClient();
   const [showFollowupForm, setShowFollowupForm] = useState(false);
   const [showStageForm, setShowStageForm] = useState(false);
+  const [showTeleFollowupForm, setShowTeleFollowupForm] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showPipelineForm, setShowPipelineForm] = useState<string | null>(null);
@@ -83,6 +84,17 @@ export default function LeadDetailPage() {
     },
     onError: (err: any) =>
       toast.error(err.response?.data?.error?.message || "Assignment failed"),
+  });
+
+  const teleMut = useMutation({
+    mutationFn: (body: any) => api.patch(`/leads/${id}`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leads", id] });
+      toast.success("Tele follow-up saved");
+      setShowTeleFollowupForm(false);
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to save tele follow-up"),
   });
 
   if (isLoading) return <PageLoader message="Loading lead details..." />;
@@ -167,6 +179,15 @@ export default function LeadDetailPage() {
               Move Stage
             </button>
           </Tooltip>
+          <Tooltip content="Log a tele follow-up">
+            <button
+              onClick={() => setShowTeleFollowupForm(true)}
+              className="rounded-lg bg-[#2E75B6] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#245f96]"
+            >
+              Tele Follow-up
+            </button>
+          </Tooltip>
+          {/* 
           <Tooltip content="Log a new follow-up">
             <button
               onClick={() => setShowFollowupForm(true)}
@@ -175,6 +196,7 @@ export default function LeadDetailPage() {
               Add Follow-up
             </button>
           </Tooltip>
+          */}
           <Tooltip content="View full timeline">
             <button
               onClick={() => setShowTimeline(true)}
@@ -292,16 +314,7 @@ export default function LeadDetailPage() {
                   <Field label="Remark">{lead.remark}</Field>
                 </div>
               )}
-              {lead.telecallerRemark && (
-                <div className="col-span-2">
-                  <Field label="Telecaller Follow Ups Remarks">{lead.telecallerRemark}</Field>
-                </div>
-              )}
-              {(lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus && (
-                <div className="col-span-2">
-                  <Field label="Call Status">{lead.metaStatus}</Field>
-                </div>
-              )}
+
               {lead.closureReason && (
                 <Field label="Closure Reason">{lead.closureReason?.name ?? lead.closureReason}</Field>
               )}
@@ -310,6 +323,45 @@ export default function LeadDetailPage() {
               )}
             </div>
           </div>
+          {/* Telecaller Remark Card */}
+          {(lead.telecallerRemark || ((lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus)) && (
+            <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-5 ring-1 ring-blue-100">
+              <div className="flex items-center gap-2 mb-3">
+                 <Phone size={16} className="text-blue-600" />
+                 <h2 className="font-semibold text-blue-900">Telecaller Follow-up</h2>
+              </div>
+              <div className="space-y-3">
+                 {(lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus && (
+                    <div>
+                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-md border border-blue-200 text-[11px] font-bold text-blue-800 uppercase tracking-wide shadow-sm">
+                          Call Status: {lead.metaStatus}
+                       </span>
+                    </div>
+                 )}
+                 {lead.telecallerRemark && (
+                    <div className="space-y-2">
+                       {lead.telecallerRemark.split('\n').filter((line: string) => line.trim() !== '').map((line: string, i: number) => {
+                           const match = line.match(/^\[(.*?)\]\s*(.*)$/);
+                           const timestamp = match ? match[1] : null;
+                           const text = match ? match[2] : line;
+
+                           return (
+                             <div key={i} className="bg-white/80 rounded-lg p-3 border border-blue-100/50 text-sm text-gray-800 flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                   <span className="inline-flex h-5 px-1.5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
+                                      F{i + 1}
+                                   </span>
+                                   <span className="text-[10px] font-bold text-gray-500">{timestamp || formatDateTime(lead.updatedAt)}</span>
+                                </div>
+                                <div className="whitespace-pre-wrap mt-1">{text}</div>
+                             </div>
+                           );
+                       })}
+                    </div>
+                 )}
+              </div>
+            </div>
+          )}
 
           {/* Follow-ups */}
           <FollowupsSection 
@@ -439,6 +491,23 @@ export default function LeadDetailPage() {
             onSubmit={(d) => followupMut.mutate(d)}
             loading={followupMut.isPending}
             followupCount={lead.followups?.length ?? 0}
+          />
+        </Modal>
+      )}
+
+      {/* Tele Follow-up modal */}
+      {showTeleFollowupForm && (
+        <Modal
+          onClose={() => setShowTeleFollowupForm(false)}
+          title="Tele Follow-up"
+        >
+          <TeleFollowupForm
+            currentRemark={lead.telecallerRemark}
+            currentStatus={lead.metaStatus}
+            currentNextFollowup={lead.nextFollowupAt}
+            isSocial={(lead.channel?.name ?? lead.channel) === "SOCIAL"}
+            onSubmit={(d) => teleMut.mutate(d)}
+            loading={teleMut.isPending}
           />
         </Modal>
       )}
@@ -697,9 +766,9 @@ function Modal({
           <h3 className="text-lg font-semibold">{title}</h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-1 rounded-full transition-colors"
           >
-            &times;
+            <X size={24} />
           </button>
         </div>
         {children}
@@ -770,8 +839,6 @@ function StageForm({
   );
 }
 
-const CHANNELS = ["CALL", "SMS", "WHATSAPP", "VISIT", "EMAIL"];
-const OUTCOMES = ["CONNECTED", "RNR", "BUSY", "WRONG_NO", "SWITCHED_OFF", "CALLBACK_REQUESTED"];
 
 function FollowupForm({
   onSubmit,
@@ -782,9 +849,7 @@ function FollowupForm({
   loading: boolean;
   followupCount?: number;
 }) {
-  const [channel, setChannel] = useState("");
   const [remark, setRemark] = useState("");
-  const [outcome, setOutcome] = useState("");
   const [nextActionAt, setNextActionAt] = useState("");
 
   const nextSeq = followupCount + 1;
@@ -811,15 +876,7 @@ function FollowupForm({
     }
   }, [nextSeq]);
 
-  // RNR = Ring No Response. Standard behaviour is to retry next day at the same time.
-  const handleOutcomeChange = (v: string) => {
-    setOutcome(v);
-    if (v === "RNR") {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      setNextActionAt(toLocalInputValue(tomorrow));
-    }
-  };
+
 
   return (
     <form
@@ -827,9 +884,7 @@ function FollowupForm({
         e.preventDefault();
         onSubmit({
           followupDate: new Date().toISOString(),
-          channel: channel || undefined,
           remark: remark || undefined,
-          outcome: outcome || undefined,
           // Convert local datetime (YYYY-MM-DDTHH:MM) to ISO only on submit
           nextActionAt: nextActionAt ? new Date(nextActionAt).toISOString() : undefined,
         });
@@ -849,34 +904,7 @@ function FollowupForm({
           {/* {nextSeq > 5 && "After F5: Please manually move the lead to 'Lost / Long Term Follow-up' if required."} */}
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium">Channel</label>
-          <select
-            value={channel}
-            onChange={(e) => setChannel(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-          >
-            <option value="">Select...</option>
-            {CHANNELS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Outcome</label>
-          <select
-            value={outcome}
-            onChange={(e) => handleOutcomeChange(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm"
-          >
-            <option value="">Select...</option>
-            {OUTCOMES.map((o) => (
-              <option key={o} value={o}>{o.replace(/_/g, " ")}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+
       <div>
         <label className="mb-1 block text-sm font-medium">Remark</label>
         <textarea
@@ -903,6 +931,102 @@ function FollowupForm({
         className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-medium text-white hover:bg-[#245f96] disabled:opacity-50"
       >
         {loading ? "Saving..." : "Add Follow-up"}
+      </button>
+    </form>
+  );
+}
+
+function TeleFollowupForm({
+  currentRemark,
+  currentStatus,
+  currentNextFollowup,
+  isSocial,
+  onSubmit,
+  loading,
+}: {
+  currentRemark?: string;
+  currentStatus?: string;
+  currentNextFollowup?: string;
+  isSocial: boolean;
+  onSubmit: (d: any) => void;
+  loading: boolean;
+}) {
+  const [newRemark, setNewRemark] = useState("");
+  const [status, setStatus] = useState(currentStatus || "");
+  const [nextActionAt, setNextActionAt] = useState(() => {
+    let d = new Date();
+    if (currentNextFollowup) {
+      try {
+        d = new Date(currentNextFollowup);
+      } catch (e) {
+        d = new Date();
+      }
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
+  const { data: metaStatuses } = useLookup("meta-statuses");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        let finalRemark = currentRemark || "";
+        if (newRemark.trim()) {
+           const timestamp = formatDateTime(new Date().toISOString());
+           const entry = `[${timestamp}] ${newRemark.trim()}`;
+           finalRemark = finalRemark ? `${finalRemark}\n${entry}` : entry;
+        }
+        onSubmit({
+          telecallerRemark: finalRemark || undefined,
+          metaStatus: status || undefined,
+          nextFollowupAt: nextActionAt ? new Date(nextActionAt).toISOString() : null,
+        });
+      }}
+      className="space-y-4"
+    >
+      {isSocial && (
+        <div>
+          <label className="mb-1 block text-sm font-medium">Call Status</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+          >
+            <option value="">Select status...</option>
+            {(metaStatuses ?? []).map((s: any) => (
+              <option key={s.name} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <div>
+        <label className="mb-1 block text-sm font-medium">New Telecaller Remark</label>
+        <textarea
+          value={newRemark}
+          onChange={(e) => setNewRemark(e.target.value)}
+          rows={3}
+          className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+          placeholder="Type your new follow-up remark here..."
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium">Next Follow-up</label>
+        <input
+          type="datetime-local"
+          value={nextActionAt}
+          onChange={(e) => setNextActionAt(e.target.value)}
+          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-medium text-white hover:bg-[#245f96] disabled:opacity-50"
+      >
+        {loading ? "Saving..." : "Save Tele Follow-up"}
       </button>
     </form>
   );
