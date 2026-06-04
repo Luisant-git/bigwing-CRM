@@ -4,7 +4,8 @@ import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-route
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
-  Download, Loader2, MessageCircle, Trash2
+  Download, Loader2, MessageCircle, Trash2,
+  CheckCircle, XCircle
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
@@ -221,6 +222,22 @@ export default function LeadListPage() {
     COLD: countQueries[2].data ?? 0,
   };
 
+  const hiriseCountQueries = useQueries({
+    queries: ["ENTERED", "NOT_ENTERED"].map((status) => ({
+      queryKey: ["leads-hirise-count", tab, status, countParams],
+      queryFn: () =>
+        api
+          .get(activeTab.endpoint, { params: { ...countParams, hiriseStatus: status } })
+          .then((r) => r.data.meta?.total ?? 0),
+      staleTime: 30_000,
+    })),
+  });
+
+  const hiriseCounts = {
+    ENTERED: hiriseCountQueries[0].data ?? 0,
+    NOT_ENTERED: hiriseCountQueries[1].data ?? 0,
+  };
+
   const hasActiveFilters = stage || channel || sourceId || modelId || executiveName || dateFrom || dateTo || referredFromBranch || hiriseStatus || metaStatus;
   const clearFilters = () => {
     setStage(""); setChannel(""); setSourceId("");
@@ -235,7 +252,7 @@ export default function LeadListPage() {
       sortable: true,
       width: "180px",
       render: (l) => {
-        if (isTeleRoute) {
+        if (isTeleRoute || isMetaRoute) {
           const entered = Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo);
           if (entered) {
             return <span className="whitespace-nowrap font-bold text-[#10B981]">{l.enquiryNo}</span>;
@@ -435,7 +452,7 @@ export default function LeadListPage() {
       </div>
 
       {/* Summary cards */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className={`mb-5 grid grid-cols-2 gap-3 ${(isTeleRoute || isMetaRoute) ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-4"}`}>
         <SummaryCard
           label="Total"
           value={meta?.total ?? "—"}
@@ -467,6 +484,26 @@ export default function LeadListPage() {
           active={interest === "COLD"}
           onClick={() => { setInterest(interest === "COLD" ? "ALL" : "COLD"); setPage(1); }}
         />
+        {(isTeleRoute || isMetaRoute) && (
+          <>
+            <SummaryCard
+              label="Hirise Entered"
+              value={hiriseCounts.ENTERED}
+              icon={CheckCircle}
+              color="#10B981"
+              active={hiriseStatus === "ENTERED"}
+              onClick={() => { setHiriseStatus(hiriseStatus === "ENTERED" ? "" : "ENTERED"); setPage(1); }}
+            />
+            <SummaryCard
+              label="Not Entered"
+              value={hiriseCounts.NOT_ENTERED}
+              icon={XCircle}
+              color="#EF4444"
+              active={hiriseStatus === "NOT_ENTERED"}
+              onClick={() => { setHiriseStatus(hiriseStatus === "NOT_ENTERED" ? "" : "NOT_ENTERED"); setPage(1); }}
+            />
+          </>
+        )}
       </div>
 
       {/* Top bar: search + filter toggle + interest chips */}
@@ -665,7 +702,7 @@ export default function LeadListPage() {
             <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
             <FilterSelect label="Assigned To" value={executiveName} onChange={setExecutiveName} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
             <FilterSelect label="Branch" value={referredFromBranch} onChange={setReferredFromBranch} options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))} />
-            {isTeleRoute && (
+            {(isTeleRoute || isMetaRoute) && (
               <FilterSelect label="Hirise Status" value={hiriseStatus} onChange={setHiriseStatus} options={[{ value: "ENTERED", label: "Entered" }, { value: "NOT_ENTERED", label: "Not Entered" }]} />
             )}
           </div>
