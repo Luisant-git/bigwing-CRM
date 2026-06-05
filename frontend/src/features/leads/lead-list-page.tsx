@@ -35,11 +35,11 @@ export default function LeadListPage() {
   const isMetaRoute = location.pathname.startsWith("/meta-leads");
   const isTeleRoute = location.pathname.startsWith("/tele-leads");
   const searchParams = useSearch({ strict: false }) as any;
-  const [tab, setTab] = useState<Tab>(isMetaRoute ? "meta-non-contacted" : (searchParams.tab || "all"));
+  const [tab, setTab] = useState<Tab>(isMetaRoute ? "meta" : (searchParams.tab || "all"));
 
   useEffect(() => {
     if (isMetaRoute && !tab.startsWith("meta")) {
-      setTab("meta-non-contacted");
+      setTab("meta");
     } else if (!isMetaRoute && searchParams.tab) {
       setTab(searchParams.tab);
     }
@@ -89,10 +89,10 @@ export default function LeadListPage() {
 
   const visibleTabs = isMetaRoute 
     ? [
+        { key: "meta" as Tab, label: "All Meta Leads", endpoint: "/leads" },
         { key: "meta-non-contacted" as Tab, label: "Non Contacted", endpoint: "/leads" },
         { key: "meta-contacted" as Tab, label: "Contacted", endpoint: "/leads" },
-        { key: "meta-completed" as Tab, label: "Completed", endpoint: "/leads" },
-        { key: "meta" as Tab, label: "All Meta Leads", endpoint: "/leads" }
+        { key: "meta-completed" as Tab, label: "Completed", endpoint: "/leads" }
       ] 
     : TABS.filter((t) => t.key !== "meta");
 
