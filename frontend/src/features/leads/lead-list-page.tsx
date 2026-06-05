@@ -285,47 +285,6 @@ export default function LeadListPage() {
       ),
       sortValue: (l) => `${l.customer?.firstName} ${l.customer?.lastName}`,
     },
-    ...(tab.startsWith("meta") ? [
-      {
-        key: "metaStatus",
-        label: "Call Status",
-        sortable: true,
-        render: (l: any) => {
-          if (!l.metaStatus) return <span className="text-gray-300">—</span>;
-          const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
-          const color = statusConfig?.color || "#4F46E5";
-          return (
-            <span
-              className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
-              style={{
-                color: color,
-                backgroundColor: `${color}1A`,
-                borderColor: `${color}40`,
-                borderWidth: '1px'
-              }}
-            >
-              {l.metaStatus}
-            </span>
-          );
-        },
-        sortValue: (l: any) => l.metaStatus ?? "",
-      },
-      {
-        key: "lastUpdated",
-        label: "Status Updated",
-        sortable: true,
-        render: (l: any) => {
-          if (!l.updatedAt || !l.metaStatus) return <span className="text-gray-300">—</span>;
-          return (
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 shadow-sm border border-amber-200">
-              <Clock size={12} className="text-amber-500" />
-              <span>{formatDistanceStrict(new Date(l.updatedAt), new Date(), { addSuffix: true })}</span>
-            </div>
-          );
-        },
-        sortValue: (l: any) => l.updatedAt,
-      }
-    ] : []),
     {
       key: "model",
       label: "Model",
@@ -372,7 +331,7 @@ export default function LeadListPage() {
       ),
       sortValue: (l: any) => l.stage,
     },
-    ...(!tab.startsWith("meta") ? [{
+    {
       key: "referredFromBranch",
       label: "Branch",
       sortable: true,
@@ -380,7 +339,7 @@ export default function LeadListPage() {
         <span className="text-[11px] font-semibold text-gray-600">{l.referredFromBranch}</span>
       ) : <span className="text-gray-300">—</span>,
       sortValue: (l: any) => l.referredFromBranch ?? "",
-    }] : []),
+    },
     {
       key: "assignedTo",
       label: "Assigned To",
@@ -422,6 +381,49 @@ export default function LeadListPage() {
       render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
       sortValue: (l: any) => l.enquiryDate,
     },
+    ...(tab.startsWith("meta") ? [
+      {
+        key: "metaStatus",
+        label: "Call Status",
+        sortable: true,
+        render: (l: any) => {
+          if (!l.metaStatus) return <span className="text-gray-300">—</span>;
+          const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
+          const color = statusConfig?.color || "#4F46E5";
+          
+          let shortTime = "";
+          if (l.updatedAt) {
+            shortTime = formatDistanceStrict(new Date(l.updatedAt), new Date())
+              .replace(/ seconds?/i, 's')
+              .replace(/ minutes?/i, 'm')
+              .replace(/ hours?/i, 'hr')
+              .replace(/ days?/i, 'd')
+              .replace(/ months?/i, 'mo')
+              .replace(/ years?/i, 'y');
+          }
+
+          return (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
+              style={{
+                color: color,
+                backgroundColor: `${color}1A`,
+                borderColor: `${color}40`,
+                borderWidth: '1px'
+              }}
+            >
+              <span>{l.metaStatus}</span>
+              {shortTime && (
+                <span className="opacity-70 text-[10px] lowercase tracking-normal">
+                  {shortTime}
+                </span>
+              )}
+            </span>
+          );
+        },
+        sortValue: (l: any) => l.metaStatus ?? "",
+      }
+    ] : []),
   ];
 
   return (
