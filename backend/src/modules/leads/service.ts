@@ -197,7 +197,7 @@ export class LeadService {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
-        ...(contactStatus === "CONTACTED" ? [{ metaStatus: { not: null } }] : contactStatus === "NON_CONTACTED" ? [{ metaStatus: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+        ...(contactStatus === "CONTACTED" ? [{ metaStatus: { not: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(metaStatus ? [{ metaStatus }] : []),
         ...(hiriseStatus === "ENTERED" ? [{
@@ -607,7 +607,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
-          ...(contactStatus === "CONTACTED" ? [{ metaStatus: { not: null } }] : contactStatus === "NON_CONTACTED" ? [{ metaStatus: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+          ...(contactStatus === "CONTACTED" ? [{ metaStatus: { not: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...(metaStatus ? [{ metaStatus }] : []),
           ...(hiriseStatus === "ENTERED" ? [{
@@ -687,7 +687,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
-          ...(contactStatus === "CONTACTED" ? [{ metaStatus: { not: null } }] : contactStatus === "NON_CONTACTED" ? [{ metaStatus: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+          ...(contactStatus === "CONTACTED" ? [{ metaStatus: { not: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...(metaStatus ? [{ metaStatus }] : []),
           ...(hiriseStatus === "ENTERED" ? [{
