@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDistanceToNow } from "date-fns";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
@@ -390,17 +391,24 @@ export default function LeadListPage() {
           const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
           const color = statusConfig?.color || "#4F46E5";
           return (
-            <span
-              className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
-              style={{
-                color: color,
-                backgroundColor: `${color}1A`,
-                borderColor: `${color}40`,
-                borderWidth: '1px'
-              }}
-            >
-              {l.metaStatus}
-            </span>
+            <div className="flex flex-col items-start gap-1">
+              <span
+                className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
+                style={{
+                  color: color,
+                  backgroundColor: `${color}1A`,
+                  borderColor: `${color}40`,
+                  borderWidth: '1px'
+                }}
+              >
+                {l.metaStatus}
+              </span>
+              {l.updatedAt && (
+                <span className="text-[10px] font-medium text-gray-400">
+                  {formatDistanceToNow(new Date(l.updatedAt), { addSuffix: true })}
+                </span>
+              )}
+            </div>
           );
         },
         sortValue: (l: any) => l.metaStatus ?? "",

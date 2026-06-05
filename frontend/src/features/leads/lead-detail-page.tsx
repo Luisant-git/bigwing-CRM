@@ -985,23 +985,7 @@ function TeleFollowupForm({
       }}
       className="space-y-4"
     >
-      {isSocial && (
-        <div>
-          <label className="mb-1 block text-sm font-medium">Call Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
-            className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-          >
-            <option value="">Select status...</option>
-            {(metaStatuses ?? []).map((s: any) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
+
       <div>
         <label className="mb-1 block text-sm font-medium">New Telecaller Remark</label>
         <textarea
