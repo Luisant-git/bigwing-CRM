@@ -97,6 +97,22 @@ export default function LeadDetailPage() {
       toast.error(err.response?.data?.error?.message || "Failed to save tele follow-up"),
   });
 
+  const handleDeleteTeleRemark = async (indexToDelete: number) => {
+    if (!window.confirm("Are you sure you want to delete this follow-up?")) return;
+    
+    const lines = lead.telecallerRemark.split('\n').filter((line: string) => line.trim() !== '');
+    lines.splice(indexToDelete, 1);
+    const newRemark = lines.join('\n');
+    
+    try {
+      await api.patch(`/leads/${id}`, { telecallerRemark: newRemark || null });
+      qc.invalidateQueries({ queryKey: ["leads", id] });
+      toast.success("Follow-up deleted");
+    } catch (err: any) {
+      toast.error(err.response?.data?.error?.message || "Failed to delete follow-up");
+    }
+  };
+
   if (isLoading) return <PageLoader message="Loading lead details..." />;
   if (!data) return <p className="text-gray-400">Lead not found</p>;
 
@@ -308,6 +324,13 @@ export default function LeadDetailPage() {
                   )}
                 </div>
               </Field>
+              {lead.metaStatus && (
+                <Field label="Call Status">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#4F46E5]/10 text-[#4F46E5] uppercase tracking-wide border border-[#4F46E5]/20">
+                    {lead.metaStatus}
+                  </span>
+                </Field>
+              )}
 
               {lead.remark && (
                 <div className="col-span-2">
@@ -324,20 +347,13 @@ export default function LeadDetailPage() {
             </div>
           </div>
           {/* Telecaller Remark Card */}
-          {(lead.telecallerRemark || ((lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus)) && (
+          {lead.telecallerRemark && (
             <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 p-5 ring-1 ring-blue-100">
               <div className="flex items-center gap-2 mb-3">
                  <Phone size={16} className="text-blue-600" />
                  <h2 className="font-semibold text-blue-900">Telecaller Follow-up</h2>
               </div>
               <div className="space-y-3">
-                 {(lead.channel?.name ?? lead.channel) === "SOCIAL" && lead.metaStatus && (
-                    <div>
-                       <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white rounded-md border border-blue-200 text-[11px] font-bold text-blue-800 uppercase tracking-wide shadow-sm">
-                          Call Status: {lead.metaStatus}
-                       </span>
-                    </div>
-                 )}
                  {lead.telecallerRemark && (
                     <div className="space-y-2">
                        {lead.telecallerRemark.split('\n').filter((line: string) => line.trim() !== '').map((line: string, i: number) => {
@@ -347,11 +363,20 @@ export default function LeadDetailPage() {
 
                            return (
                              <div key={i} className="bg-white/80 rounded-lg p-3 border border-blue-100/50 text-sm text-gray-800 flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                   <span className="inline-flex h-5 px-1.5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
-                                      F{i + 1}
-                                   </span>
-                                   <span className="text-[10px] font-bold text-gray-500">{timestamp || formatDateTime(lead.updatedAt)}</span>
+                                <div className="flex items-center justify-between w-full">
+                                   <div className="flex items-center gap-2">
+                                      <span className="inline-flex h-5 px-1.5 items-center justify-center rounded-full bg-[#2E75B6] text-[10px] font-semibold text-white">
+                                         F{i + 1}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-gray-500">{timestamp || formatDateTime(lead.updatedAt)}</span>
+                                   </div>
+                                   <button 
+                                     onClick={() => handleDeleteTeleRemark(i)}
+                                     title="Delete this remark"
+                                     className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                   >
+                                     <Trash2 size={12} />
+                                   </button>
                                 </div>
                                 <div className="whitespace-pre-wrap mt-1">{text}</div>
                              </div>
