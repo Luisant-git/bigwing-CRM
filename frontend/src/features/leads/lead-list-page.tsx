@@ -14,7 +14,7 @@ import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
 import { DataTable, SummaryCard, FilterChips, Pagination, type Column } from "@/components/data-table";
 
-type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked" | "meta" | "meta-contacted" | "meta-non-contacted" | "service";
+type Tab = "all" | "active" | "today" | "overdue" | "upcoming" | "no-followup" | "booked" | "meta" | "meta-contacted" | "meta-non-contacted" | "meta-completed" | "service";
 type InterestFilter = "ALL" | "HOT" | "WARM" | "COLD";
 
 const TABS: { key: Tab; label: string; endpoint: string }[] = [
@@ -91,7 +91,8 @@ export default function LeadListPage() {
     ? [
         { key: "meta" as Tab, label: "All Meta Leads", endpoint: "/leads" },
         { key: "meta-contacted" as Tab, label: "Contacted", endpoint: "/leads" },
-        { key: "meta-non-contacted" as Tab, label: "Non Contacted", endpoint: "/leads" }
+        { key: "meta-non-contacted" as Tab, label: "Non Contacted", endpoint: "/leads" },
+        { key: "meta-completed" as Tab, label: "Completed", endpoint: "/leads" }
       ] 
     : TABS.filter((t) => t.key !== "meta");
 
@@ -106,6 +107,7 @@ export default function LeadListPage() {
   if (tab.startsWith("meta")) params.channel = "SOCIAL";
   if (tab === "meta-contacted") params.contactStatus = "CONTACTED";
   if (tab === "meta-non-contacted") params.contactStatus = "NON_CONTACTED";
+  if (tab === "meta-completed") params.contactStatus = "COMPLETED";
   if (tab === "service") params.channel = "SERVICE";
   else if (isTeleRoute) params.channel = "TELE,SERVICE";
   else if (channel) params.channel = channel;
@@ -197,6 +199,7 @@ export default function LeadListPage() {
   if (tab.startsWith("meta")) countParams.channel = "SOCIAL";
   if (tab === "meta-contacted") countParams.contactStatus = "CONTACTED";
   if (tab === "meta-non-contacted") countParams.contactStatus = "NON_CONTACTED";
+  if (tab === "meta-completed") countParams.contactStatus = "COMPLETED";
   if (tab === "service") countParams.channel = "SERVICE";
   else if (isTeleRoute) countParams.channel = "TELE,SERVICE";
   else if (channel) countParams.channel = channel;
