@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-
+import { formatDistanceStrict } from "date-fns";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Clock
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -391,28 +391,35 @@ export default function LeadListPage() {
           const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
           const color = statusConfig?.color || "#4F46E5";
           return (
-            <div className="flex flex-col items-start gap-1.5">
-              <span
-                className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
-                style={{
-                  color: color,
-                  backgroundColor: `${color}1A`,
-                  borderColor: `${color}40`,
-                  borderWidth: '1px'
-                }}
-              >
-                {l.metaStatus}
-              </span>
-              {l.updatedAt && (
-                <div className="flex items-center gap-1 text-[10px] font-medium text-gray-400">
-                  <Clock size={10} />
-                  <span>{formatDateTime(l.updatedAt)}</span>
-                </div>
-              )}
-            </div>
+            <span
+              className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
+              style={{
+                color: color,
+                backgroundColor: `${color}1A`,
+                borderColor: `${color}40`,
+                borderWidth: '1px'
+              }}
+            >
+              {l.metaStatus}
+            </span>
           );
         },
         sortValue: (l: any) => l.metaStatus ?? "",
+      },
+      {
+        key: "lastUpdated",
+        label: "Status Updated",
+        sortable: true,
+        render: (l: any) => {
+          if (!l.updatedAt) return <span className="text-gray-300">—</span>;
+          return (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 shadow-sm border border-amber-200">
+              <Clock size={12} className="text-amber-500" />
+              <span>{formatDistanceStrict(new Date(l.updatedAt), new Date(), { addSuffix: true })}</span>
+            </div>
+          );
+        },
+        sortValue: (l: any) => l.updatedAt,
       }
     ] : []),
   ];
