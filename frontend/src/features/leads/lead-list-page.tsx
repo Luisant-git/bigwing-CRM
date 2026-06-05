@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceStrict } from "date-fns";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
   Download, Loader2, MessageCircle, Trash2,
-  CheckCircle, XCircle
+  CheckCircle, XCircle, Clock
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
@@ -391,7 +391,7 @@ export default function LeadListPage() {
           const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
           const color = statusConfig?.color || "#4F46E5";
           return (
-            <div className="flex flex-col items-start gap-1">
+            <div className="flex flex-col items-start gap-1.5">
               <span
                 className="inline-flex items-center rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
                 style={{
@@ -404,9 +404,10 @@ export default function LeadListPage() {
                 {l.metaStatus}
               </span>
               {l.updatedAt && (
-                <span className="text-[10px] font-medium text-gray-400">
-                  {formatDistanceToNow(new Date(l.updatedAt), { addSuffix: true })}
-                </span>
+                <div className="flex items-center gap-1 text-[10px] font-medium text-gray-400">
+                  <Clock size={10} />
+                  <span>{formatDistanceStrict(new Date(l.updatedAt), new Date(), { addSuffix: true })}</span>
+                </div>
               )}
             </div>
           );
