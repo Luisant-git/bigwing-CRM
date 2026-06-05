@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { formatDistanceStrict } from "date-fns";
+
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
 import {
@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Clock
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -406,7 +406,7 @@ export default function LeadListPage() {
               {l.updatedAt && (
                 <div className="flex items-center gap-1 text-[10px] font-medium text-gray-400">
                   <Clock size={10} />
-                  <span>{formatDistanceStrict(new Date(l.updatedAt), new Date(), { addSuffix: true })}</span>
+                  <span>{formatDateTime(l.updatedAt)}</span>
                 </div>
               )}
             </div>
