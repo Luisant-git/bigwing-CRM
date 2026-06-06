@@ -220,11 +220,21 @@ export class LeadService {
       ]
     };
 
+    let orderBy: any = undefined;
+    if (contactStatus === "CONTACTED") {
+      orderBy = [
+        { nextFollowupAt: { sort: "asc", nulls: "last" } },
+        { enquiryDate: "desc" },
+        { createdAt: "desc" }
+      ];
+    }
+
     const [leads, total] = await Promise.all([
       leadRepository.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
+        orderBy,
       }),
       leadRepository.count(where),
     ]);
@@ -537,11 +547,21 @@ async getByPhoneNumber(phoneNo: string) {
         break;
     }
 
+    let orderBy: any = undefined;
+    if (["today", "upcoming", "overdue"].includes(view) || contactStatus === "CONTACTED") {
+      orderBy = [
+        { nextFollowupAt: { sort: "asc", nulls: "last" } },
+        { enquiryDate: "desc" },
+        { createdAt: "desc" }
+      ];
+    }
+
     const [leads, total] = await Promise.all([
       leadRepository.findMany({
         where,
         skip: (page - 1) * pageSize,
         take: pageSize,
+        orderBy,
       }),
       leadRepository.count(where),
     ]);
@@ -635,7 +655,16 @@ async getByPhoneNumber(phoneNo: string) {
           }] : []),
         ]
       };
-      leads = await leadRepository.findMany({ where });
+      
+      let orderBy: any = undefined;
+      if (contactStatus === "CONTACTED") {
+        orderBy = [
+          { nextFollowupAt: { sort: "asc", nulls: "last" } },
+          { enquiryDate: "desc" },
+          { createdAt: "desc" }
+        ];
+      }
+      leads = await leadRepository.findMany({ where, orderBy });
     } else {
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -732,7 +761,16 @@ async getByPhoneNumber(phoneNo: string) {
           conditions.push({ nextFollowupAt: null });
           break;
       }
-      leads = await leadRepository.findMany({ where });
+      
+      let orderBy: any = undefined;
+      if (["today", "upcoming", "overdue"].includes(view) || contactStatus === "CONTACTED") {
+        orderBy = [
+          { nextFollowupAt: { sort: "asc", nulls: "last" } },
+          { enquiryDate: "desc" },
+          { createdAt: "desc" }
+        ];
+      }
+      leads = await leadRepository.findMany({ where, orderBy });
     }
 
     const formatted = leads.map(this.formatLead);

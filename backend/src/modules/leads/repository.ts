@@ -27,13 +27,13 @@ const listIncludes = {
 } as const;
 
 export class LeadRepository {
-  async findMany(params: { where: any; skip?: number; take?: number }) {
+  async findMany(params: { where: any; skip?: number; take?: number; orderBy?: any }) {
     const brand = brandContext.getStore() || "BIGWING";
     return prisma.lead.findMany({
       where: { ...params.where, brand },
       ...(params.skip !== undefined && { skip: params.skip }),
       ...(params.take !== undefined && { take: params.take }),
-      orderBy: [{ enquiryDate: "desc" }, { createdAt: "desc" }],
+      orderBy: params.orderBy || [{ enquiryDate: "desc" }, { createdAt: "desc" }],
       include: listIncludes,
     });
   }
