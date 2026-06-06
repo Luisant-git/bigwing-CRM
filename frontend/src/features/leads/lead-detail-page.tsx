@@ -26,6 +26,7 @@ export default function LeadDetailPage() {
   const [showFollowupForm, setShowFollowupForm] = useState(false);
   const [showStageForm, setShowStageForm] = useState(false);
   const [showTeleFollowupForm, setShowTeleFollowupForm] = useState(false);
+  const [showCallStatusForm, setShowCallStatusForm] = useState(false);
   const [showTimeline, setShowTimeline] = useState(false);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showPipelineForm, setShowPipelineForm] = useState<string | null>(null);
@@ -96,6 +97,17 @@ export default function LeadDetailPage() {
     },
     onError: (err: any) =>
       toast.error(err.response?.data?.error?.message || "Failed to save tele follow-up"),
+  });
+
+  const callStatusMut = useMutation({
+    mutationFn: (body: any) => api.patch(`/leads/${id}`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leads", id] });
+      toast.success("Call status updated");
+      setShowCallStatusForm(false);
+    },
+    onError: (err: any) =>
+      toast.error(err.response?.data?.error?.message || "Failed to update call status"),
   });
 
   const handleDeleteTeleRemark = async (indexToDelete: number) => {
@@ -204,6 +216,16 @@ export default function LeadDetailPage() {
               Tele Follow-up
             </button>
           </Tooltip>
+          {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
+            <Tooltip content="Update call status">
+              <button
+                onClick={() => setShowCallStatusForm(true)}
+                className="rounded-lg bg-[#2E75B6] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#245f96]"
+              >
+                Call Status
+              </button>
+            </Tooltip>
+          )}
           {/* 
           <Tooltip content="Log a new follow-up">
             <button
@@ -555,6 +577,21 @@ export default function LeadDetailPage() {
             isSocial={(lead.channel?.name ?? lead.channel) === "SOCIAL"}
             onSubmit={(d) => teleMut.mutate(d)}
             loading={teleMut.isPending}
+          />
+        </Modal>
+      )}
+
+      {/* Call Status modal */}
+      {showCallStatusForm && (
+        <Modal
+          onClose={() => setShowCallStatusForm(false)}
+          title="Call Status"
+        >
+          <CallStatusForm
+            currentStatus={lead.metaStatus}
+            currentNextFollowup={lead.nextFollowupAt}
+            onSubmit={(d) => callStatusMut.mutate(d)}
+            loading={callStatusMut.isPending}
           />
         </Modal>
       )}
@@ -1058,6 +1095,77 @@ function TeleFollowupForm({
         className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-medium text-white hover:bg-[#245f96] disabled:opacity-50"
       >
         {loading ? "Saving..." : "Save Tele Follow-up"}
+      </button>
+    </form>
+  );
+}
+
+function CallStatusForm({
+  currentStatus,
+  currentNextFollowup,
+  onSubmit,
+  loading,
+}: {
+  currentStatus?: string;
+  currentNextFollowup?: string;
+  onSubmit: (d: any) => void;
+  loading: boolean;
+}) {
+  const [status, setStatus] = useState(currentStatus || "");
+  const [nextActionAt, setNextActionAt] = useState(() => {
+    if (!currentNextFollowup) return "";
+    let d = new Date();
+    try {
+      d = new Date(currentNextFollowup);
+    } catch (e) {
+      d = new Date();
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
+  const { data: metaStatuses } = useLookup("meta-statuses");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({
+          metaStatus: status || undefined,
+          nextFollowupAt: nextActionAt ? new Date(nextActionAt).toISOString() : null,
+        });
+      }}
+      className="space-y-4"
+    >
+      <div>
+        <label className="mb-1 block text-sm font-medium">Call Status</label>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+        >
+          <option value="">Select status...</option>
+          {(metaStatuses ?? []).map((s: any) => (
+            <option key={s.id} value={s.name}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block text-sm font-medium">Reminder Time</label>
+        <input
+          type="datetime-local"
+          value={nextActionAt}
+          onChange={(e) => setNextActionAt(e.target.value)}
+          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+        />
+      </div>
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full rounded-lg bg-[#2E75B6] py-2 text-sm font-medium text-white hover:bg-[#245f96] disabled:opacity-50"
+      >
+        {loading ? "Saving..." : "Save Call Status"}
       </button>
     </form>
   );
