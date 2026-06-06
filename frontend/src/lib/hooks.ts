@@ -38,6 +38,16 @@ export function formatDateTime(d: string | null | undefined) {
   });
 }
 
+export function formatDateTimeShort(d: string | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 // Badge colors aligned with Bigwing UX designs
 export const STAGE_COLORS: Record<string, string> = {
   NEW: "bg-[#F1F3F5] text-[#6C757D]",

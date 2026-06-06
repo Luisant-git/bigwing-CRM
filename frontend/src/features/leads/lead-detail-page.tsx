@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, formatDateTimeShort, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { InterestBadge } from "@/components/interest-badge";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal, Timeline, Breadcrumb, Tooltip, ConfirmModal, type TimelineEvent } from "@/components/ui";
@@ -330,7 +330,7 @@ export default function LeadDetailPage() {
                 const color = statusConfig?.color || "#4F46E5";
                 let reminderTime = "";
                 if (lead.nextFollowupAt) {
-                  reminderTime = formatDateTime(lead.nextFollowupAt);
+                  reminderTime = formatDateTimeShort(lead.nextFollowupAt);
                 }
                 return (
                   <Field label="Call Status">

@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Clock
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, formatDateTimeShort, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -393,7 +393,7 @@ export default function LeadListPage() {
           
           let reminderTime = "";
           if (l.nextFollowupAt) {
-            reminderTime = formatDateTime(l.nextFollowupAt);
+            reminderTime = formatDateTimeShort(l.nextFollowupAt);
           }
 
           return (
