@@ -110,6 +110,7 @@ export default function LeadEditPage() {
           telecallerRemark: lead.telecallerRemark ?? "",
           referredFromBranch: branches?.find((b: any) => b.name?.toLowerCase().trim() === (val(lead.referredFromBranch) ?? "").toLowerCase().trim())?.name || (val(lead.referredFromBranch) ?? ""),
           metaStatus: lead.metaStatus ?? "",
+          nextFollowupAt: lead.nextFollowupAt ? (function(d){const pad = (n: number) => String(n).padStart(2, "0"); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;})(new Date(lead.nextFollowupAt)) : "",
           // Service fields
           typeOfService: val(lead.typeOfService) ?? "",
           expectedServiceDate: lead.expectedServiceDate ? lead.expectedServiceDate.split("T")[0] : "",
@@ -161,6 +162,7 @@ export default function LeadEditPage() {
     if (form.telecallerRemark !== undefined) body.telecallerRemark = form.telecallerRemark;
     if (form.referredFromBranch !== undefined) body.referredFromBranch = form.referredFromBranch;
     if (form.metaStatus !== undefined) body.metaStatus = form.metaStatus;
+    if (form.nextFollowupAt !== undefined) body.nextFollowupAt = form.nextFollowupAt ? new Date(form.nextFollowupAt).toISOString() : null;
     
     // Service fields
     if (form.typeOfService !== undefined) body.typeOfService = form.typeOfService;
@@ -391,13 +393,19 @@ export default function LeadEditPage() {
               />
             </div>
             {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
-              <div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <SelectField
                   label="Call Status"
                   value={form.metaStatus}
                   onChange={(v) => set("metaStatus", v)}
                   options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
                   current={lead.metaStatus}
+                />
+                <InputField
+                  label="Reminder Time"
+                  type="datetime-local"
+                  value={form.nextFollowupAt ?? ""}
+                  onChange={(v: string) => set("nextFollowupAt", v)}
                 />
               </div>
             )}

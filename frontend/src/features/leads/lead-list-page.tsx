@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Clock
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -391,15 +391,9 @@ export default function LeadListPage() {
           const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === l.metaStatus);
           const color = statusConfig?.color || "#4F46E5";
           
-          let shortTime = "";
-          if (l.updatedAt) {
-            shortTime = formatDistanceStrict(new Date(l.updatedAt), new Date())
-              .replace(/ seconds?/i, 's')
-              .replace(/ minutes?/i, 'm')
-              .replace(/ hours?/i, 'hr')
-              .replace(/ days?/i, 'd')
-              .replace(/ months?/i, 'mo')
-              .replace(/ years?/i, 'y');
+          let reminderTime = "";
+          if (l.nextFollowupAt) {
+            reminderTime = formatDateTime(l.nextFollowupAt);
           }
 
           return (
@@ -413,9 +407,9 @@ export default function LeadListPage() {
               }}
             >
               <span>{l.metaStatus}</span>
-              {shortTime && (
-                <span className="opacity-70 text-[10px] lowercase tracking-normal">
-                  {shortTime}
+              {reminderTime && (
+                <span className="opacity-70 text-[10px] tracking-normal border-l pl-1.5 ml-0.5" style={{ borderColor: 'inherit' }}>
+                  {reminderTime}
                 </span>
               )}
             </span>
