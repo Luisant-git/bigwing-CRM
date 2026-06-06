@@ -37,6 +37,7 @@ export default function LeadDetailPage() {
 
   const [showAssignForm, setShowAssignForm] = useState(false);
 
+  const { data: metaStatuses } = useLookup("meta-statuses");
   const { data, isLoading } = useQuery({
     queryKey: ["leads", id],
     queryFn: () => api.get(`/leads/${id}`).then((r) => r.data.data),
@@ -324,13 +325,34 @@ export default function LeadDetailPage() {
                   )}
                 </div>
               </Field>
-              {lead.metaStatus && (
-                <Field label="Call Status">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#4F46E5]/10 text-[#4F46E5] uppercase tracking-wide border border-[#4F46E5]/20">
-                    {lead.metaStatus}
-                  </span>
-                </Field>
-              )}
+              {lead.metaStatus && (() => {
+                const statusConfig = (metaStatuses ?? []).find((s: any) => s.name === lead.metaStatus);
+                const color = statusConfig?.color || "#4F46E5";
+                let reminderTime = "";
+                if (lead.nextFollowupAt) {
+                  reminderTime = formatDateTime(lead.nextFollowupAt);
+                }
+                return (
+                  <Field label="Call Status">
+                    <span
+                      className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-[11px] font-bold shadow-sm uppercase tracking-wider"
+                      style={{
+                        color: color,
+                        backgroundColor: `${color}1A`,
+                        borderColor: `${color}40`,
+                        borderWidth: '1px'
+                      }}
+                    >
+                      <span>{lead.metaStatus}</span>
+                      {reminderTime && (
+                        <span className="opacity-70 text-[10px] tracking-normal border-l pl-1.5 ml-0.5" style={{ borderColor: 'inherit' }}>
+                          {reminderTime}
+                        </span>
+                      )}
+                    </span>
+                  </Field>
+                );
+              })()}
 
               {lead.remark && (
                 <div className="col-span-2">
