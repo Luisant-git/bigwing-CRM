@@ -47,7 +47,7 @@ export default function LeadDetailPage() {
   const stageMut = useMutation({
     mutationFn: (body: any) => api.post(`/leads/${id}/stage`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Stage updated");
       setShowStageForm(false);
     },
@@ -58,7 +58,7 @@ export default function LeadDetailPage() {
   const followupMut = useMutation({
     mutationFn: (body: any) => api.post(`/leads/${id}/followups`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Follow-up added");
       setShowFollowupForm(false);
     },
@@ -80,7 +80,7 @@ export default function LeadDetailPage() {
   const assignMut = useMutation({
     mutationFn: (body: { assignedTo: number }) => api.post(`/leads/${id}/assign`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Lead assigned successfully");
       setShowAssignForm(false);
     },
@@ -91,7 +91,7 @@ export default function LeadDetailPage() {
   const teleMut = useMutation({
     mutationFn: (body: any) => api.patch(`/leads/${id}`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Tele follow-up saved");
       setShowTeleFollowupForm(false);
     },
@@ -102,7 +102,7 @@ export default function LeadDetailPage() {
   const callStatusMut = useMutation({
     mutationFn: (body: any) => api.patch(`/leads/${id}`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Call status updated");
       setShowCallStatusForm(false);
     },
@@ -119,7 +119,7 @@ export default function LeadDetailPage() {
     
     try {
       await api.patch(`/leads/${id}`, { telecallerRemark: newRemark || null });
-      qc.invalidateQueries({ queryKey: ["leads", id] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Follow-up deleted");
     } catch (err: any) {
       toast.error(err.response?.data?.error?.message || "Failed to delete follow-up");
