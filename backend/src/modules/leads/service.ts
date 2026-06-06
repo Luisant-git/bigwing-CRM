@@ -468,6 +468,7 @@ async getByPhoneNumber(phoneNo: string) {
       metaForm,
       hiriseStatus,
       metaStatus,
+      contactStatus,
       q,
     } = filters;
 
@@ -506,6 +507,7 @@ async getByPhoneNumber(phoneNo: string) {
         }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(metaStatus ? [{ metaStatus }] : []),
+        ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
         ...(hiriseStatus === "ENTERED" ? [{
           OR: [
             { dmsEnquiryNo: { not: null } },
