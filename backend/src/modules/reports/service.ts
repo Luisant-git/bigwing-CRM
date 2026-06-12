@@ -579,7 +579,10 @@ export class ReportService {
     });
 
     for (const l of leadData) {
-      const name = l.executiveName || l.assignedUser?.fullName || "Unassigned";
+      let rawName = l.assignedUser?.fullName || l.executiveName || "Unassigned";
+      // Convert to uppercase and strip out all special characters (keep only letters, numbers, and spaces)
+      let name = rawName.trim().toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
+      
       if (!matrixMap.has(name)) {
         matrixMap.set(name, {
           name,
@@ -612,7 +615,10 @@ export class ReportService {
     // Process Executive Breakdown (Today/Overdue) using the same leadData
     const execBreakdownMap = new Map<string, any>();
     for (const l of leadData) {
-      const name = l.executiveName || l.assignedUser?.fullName || "Unassigned";
+      let rawName = l.assignedUser?.fullName || l.executiveName || "Unassigned";
+      // Convert to uppercase and strip out all special characters
+      let name = rawName.trim().toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
+
       if (!execBreakdownMap.has(name)) {
         execBreakdownMap.set(name, { 
           name,
