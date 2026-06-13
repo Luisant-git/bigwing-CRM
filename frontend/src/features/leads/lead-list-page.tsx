@@ -36,13 +36,21 @@ export default function LeadListPage() {
   const isMetaRoute = location.pathname.startsWith("/meta-leads");
   const isTeleRoute = location.pathname.startsWith("/tele-leads");
   const searchParams = useSearch({ strict: false }) as any;
-  const [tab, setTab] = useState<Tab>(isMetaRoute ? "meta" : (searchParams.tab || "all"));
+  const defaultTab = isMetaRoute ? "meta" : "all";
+  const initialTab = searchParams.tab && (isMetaRoute ? searchParams.tab.startsWith("meta") : true) 
+    ? searchParams.tab 
+    : defaultTab;
+  const [tab, setTab] = useState<Tab>(initialTab);
 
   useEffect(() => {
-    if (isMetaRoute && !tab.startsWith("meta")) {
-      setTab("meta");
-    } else if (!isMetaRoute && searchParams.tab) {
-      setTab(searchParams.tab);
+    if (searchParams.tab) {
+      if (isMetaRoute && !searchParams.tab.startsWith("meta")) {
+        setTab("meta");
+      } else {
+        setTab(searchParams.tab);
+      }
+    } else {
+      setTab(defaultTab);
     }
   }, [searchParams.tab, isMetaRoute]);
   const pfx = isMetaRoute ? "meta" : isTeleRoute ? "tele" : "leads";
