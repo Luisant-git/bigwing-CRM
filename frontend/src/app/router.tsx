@@ -91,7 +91,7 @@ const metaLeadsRoute = createRoute({
   validateSearch: (search: Record<string, unknown>) => {
     return {
       ...search,
-      tab: "meta",
+      tab: (search.tab as string) || "meta",
     };
   },
 });

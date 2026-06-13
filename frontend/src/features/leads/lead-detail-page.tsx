@@ -167,8 +167,8 @@ export default function LeadDetailPage() {
       <Breadcrumb items={[
         { label: "Home", to: "/" },
         (lead.channel?.name ?? lead.channel) === "SOCIAL"
-          ? { label: "Meta Leads", to: "/meta-leads", search: { tab: "meta" }, icon: ClipboardList }
-          : { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
+          ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList }
+          : { label: "Leads", to: "/leads", icon: ClipboardList },
         { label: lead.enquiryNo },
       ]} />
       {/* Header */}
@@ -181,9 +181,9 @@ export default function LeadDetailPage() {
               } else {
                 const isMeta = (lead.channel?.name ?? lead.channel) === "SOCIAL";
                 if (isMeta) {
-                  navigate({ to: "/meta-leads", search: { tab: "meta" } });
+                  navigate({ to: "/meta-leads" });
                 } else {
-                  navigate({ to: "/leads", search: { tab: "all" } });
+                  navigate({ to: "/leads" });
                 }
               }
             }}

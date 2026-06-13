@@ -187,7 +187,7 @@ export default function LeadEditPage() {
     <div className="mx-auto max-w-4xl pb-24">
       <Breadcrumb items={[
         { label: "Home", to: "/" },
-        { label: "Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList },
+        { label: "Leads", to: "/leads", icon: ClipboardList },
         { label: lead.enquiryNo, to: `/leads/${id}` },
         { label: "Edit" },
       ]} />
