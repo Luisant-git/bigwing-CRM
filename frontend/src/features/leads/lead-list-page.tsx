@@ -622,7 +622,7 @@ export default function LeadListPage() {
               onClick={() => { 
                 setTab(t.key); 
                 setPage(1); 
-                navigate({ search: (prev: any) => ({ ...prev, tab: t.key }), replace: true });
+                navigate({ search: { ...searchParams, tab: t.key } as any, replace: true });
               }}
               className={`relative px-5 py-3 text-sm font-semibold transition-all ${
                 tab === t.key 
