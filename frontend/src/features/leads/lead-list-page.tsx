@@ -9,7 +9,7 @@ import {
   CheckCircle, XCircle, Clock
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate, formatDateTime, formatDateTimeShort, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers } from "@/lib/hooks";
+import { formatDate, formatDateTime, formatDateTimeShort, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers, useSessionState } from "@/lib/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { Breadcrumb, Tooltip } from "@/components/ui";
 import { InterestBadge } from "@/components/interest-badge";
@@ -45,15 +45,16 @@ export default function LeadListPage() {
       setTab(searchParams.tab);
     }
   }, [searchParams.tab, isMetaRoute]);
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
-  const [search, setSearch] = useState("");
-  const [interest, setInterest] = useState<InterestFilter>("ALL");
-  const [followupSeq, setFollowupSeq] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [downloadingWhatsapp, setDownloadingWhatsapp] = useState(false);
-  const [isTruncating, setIsTruncating] = useState(false);
+  const pfx = isMetaRoute ? "meta" : isTeleRoute ? "tele" : "leads";
+  const [page, setPage] = useSessionState(`${pfx}-page`, 1);
+  const [pageSize, setPageSize] = useSessionState(`${pfx}-pageSize`, 25);
+  const [search, setSearch] = useSessionState(`${pfx}-search`, "");
+  const [interest, setInterest] = useSessionState<InterestFilter>(`${pfx}-interest`, "ALL");
+  const [followupSeq, setFollowupSeq] = useSessionState(`${pfx}-followupSeq`, "");
+  const [showFilters, setShowFilters] = useSessionState(`${pfx}-showFilters`, false);
+  const [downloading, setDownloading] = useSessionState(`${pfx}-downloading`, false);
+  const [downloadingWhatsapp, setDownloadingWhatsapp] = useSessionState(`${pfx}-downloadingWhatsapp`, false);
+  const [isTruncating, setIsTruncating] = useSessionState(`${pfx}-isTruncating`, false);
   const currentUser = useAuthStore((s) => s.user);
 
   const { data: metaForms } = useQuery({
@@ -63,19 +64,19 @@ export default function LeadListPage() {
   });
 
   // advanced filters
-  const [stage, setStage] = useState("");
-  const [channel, setChannel] = useState("");
-  const [interestLevel, setInterestLevel] = useState("");
-  const [assignedTo, setAssignedTo] = useState("");
-  const [executiveName, setExecutiveName] = useState("");
-  const [referredFromBranch, setReferredFromBranch] = useState("");
-  const [metaForm, setMetaForm] = useState("");
-  const [sourceId, setSourceId] = useState("");
-  const [modelId, setModelId] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [hiriseStatus, setHiriseStatus] = useState("");
-  const [metaStatus, setMetaStatus] = useState("");
+  const [stage, setStage] = useSessionState(`${pfx}-stage`, "");
+  const [channel, setChannel] = useSessionState(`${pfx}-channel`, "");
+  const [interestLevel, setInterestLevel] = useSessionState(`${pfx}-interestLevel`, "");
+  const [assignedTo, setAssignedTo] = useSessionState(`${pfx}-assignedTo`, "");
+  const [executiveName, setExecutiveName] = useSessionState(`${pfx}-executiveName`, "");
+  const [referredFromBranch, setReferredFromBranch] = useSessionState(`${pfx}-referredFromBranch`, "");
+  const [metaForm, setMetaForm] = useSessionState(`${pfx}-metaForm`, "");
+  const [sourceId, setSourceId] = useSessionState(`${pfx}-sourceId`, "");
+  const [modelId, setModelId] = useSessionState(`${pfx}-modelId`, "");
+  const [dateFrom, setDateFrom] = useSessionState(`${pfx}-dateFrom`, "");
+  const [dateTo, setDateTo] = useSessionState(`${pfx}-dateTo`, "");
+  const [hiriseStatus, setHiriseStatus] = useSessionState(`${pfx}-hiriseStatus`, "");
+  const [metaStatus, setMetaStatus] = useSessionState(`${pfx}-metaStatus`, "");
 
   // Reset page to 1 whenever any filter changes
   useEffect(() => {
@@ -566,13 +567,24 @@ export default function LeadListPage() {
               className="w-full sm:w-64 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
             />
           </div>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${hasActiveFilters ? "border-[#2E75B6] bg-blue-50 text-[#2E75B6]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
-          >
-            <Filter size={14} /> Filters
-            {hasActiveFilters && <span className="ml-0.5 h-2 w-2 rounded-full bg-[#2E75B6]" />}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${hasActiveFilters ? "border-[#2E75B6] bg-blue-50 text-[#2E75B6]" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+            >
+              <Filter size={14} /> Filters
+              {hasActiveFilters && <span className="ml-0.5 h-2 w-2 rounded-full bg-[#2E75B6]" />}
+            </button>
+            {hasActiveFilters && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-2 text-red-600 transition-colors hover:bg-red-100"
+                title="Clear all filters"
+              >
+                <X size={16} strokeWidth={2.5} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

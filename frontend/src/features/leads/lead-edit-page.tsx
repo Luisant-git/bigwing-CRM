@@ -18,6 +18,14 @@ export default function LeadEditPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
+  const goBack = () => {
+    if (window.history.length > 2) {
+      window.history.back();
+    } else {
+      navigate({ to: "/leads/$id", params: { id: id! }, replace: true });
+    }
+  };
+
   const { data: lead, isLoading } = useQuery({
     queryKey: ["leads", id],
     queryFn: () => api.get(`/leads/${id}`).then((r) => r.data.data),
@@ -134,7 +142,7 @@ export default function LeadEditPage() {
       qc.invalidateQueries({ queryKey: ["leads", id] });
       qc.invalidateQueries({ queryKey: ["leads"] });
       toast.success("Lead updated successfully");
-      navigate({ to: "/leads/$id", params: { id: id! } });
+      goBack();
     },
     onError: (err: any) => {
       const details = err.response?.data?.error?.details;
@@ -189,11 +197,12 @@ export default function LeadEditPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate({ to: "/leads/$id", params: { id: id! } })}
-              className="rounded-lg bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+              onClick={goBack}
+              className="flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-white/20"
               title="Back"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={16} /> 
+              <span>Back</span>
             </button>
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-white/60">
@@ -432,7 +441,7 @@ export default function LeadEditPage() {
           <div className="flex gap-2">
             <Tooltip content="Discard changes">
               <button
-                onClick={() => navigate({ to: "/leads/$id", params: { id: id! } })}
+                onClick={goBack}
                 className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
               >
                 <X size={14} /> Cancel

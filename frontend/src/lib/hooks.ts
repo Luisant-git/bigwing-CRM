@@ -1,5 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import api from "./api";
+
+export function useSessionState<T>(key: string, initialValue: T) {
+  const [state, setState] = useState<T>(() => {
+    try {
+      const item = sessionStorage.getItem(key);
+      return item ? JSON.parse(item) : initialValue;
+    } catch (error) {
+      return initialValue;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(state));
+    } catch (error) {
+      // ignore
+    }
+  }, [key, state]);
+
+  return [state, setState] as const;
+}
 
 export function useLookup(name: string, params?: Record<string, any>) {
   return useQuery({

@@ -187,9 +187,10 @@ export default function LeadDetailPage() {
                 }
               }
             }}
-            className="rounded-lg p-1.5 hover:bg-gray-200"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} /> 
+            <span>Back</span>
           </button>
           <div>
             <h1 className="text-xl font-bold">{lead.enquiryNo}</h1>
