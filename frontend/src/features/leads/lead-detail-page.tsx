@@ -181,9 +181,9 @@ export default function LeadDetailPage() {
               } else {
                 const isMeta = (lead.channel?.name ?? lead.channel) === "SOCIAL";
                 if (isMeta) {
-                  navigate({ to: "/meta-leads" });
+                  navigate({ to: "/meta-leads", search: {} as any });
                 } else {
-                  navigate({ to: "/leads" });
+                  navigate({ to: "/leads", search: {} as any });
                 }
               }
             }}
