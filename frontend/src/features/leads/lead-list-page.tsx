@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatDistanceStrict } from "date-fns";
 import { useQuery, useQueries } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch, useLocation } from "@tanstack/react-router";
@@ -78,10 +78,7 @@ export default function LeadListPage() {
   const [hiriseStatus, setHiriseStatus] = useSessionState(`${pfx}-hiriseStatus`, "");
   const [metaStatus, setMetaStatus] = useSessionState(`${pfx}-metaStatus`, "");
 
-  // Reset page to 1 whenever any filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [tab, search, interest, stage, channel, sourceId, modelId, executiveName, dateFrom, dateTo, followupSeq, metaForm, hiriseStatus, metaStatus]);
+
 
   const { data: sources } = useLookup("enquiry-sources");
   const { data: models } = useLookup("vehicle-models");
@@ -191,6 +188,22 @@ export default function LeadListPage() {
   const leads = data?.data ?? [];
   const meta = data?.meta;
 
+  // Restore scroll position when returning from details page
+  useEffect(() => {
+    if (!isLoading && data) {
+      const scrollY = sessionStorage.getItem(`${pfx}-scroll`);
+      if (scrollY) {
+        setTimeout(() => {
+          const mainElement = document.getElementById("main-scroll-container");
+          if (mainElement) {
+            mainElement.scrollTo({ top: parseInt(scrollY, 10), behavior: "instant" });
+          }
+          sessionStorage.removeItem(`${pfx}-scroll`);
+        }, 100);
+      }
+    }
+  }, [isLoading, data, pfx]);
+
   // Summary counts by interest — fetched from server for the CURRENT filter set
   // (ignores `interest` filter itself so the chips always show total counts)
   const countParams: any = { pageSize: 1 };
@@ -247,10 +260,22 @@ export default function LeadListPage() {
   const clearFilters = () => {
     setStage(""); setChannel(""); setSourceId("");
     setModelId(""); setExecutiveName(""); setDateFrom(""); setDateTo(""); setReferredFromBranch(""); setHiriseStatus(""); setMetaStatus("");
+    setPage(1);
   };
 
   // ─── Column definitions ────────────────────────────────────
   const columns: Column<any>[] = [
+    {
+      key: "sno",
+      label: "S.No",
+      width: "60px",
+      align: "center",
+      render: (l) => {
+        const idx = leads.indexOf(l);
+        const sNo = ((page - 1) * pageSize) + idx + 1;
+        return <span className="text-xs font-medium text-gray-400">{sNo}</span>;
+      },
+    },
     {
       key: "enquiryNo",
       label: "Enquiry No",
@@ -594,7 +619,11 @@ export default function LeadListPage() {
           {visibleTabs.map((t) => (
             <button
               key={t.key}
-              onClick={() => { setTab(t.key); setPage(1); }}
+              onClick={() => { 
+                setTab(t.key); 
+                setPage(1); 
+                navigate({ search: (prev: any) => ({ ...prev, tab: t.key }), replace: true });
+              }}
               className={`relative px-5 py-3 text-sm font-semibold transition-all ${
                 tab === t.key 
                   ? "text-[#1F3864]" 
@@ -723,14 +752,14 @@ export default function LeadListPage() {
       {showFilters && (
         <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            <FilterSelect label="Stage" value={stage} onChange={setStage} options={["NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].map(s => ({ value: s, label: STAGE_LABELS[s] ?? s.replace(/_/g, " ") }))} />
-            <FilterSelect label="Channel" value={channel} onChange={setChannel} options={["WALKIN", "TELE", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"].map(c => ({ value: c, label: c }))} />
-            <FilterSelect label="Source" value={sourceId} onChange={setSourceId} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
-            <FilterSelect label="Model" value={modelId} onChange={setModelId} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
-            <FilterSelect label="Assigned To" value={executiveName} onChange={setExecutiveName} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
-            <FilterSelect label="Branch" value={referredFromBranch} onChange={setReferredFromBranch} options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))} />
+            <FilterSelect label="Stage" value={stage} onChange={(v) => { setStage(v); setPage(1); }} options={["NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].map(s => ({ value: s, label: STAGE_LABELS[s] ?? s.replace(/_/g, " ") }))} />
+            <FilterSelect label="Channel" value={channel} onChange={(v) => { setChannel(v); setPage(1); }} options={["WALKIN", "TELE", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"].map(c => ({ value: c, label: c }))} />
+            <FilterSelect label="Source" value={sourceId} onChange={(v) => { setSourceId(v); setPage(1); }} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
+            <FilterSelect label="Model" value={modelId} onChange={(v) => { setModelId(v); setPage(1); }} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
+            <FilterSelect label="Assigned To" value={executiveName} onChange={(v) => { setExecutiveName(v); setPage(1); }} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
+            <FilterSelect label="Branch" value={referredFromBranch} onChange={(v) => { setReferredFromBranch(v); setPage(1); }} options={(branches ?? []).map((b: any) => ({ value: b.name, label: b.name }))} />
             {(isTeleRoute || isMetaRoute) && (
-              <FilterSelect label="Hirise Status" value={hiriseStatus} onChange={setHiriseStatus} options={[{ value: "ENTERED", label: "Entered" }, { value: "NOT_ENTERED", label: "Not Entered" }]} />
+              <FilterSelect label="Hirise Status" value={hiriseStatus} onChange={(v) => { setHiriseStatus(v); setPage(1); }} options={[{ value: "ENTERED", label: "Entered" }, { value: "NOT_ENTERED", label: "Not Entered" }]} />
             )}
           </div>
           {hasActiveFilters && (
@@ -749,7 +778,11 @@ export default function LeadListPage() {
         loading={isLoading}
         emptyIcon={ClipboardList}
         emptyMessage="No leads found — try adjusting your filters"
-        onRowClick={(l) => navigate({ to: "/leads/$id", params: { id: String(l.id) } })}
+        onRowClick={(l) => {
+          const mainElement = document.getElementById("main-scroll-container");
+          sessionStorage.setItem(`${pfx}-scroll`, (mainElement?.scrollTop || 0).toString());
+          navigate({ to: "/leads/$id", params: { id: String(l.id) } });
+        }}
         rowAccent={(l) =>
           l.interestLevel === "HOT" ? "#EF4444" :
             l.interestLevel === "WARM" ? "#F59E0B" :
