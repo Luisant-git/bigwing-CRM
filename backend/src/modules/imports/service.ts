@@ -1306,7 +1306,7 @@ export class ImportService {
 
     if (match) {
       if (match.remark !== remark || (followupDate && match.followupDate?.getTime() !== followupDate.getTime())) {
-        await tx.leadFollowup.update({
+        const updated = await tx.leadFollowup.update({
           where: { id: match.id },
           data: {
             remark,
@@ -1314,13 +1314,18 @@ export class ImportService {
             updatedBy: createdBy,
           },
         });
+        if (followupCache) {
+          const list = followupCache.get(leadId) || [];
+          const idx = list.findIndex(f => f.id === match.id);
+          if (idx !== -1) list[idx] = updated;
+        }
       }
       return;
     }
 
     const nextSeqNo = (existing[0]?.seqNo ?? 0) + 1;
 
-    await tx.leadFollowup.create({
+    const newF = await tx.leadFollowup.create({
       data: {
         leadId,
         seqNo: nextSeqNo,
@@ -1329,6 +1334,12 @@ export class ImportService {
         createdBy,
       },
     });
+
+    if (followupCache) {
+      const list = followupCache.get(leadId) || [];
+      list.unshift(newF);
+      followupCache.set(leadId, list);
+    }
 
     if (mapped.nextFollowupAt) {
       await tx.lead.update({
