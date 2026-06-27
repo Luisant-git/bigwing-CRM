@@ -24,6 +24,11 @@ const listIncludes = {
   colour: { select: { id: true, name: true } },
   assignedUser: { select: { id: true, fullName: true } },
   _count: { select: { followups: true } },
+  followups: {
+    orderBy: { seqNo: "desc" },
+    take: 1,
+    select: { remark: true }
+  },
 } as const;
 
 export class LeadRepository {

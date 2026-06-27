@@ -842,6 +842,7 @@ async getByPhoneNumber(phoneNo: string) {
           "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
           "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleDateString() : "None",
           "Remarks": l.remark || "",
+          "Follow up Remark": l.latestFollowupRemark || l.telecallerRemark || "",
         };
       } else {
         // Targeted format for follow-up views
@@ -851,6 +852,7 @@ async getByPhoneNumber(phoneNo: string) {
           "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
           ...(view === "overdue" && { "Overdue Days": overdueDays }),
           "Remarks": l.remark || "",
+          "Follow up Remark": l.latestFollowupRemark || l.telecallerRemark || "",
         };
       }
     });
@@ -879,6 +881,7 @@ async getByPhoneNumber(phoneNo: string) {
         { wch: 15 }, // Next Follow-up
         { wch: 15 }, // Last Follow-up
         { wch: 30 }, // Remarks
+        { wch: 40 }, // Follow up Remark
       ];
     } else {
       widths = [
@@ -893,6 +896,7 @@ async getByPhoneNumber(phoneNo: string) {
         { wch: 15 }, // Next Follow-up
         ...(view === "overdue" ? [{ wch: 12 }] : []), // Overdue Days
         { wch: 40 }, // Remarks (Wider for focus)
+        { wch: 40 }, // Follow up Remark
       ];
     }
     sheet["!cols"] = widths;
@@ -979,6 +983,7 @@ async getByPhoneNumber(phoneNo: string) {
       closedAt: l.closedAt,
       remark: l.remark,
       telecallerRemark: l.telecallerRemark,
+      latestFollowupRemark: l.followups?.[0]?.remark || null,
       executiveName: l.executiveName,
       referredFromBranch: l.referredFromBranch,
       typeOfService: l.typeOfService,
