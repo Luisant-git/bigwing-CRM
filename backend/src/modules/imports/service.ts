@@ -1281,7 +1281,7 @@ export class ImportService {
       ? (followupCache.get(leadId) || [])
       : await tx.leadFollowup.findMany({
           where: { leadId },
-          select: { seqNo: true, followupDate: true, remark: true },
+          select: { id: true, seqNo: true, followupDate: true, remark: true },
           orderBy: { seqNo: "desc" },
         });
 
@@ -1289,7 +1289,7 @@ export class ImportService {
     const followupIdTag = mapped.followupId
       ? `[${String(mapped.followupId).trim()}]`
       : null;
-    const alreadyExists = existing.some((f: any) => {
+    const match = existing.find((f: any) => {
       if (followupIdTag && f.remark?.startsWith(followupIdTag)) return true;
       if (
         followupDate &&
@@ -1301,7 +1301,20 @@ export class ImportService {
       }
       return false;
     });
-    if (alreadyExists) return;
+
+    if (match) {
+      if (match.remark !== remark || (followupDate && match.followupDate?.getTime() !== followupDate.getTime())) {
+        await tx.leadFollowup.update({
+          where: { id: match.id },
+          data: {
+            remark,
+            followupDate: followupDate ?? match.followupDate,
+            updatedBy: createdBy,
+          },
+        });
+      }
+      return;
+    }
 
     const nextSeqNo = (existing[0]?.seqNo ?? 0) + 1;
 

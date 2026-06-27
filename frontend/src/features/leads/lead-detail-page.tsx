@@ -710,10 +710,11 @@ function FollowupsSection({
   followups: any[];
   assignedName?: string | null;
 }) {
-  const sorted = [...followups].sort(
-    (a, b) =>
-      new Date(a.followupDate).getTime() - new Date(b.followupDate).getTime()
-  );
+  const sorted = [...followups].sort((a, b) => {
+    const diff = new Date(a.followupDate).getTime() - new Date(b.followupDate).getTime();
+    if (diff !== 0) return diff;
+    return (a.seqNo ?? 0) - (b.seqNo ?? 0);
+  });
   const count = sorted.length;
   const firstDate = sorted[0]?.followupDate;
   const lastDate = sorted[count - 1]?.followupDate;
