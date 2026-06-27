@@ -179,7 +179,7 @@ export default function AppLayout() {
               >
                 <item.icon size={18} />
                 {item.to === "/meta-leads" && (uncontactedMeta ?? 0) > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-[9px] font-bold text-white shadow-sm">
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[9px] font-bold text-white shadow-sm">
                     {uncontactedMeta > 99 ? '99+' : uncontactedMeta}
                   </span>
                 )}
@@ -215,7 +215,7 @@ export default function AppLayout() {
                     {dynamicLabel}
                   </div>
                   {item.to === "/meta-leads" && (uncontactedMeta ?? 0) > 0 && (
-                    <span className="flex h-5 items-center justify-center rounded-full bg-pink-500 px-2 text-[10px] font-bold text-white shadow-sm">
+                    <span className="flex h-5 items-center justify-center rounded-full bg-orange-500 px-2 text-[10px] font-bold text-white shadow-sm">
                       {uncontactedMeta}
                     </span>
                   )}
