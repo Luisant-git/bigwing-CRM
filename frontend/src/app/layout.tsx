@@ -86,6 +86,16 @@ export default function AppLayout() {
     refetchInterval: 30000,
   });
 
+  const { data: uncontactedMeta } = useQuery({
+    queryKey: ["leads", "meta-non-contacted-count"],
+    queryFn: () =>
+      api.get("/leads", {
+        params: { channel: "SOCIAL", contactStatus: "NON_CONTACTED", pageSize: 1 }
+      }).then((r) => r.data.meta?.total ?? 0),
+    refetchInterval: 30000,
+    enabled: !!user,
+  });
+
   const { data: profile } = useQuery({
     queryKey: ["profile", "me", user?.id],
     queryFn: () => api.get("/profile/me").then((r) => r.data.data),
@@ -155,7 +165,7 @@ export default function AppLayout() {
                     to={item.to}
                 search={(item as any).search}
                 onClick={() => setMobileOpen(false)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+                className="relative flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/5 hover:text-white"
                 activeOptions={{ includeHash: true }}
                 activeProps={{
                   style: { 
@@ -167,8 +177,12 @@ export default function AppLayout() {
                   }
                 }}
               >
-
                 <item.icon size={18} />
+                {item.to === "/meta-leads" && (uncontactedMeta ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-pink-500 text-[9px] font-bold text-white shadow-sm">
+                    {uncontactedMeta > 99 ? '99+' : uncontactedMeta}
+                  </span>
+                )}
               </Link>
             </Tooltip>
           ) : (
@@ -177,7 +191,7 @@ export default function AppLayout() {
               to={item.to}
               search={(item as any).search}
               onClick={() => setMobileOpen(false)}
-              className="group flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
+              className="group flex items-center justify-between rounded-lg px-3 py-2.5 text-[13px] font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white"
               activeOptions={{ includeHash: true }}
               activeProps={{
                 style: { 
@@ -187,18 +201,24 @@ export default function AppLayout() {
                   borderTopLeftRadius: "0",
                   borderBottomLeftRadius: "0",
                   fontWeight: "600"
-
                 }
               }}
             >
               {({ isActive }) => (
                 <>
-                  <item.icon 
-                    size={18} 
-                    className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`} 
-                    style={{ color: isActive ? "var(--brand-primary)" : "inherit" }}
-                  />
-                  {dynamicLabel}
+                  <div className="flex items-center gap-2.5">
+                    <item.icon 
+                      size={18} 
+                      className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`} 
+                      style={{ color: isActive ? "var(--brand-primary)" : "inherit" }}
+                    />
+                    {dynamicLabel}
+                  </div>
+                  {item.to === "/meta-leads" && (uncontactedMeta ?? 0) > 0 && (
+                    <span className="flex h-5 items-center justify-center rounded-full bg-pink-500 px-2 text-[10px] font-bold text-white shadow-sm">
+                      {uncontactedMeta}
+                    </span>
+                  )}
                 </>
               )}
             </Link>

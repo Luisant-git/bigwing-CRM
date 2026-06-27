@@ -376,6 +376,12 @@ async getByPhoneNumber(phoneNo: string) {
       }
     }
 
+    if (data.remark) {
+      const stageName = data.stage === "LOST" ? "LOST" : data.stage.replace(/_/g, " ");
+      const newEntry = `[${stageName}] ${data.remark}`;
+      updateData.remark = existing.remark ? `${existing.remark}\n${newEntry}` : newEntry;
+    }
+
     const [lead] = await prisma.$transaction([
       prisma.lead.update({
         where: { id },

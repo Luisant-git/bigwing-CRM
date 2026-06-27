@@ -377,11 +377,20 @@ export default function LeadDetailPage() {
                 );
               })()}
 
-              {lead.remark && (
-                <div className="col-span-2">
-                  <Field label="Remark">{lead.remark}</Field>
-                </div>
-              )}
+              {(() => {
+                const manualRemark = (lead.remark || "")
+                  .split("\n")
+                  .filter((line: string) => !line.trim().startsWith("Generated from Facebook Lead Ads") && !line.trim().startsWith("Historical Meta Lead ID"))
+                  .join("\n")
+                  .trim();
+                
+                if (!manualRemark) return null;
+                return (
+                  <div className="col-span-2">
+                    <Field label="Remark">{manualRemark}</Field>
+                  </div>
+                );
+              })()}
 
               {lead.closureReason && (
                 <Field label="Closure Reason">{lead.closureReason?.name ?? lead.closureReason}</Field>
@@ -905,12 +914,15 @@ function StageForm({
         </select>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium">Remark</label>
+        <label className="mb-1 block text-sm font-medium">
+          Remark {stage === "LOST" && <span className="text-red-500">*</span>}
+        </label>
         <textarea
           value={remark}
           onChange={(e) => setRemark(e.target.value)}
           rows={2}
-          className="w-full rounded-lg border px-3 py-2 text-sm"
+          required={stage === "LOST"}
+          className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
         />
       </div>
       <button
@@ -1142,6 +1154,7 @@ function CallStatusForm({
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
+          required
           className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
         >
           <option value="">Select status...</option>
@@ -1158,6 +1171,7 @@ function CallStatusForm({
           type="datetime-local"
           value={nextActionAt}
           onChange={(e) => setNextActionAt(e.target.value)}
+          required
           className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
         />
       </div>

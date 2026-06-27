@@ -114,7 +114,7 @@ export default function LeadEditPage() {
           purchaseType: val(lead.purchaseType) ?? "",
           exchangeFlag: lead.exchangeFlag ?? false,
           testRideFlag: lead.testRideFlag ?? false,
-          remark: lead.remark ?? "",
+          remark: (lead.remark || "").split("\n").filter((line: string) => !line.trim().startsWith("Generated from Facebook Lead Ads") && !line.trim().startsWith("Historical Meta Lead ID")).join("\n").trim(),
           telecallerRemark: lead.telecallerRemark ?? "",
           referredFromBranch: branches?.find((b: any) => b.name?.toLowerCase().trim() === (val(lead.referredFromBranch) ?? "").toLowerCase().trim())?.name || (val(lead.referredFromBranch) ?? ""),
           metaStatus: lead.metaStatus ?? "",
@@ -308,15 +308,33 @@ export default function LeadEditPage() {
         {/* Interest & Purchase */}
         {(lead.channel?.name ?? lead.channel) !== "SERVICE" && (
           <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <SelectField
+                label="Month for Purchase"
+                value={
+                  form.interestLevel === "HOT" ? "1_MONTH" :
+                  form.interestLevel === "WARM" ? "2_MONTHS" :
+                  form.interestLevel === "COLD" ? "MORE_THAN_2_MONTHS" : ""
+                }
+                onChange={(v) => {
+                  if (v === "1_MONTH") set("interestLevel", "HOT");
+                  if (v === "2_MONTHS") set("interestLevel", "WARM");
+                  if (v === "MORE_THAN_2_MONTHS") set("interestLevel", "COLD");
+                }}
+                options={[
+                  { value: "1_MONTH", label: "1 month" },
+                  { value: "2_MONTHS", label: "2 months" },
+                  { value: "MORE_THAN_2_MONTHS", label: "More than 2 months" },
+                ]}
+              />
               <SelectField
                 label="Interest Level"
                 value={form.interestLevel}
                 onChange={(v) => set("interestLevel", v)}
                 options={[
-                  { value: "HOT", label: "🔥 Hot — Ready to buy" },
-                  { value: "WARM", label: "🌤️ Warm — Interested, needs time" },
-                  { value: "COLD", label: "❄️ Cold — Low interest" },
+                  { value: "HOT", label: "🔥 Hot" },
+                  { value: "WARM", label: "🌤️ Warm" },
+                  { value: "COLD", label: "❄️ Cold" },
                 ]}
                 current={lead.interestLevel}
               />
@@ -409,12 +427,14 @@ export default function LeadEditPage() {
                   onChange={(v) => set("metaStatus", v)}
                   options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
                   current={lead.metaStatus}
+                  required={true}
                 />
                 <InputField
                   label="Reminder Time"
                   type="datetime-local"
                   value={form.nextFollowupAt ?? ""}
                   onChange={(v: string) => set("nextFollowupAt", v)}
+                  required={true}
                 />
               </div>
             )}
@@ -490,7 +510,7 @@ function Section({
 // SelectField — shows current value clearly + highlights changes
 // ─────────────────────────────────────────────────────────────
 function SelectField({
-  label, value, onChange, options, current, disabled = false, icon,
+  label, value, onChange, options, current, disabled = false, icon, required,
 }: {
   label: string;
   value: string;
@@ -499,6 +519,7 @@ function SelectField({
   current?: any;
   disabled?: boolean;
   icon?: any;
+  required?: boolean;
 }) {
   // Find the label of the currently selected option
   const selectedLabel = options.find((o) => o.value === value)?.label;
@@ -524,6 +545,7 @@ function SelectField({
           value={value ?? ""}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
+          required={required}
           className={`w-full appearance-none rounded-lg border bg-white px-3 py-2.5 pr-8 text-sm transition-colors focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 ${
             selectedLabel
               ? "border-[#2E75B6]/40 text-gray-800 focus:border-[#2E75B6] focus:ring-[rgba(46,117,182,0.1)]"
