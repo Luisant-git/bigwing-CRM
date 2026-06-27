@@ -90,7 +90,7 @@ export const prisma = basePrisma.$extends({
           }
         }
 
-        if (["update", "updateMany", "upsert", "delete", "deleteMany"].includes(operation)) {
+        if (["updateMany", "upsert", "deleteMany"].includes(operation)) {
           a.where = { ...a.where, brand };
         }
 
