@@ -1311,7 +1311,6 @@ export class ImportService {
           data: {
             remark,
             followupDate: followupDate ?? match.followupDate,
-            updatedBy: createdBy,
           },
         });
         if (followupCache) {
