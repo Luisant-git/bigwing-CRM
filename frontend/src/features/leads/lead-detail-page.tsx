@@ -163,7 +163,7 @@ export default function LeadDetailPage() {
   timelineEvents.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-7xl">
       <Breadcrumb items={[
         { label: "Home", to: "/" },
         (lead.channel?.name ?? lead.channel) === "SOCIAL"
@@ -269,9 +269,9 @@ export default function LeadDetailPage() {
       {/* Pipeline progress bar */}
       <PipelineProgress lead={lead} />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left column — Lead info */}
-        <div className="space-y-6 lg:col-span-2">
+        <div className="space-y-6">
           {/* Lead details card */}
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Lead Details</h2>
@@ -442,12 +442,6 @@ export default function LeadDetailPage() {
             </div>
           )}
 
-          {/* Follow-ups */}
-          <FollowupsSection 
-            followups={lead.followups ?? []} 
-            assignedName={lead.assignedTo?.fullName ?? lead.executiveName} 
-          />
-
           {/* Pipeline Documents */}
           <PipelineSection leadId={id!} />
 
@@ -528,6 +522,12 @@ export default function LeadDetailPage() {
           </div>
 
           <HiriseStatusCard dmsEnquiryNo={lead.dmsEnquiryNo} linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} />
+
+          {/* Follow-ups */}
+          <FollowupsSection 
+            followups={lead.followups ?? []} 
+            assignedName={lead.assignedTo?.fullName ?? lead.executiveName} 
+          />
         </div>
       </div>
 
@@ -793,29 +793,24 @@ function FollowupsSection({
       {/* Legend / Policy */}
       <div className="mt-8 border-t border-dashed pt-6">
         <p className="mb-4 text-sm font-bold uppercase tracking-wider text-gray-600">Follow-up Policy (Gaps)</p>
-        <div className="flex items-center justify-between gap-1 text-sm">
-          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 1: Next Day">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-sm">
+          <div className="rounded-xl bg-gray-50 p-2 sm:p-3 text-center shadow-sm" title="Follow-up 1: Next Day">
             <span className="font-bold text-[#2E75B6]">F1</span><br/><span className="text-gray-500">1d</span>
           </div>
-          <ChevronRight size={14} className="text-gray-600" />
-          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 2: 3 Days Later">
+          <div className="rounded-xl bg-gray-50 p-2 sm:p-3 text-center shadow-sm" title="Follow-up 2: 3 Days Later">
             <span className="font-bold text-[#2E75B6]">F2</span><br/><span className="text-gray-500">3d</span>
           </div>
-          <ChevronRight size={14} className="text-gray-600" />
-          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 3: 7 Days Later">
+          <div className="rounded-xl bg-gray-50 p-2 sm:p-3 text-center shadow-sm" title="Follow-up 3: 7 Days Later">
             <span className="font-bold text-[#2E75B6]">F3</span><br/><span className="text-gray-500">7d</span>
           </div>
-          <ChevronRight size={14} className="text-gray-600" />
-          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 4: 15 Days Later">
+          <div className="rounded-xl bg-gray-50 p-2 sm:p-3 text-center shadow-sm" title="Follow-up 4: 15 Days Later">
             <span className="font-bold text-[#2E75B6]">F4</span><br/><span className="text-gray-500">15d</span>
           </div>
-          <ChevronRight size={14} className="text-gray-600" />
-          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Follow-up 5: 30 Days Later">
+          <div className="rounded-xl bg-gray-50 p-2 sm:p-3 text-center shadow-sm" title="Follow-up 5: 30 Days Later">
             <span className="font-bold text-[#2E75B6]">F5</span><br/><span className="text-gray-500">30d</span>
           </div>
-          <ChevronRight size={14} className="text-gray-600" />
-          <div className="flex-1 rounded-xl bg-gray-50 p-3 text-center shadow-sm" title="Beyond F5">
-            <span className="font-bold text-[#2E75B6]">More than</span><br/><span className="text-gray-500 text-[10px]">F5</span>
+          <div className="rounded-xl bg-gray-50 p-2 sm:p-3 text-center shadow-sm" title="Beyond F5">
+            <span className="font-bold text-[#2E75B6]">More</span><br/><span className="text-gray-500 text-[10px]">than F5</span>
           </div>
         </div>
       </div>
