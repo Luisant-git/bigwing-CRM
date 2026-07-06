@@ -10,13 +10,17 @@ import {
   Megaphone,
   Kanban,
   BarChart3,
-  Rocket
+  Rocket,
+  Wrench,
+  Headset
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 
 const menuItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, description: "Overview of your CRM performance and key metrics", accent: "#2E75B6", bg: "bg-blue-50" },
-  { to: "/leads", search: { tab: "all" }, label: "Leads", icon: ClipboardList, description: "Manage, track, and follow up with all incoming enquiries", accent: "#6366F1", bg: "bg-indigo-50" },
+  { to: "/leads", search: { tab: "all" }, label: "Highrise Leads", icon: ClipboardList, description: "Manage, track, and follow up with all incoming enquiries", accent: "#6366F1", bg: "bg-indigo-50" },
+  { to: "/service-leads", search: { tab: "all" }, label: "Service Leads", icon: Wrench, description: "Track and manage all service enquiries and jobs", accent: "#EAB308", bg: "bg-yellow-50" },
+  { to: "/tele-leads", search: { tab: "all" }, label: "Tele Leads", icon: Headset, description: "Telecaller hub for all active follow-ups and calls", accent: "#06B6D4", bg: "bg-cyan-50" },
   { to: "/meta-leads", label: "Meta Leads", icon: Megaphone, description: "Dedicated inbox for Facebook and Instagram campaign leads", accent: "#EC4899", bg: "bg-pink-50" },
   { to: "/pipeline", label: "Pipeline", icon: Kanban, description: "Visual drag-and-drop board for lead stages and progress", accent: "#9B59B6", bg: "bg-purple-50" },
   { to: "/customers", label: "Customers", icon: UserCircle, description: "Comprehensive customer database and purchase history", accent: "#0D9488", bg: "bg-teal-50" },
