@@ -84,6 +84,18 @@ const teleLeadsRoute = createRoute({
   },
 });
 
+const serviceLeadsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/service-leads",
+  component: LeadListPage,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      ...search,
+      tab: (search.tab as string) || "all",
+    };
+  },
+});
+
 const metaLeadsRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: "/meta-leads",
@@ -196,6 +208,7 @@ const routeTree = rootRoute.addChildren([
     dashboardRoute,
     leadsRoute,
     teleLeadsRoute,
+    serviceLeadsRoute,
     metaLeadsRoute,
     leadNewRoute,
     leadDetailRoute,

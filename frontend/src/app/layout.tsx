@@ -19,6 +19,9 @@ import {
   Megaphone,
   Kanban,
   Rocket,
+  Building,
+  Wrench,
+  Headset,
 } from "lucide-react";
 import { useAuthStore } from "@/stores/auth";
 import { useBrandStore } from "@/stores/brand";
@@ -32,7 +35,8 @@ const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   // { to: "/reports", label: "Analytics", icon: BarChart3 },
   { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
-  { to: "/tele-leads", label: "Tele Leads", icon: ClipboardList, search: { tab: "all" } },
+  { to: "/service-leads", label: "Service Leads", icon: Wrench, search: { tab: "all" } },
+  { to: "/tele-leads", label: "Tele Leads", icon: Headset, search: { tab: "all" } },
   { to: "/meta-leads", label: "Meta Leads", icon: Megaphone },
   { to: "/pipeline", label: "Pipeline", icon: Kanban },
   { to: "/customers", label: "Customers", icon: UserCircle },

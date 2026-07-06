@@ -6,7 +6,8 @@ import {
   Plus, Filter, X, ClipboardList,
   Flame, Sun, Snowflake, Search, TrendingUp,
   Download, Loader2, MessageCircle, Trash2,
-  CheckCircle, XCircle, Clock
+  CheckCircle, XCircle, Clock,
+  Building, Wrench, Headset, Megaphone
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, formatDateTime, formatDateTimeShort, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers, useSessionState } from "@/lib/hooks";
@@ -35,8 +36,9 @@ export default function LeadListPage() {
   const location = useLocation();
   const isMetaRoute = location.pathname.startsWith("/meta-leads");
   const isTeleRoute = location.pathname.startsWith("/tele-leads");
+  const isServiceRoute = location.pathname.startsWith("/service-leads");
   const searchParams = useSearch({ strict: false }) as any;
-  const pfx = isMetaRoute ? "meta" : isTeleRoute ? "tele" : "leads";
+  const pfx = isMetaRoute ? "meta" : isTeleRoute ? "tele" : isServiceRoute ? "service" : "leads";
   const defaultTab = isMetaRoute ? "meta" : "all";
 
   const [tab, setTab] = useSessionState<Tab>(`${pfx}-tab`, defaultTab);
@@ -49,7 +51,7 @@ export default function LeadListPage() {
         setTab(searchParams.tab);
       }
     }
-  }, [searchParams.tab, isMetaRoute]);
+  }, [searchParams.tab, isMetaRoute, isServiceRoute]);
   const [page, setPage] = useSessionState(`${pfx}-page`, 1);
   const [pageSize, setPageSize] = useSessionState(`${pfx}-pageSize`, 25);
   const [search, setSearch] = useSessionState(`${pfx}-search`, "");
@@ -97,7 +99,9 @@ export default function LeadListPage() {
         { key: "meta-contacted" as Tab, label: "Contacted", endpoint: "/leads" },
         { key: "meta-completed" as Tab, label: "Completed", endpoint: "/leads" }
       ] 
-    : TABS.filter((t) => t.key !== "meta");
+    : isServiceRoute
+    ? [{ key: "all" as Tab, label: "All Service Leads", endpoint: "/leads" }]
+    : TABS.filter((t) => t.key !== "meta" && t.key !== "service");
 
   const activeTab = visibleTabs.find((t) => t.key === tab) || visibleTabs[0];
 
@@ -112,6 +116,7 @@ export default function LeadListPage() {
   if (tab === "meta-non-contacted") params.contactStatus = "NON_CONTACTED";
   if (tab === "meta-completed") params.contactStatus = "COMPLETED";
   if (tab === "service") params.channel = "SERVICE";
+  else if (isServiceRoute) params.channel = "SERVICE";
   else if (isTeleRoute) params.channel = "TELE,SERVICE";
   else if (channel) params.channel = channel;
   else if (!isMetaRoute) params.channel = "WALKIN,DIGITAL,REFERENCE,WEBSITE";
@@ -134,7 +139,7 @@ export default function LeadListPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      const modulePrefix = isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : "Highrise Leads";
+      const modulePrefix = isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : isServiceRoute ? "Service Leads" : "Highrise Leads";
       const currentTabLabel = visibleTabs.find(t => t.key === tab)?.label || tab;
       link.setAttribute("download", `${modulePrefix} - ${currentTabLabel}.xlsx`);
       document.body.appendChild(link);
@@ -157,7 +162,7 @@ export default function LeadListPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
-      const modulePrefix = isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : "Highrise Leads";
+      const modulePrefix = isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : isServiceRoute ? "Service Leads" : "Highrise Leads";
       const currentTabLabel = visibleTabs.find(t => t.key === tab)?.label || tab;
       link.setAttribute("download", `Campaign Report - ${modulePrefix} - ${currentTabLabel}.xlsx`);
       document.body.appendChild(link);
@@ -220,6 +225,7 @@ export default function LeadListPage() {
   if (tab === "meta-non-contacted") countParams.contactStatus = "NON_CONTACTED";
   if (tab === "meta-completed") countParams.contactStatus = "COMPLETED";
   if (tab === "service") countParams.channel = "SERVICE";
+  else if (isServiceRoute) countParams.channel = "SERVICE";
   else if (isTeleRoute) countParams.channel = "TELE,SERVICE";
   else if (channel) countParams.channel = channel;
   if (sourceId) countParams.sourceId = sourceId;
@@ -324,7 +330,7 @@ export default function LeadListPage() {
       ) : <span className="text-gray-300">—</span>,
       sortValue: (l) => l.model ?? "",
     },
-    ...((channel === "SERVICE" || tab === "service") ? [
+    ...((channel === "SERVICE" || tab === "service" || isServiceRoute) ? [
       {
         key: "expectedServiceDate",
         label: "Service Date",
@@ -455,24 +461,26 @@ export default function LeadListPage() {
       <Breadcrumb items={[
         { label: "Home", to: "/" },
         isMetaRoute 
-          ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList }
+          ? { label: "Meta Leads", to: "/meta-leads", icon: Megaphone }
           : isTeleRoute 
-            ? { label: "Tele Leads", to: "/tele-leads", search: { tab: "all" }, icon: ClipboardList }
-            : { label: "Highrise Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }
+            ? { label: "Tele Leads", to: "/tele-leads", search: { tab: "all" }, icon: Headset }
+            : isServiceRoute
+              ? { label: "Service Leads", to: "/service-leads", search: { tab: "all" }, icon: Wrench }
+              : { label: "Highrise Leads", to: "/leads", search: { tab: "all" }, icon: ClipboardList }
       ]} />
 
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1F3864] text-white">
-            <ClipboardList size={20} />
+            {isMetaRoute ? <Megaphone size={20} /> : isTeleRoute ? <Headset size={20} /> : isServiceRoute ? <Wrench size={20} /> : <ClipboardList size={20} />}
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-[#1F3864] truncate">
-              {isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : "Highrise Leads"}
+              {isMetaRoute ? "Meta Leads" : isTeleRoute ? "Tele Leads" : isServiceRoute ? "Service Leads" : "Highrise Leads"}
             </h1>
             <p className="text-[11px] sm:text-[12px] text-gray-400 line-clamp-1 sm:line-clamp-none">
-              {isMetaRoute ? "Manage incoming Facebook and Instagram leads" : "Track and manage all sales enquiries"}
+              {isMetaRoute ? "Manage incoming Facebook and Instagram leads" : isServiceRoute ? "Track and manage all service enquiries" : "Track and manage all sales enquiries"}
             </p>
           </div>
         </div>
@@ -489,6 +497,7 @@ export default function LeadListPage() {
           )}
           <Link
             to="/leads/new"
+            search={isServiceRoute ? { type: "service" } : undefined}
             className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
           >
             <Plus size={16} /> <span>New Lead</span>
@@ -497,7 +506,7 @@ export default function LeadListPage() {
       </div>
 
       {/* Summary cards */}
-      <div className={`mb-5 grid grid-cols-2 gap-3 ${(isTeleRoute || isMetaRoute) ? "sm:grid-cols-3 lg:grid-cols-6" : "sm:grid-cols-4"}`}>
+      <div className={`mb-5 grid grid-cols-2 gap-3 ${(isTeleRoute || isMetaRoute) ? "sm:grid-cols-3 lg:grid-cols-6" : isServiceRoute ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-4"}`}>
         <SummaryCard
           label="Total"
           value={meta?.total ?? "—"}
@@ -505,30 +514,34 @@ export default function LeadListPage() {
           color="#2E75B6"
           trend={tab !== "all" ? activeTab.label : undefined}
         />
-        <SummaryCard
-          label="Hot Leads"
-          value={counts.HOT}
-          icon={Flame}
-          color="#EF4444"
-          active={interest === "HOT"}
-          onClick={() => { setInterest(interest === "HOT" ? "ALL" : "HOT"); setPage(1); }}
-        />
-        <SummaryCard
-          label="Warm Leads"
-          value={counts.WARM}
-          icon={Sun}
-          color="#F59E0B"
-          active={interest === "WARM"}
-          onClick={() => { setInterest(interest === "WARM" ? "ALL" : "WARM"); setPage(1); }}
-        />
-        <SummaryCard
-          label="Cold Leads"
-          value={counts.COLD}
-          icon={Snowflake}
-          color="#64748B"
-          active={interest === "COLD"}
-          onClick={() => { setInterest(interest === "COLD" ? "ALL" : "COLD"); setPage(1); }}
-        />
+        {!isServiceRoute && (
+          <>
+            <SummaryCard
+              label="Hot Leads"
+              value={counts.HOT}
+              icon={Flame}
+              color="#EF4444"
+              active={interest === "HOT"}
+              onClick={() => { setInterest(interest === "HOT" ? "ALL" : "HOT"); setPage(1); }}
+            />
+            <SummaryCard
+              label="Warm Leads"
+              value={counts.WARM}
+              icon={Sun}
+              color="#F59E0B"
+              active={interest === "WARM"}
+              onClick={() => { setInterest(interest === "WARM" ? "ALL" : "WARM"); setPage(1); }}
+            />
+            <SummaryCard
+              label="Cold Leads"
+              value={counts.COLD}
+              icon={Snowflake}
+              color="#64748B"
+              active={interest === "COLD"}
+              onClick={() => { setInterest(interest === "COLD" ? "ALL" : "COLD"); setPage(1); }}
+            />
+          </>
+        )}
         {(isTeleRoute || isMetaRoute) && (
           <>
             <SummaryCard
@@ -554,37 +567,39 @@ export default function LeadListPage() {
       {/* Top bar: search + filter toggle + interest chips */}
       <div className="mb-4 flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-6 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-sm">
-            <div className="flex items-center gap-3 pl-2 pr-4 border-r border-gray-100">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Interest</span>
-              <FilterChips
-                value={interest}
-                onChange={(v) => { setInterest(v); setPage(1); }}
-                options={[
-                  { key: "ALL", label: "All" },
-                  { key: "HOT", label: "🔥 Hot", color: "#EF4444", count: counts.HOT },
-                  { key: "WARM", label: "🌤️ Warm", color: "#F59E0B", count: counts.WARM },
-                  { key: "COLD", label: "❄️ Cold", color: "#64748B", count: counts.COLD },
-                ]}
-              />
+          {!isServiceRoute && (
+            <div className="flex flex-wrap items-center gap-6 rounded-2xl border border-gray-200 bg-white p-1.5 shadow-sm">
+              <div className="flex items-center gap-3 pl-2 pr-4 border-r border-gray-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Interest</span>
+                <FilterChips
+                  value={interest}
+                  onChange={(v) => { setInterest(v); setPage(1); }}
+                  options={[
+                    { key: "ALL", label: "All" },
+                    { key: "HOT", label: "🔥 Hot", color: "#EF4444", count: counts.HOT },
+                    { key: "WARM", label: "🌤️ Warm", color: "#F59E0B", count: counts.WARM },
+                    { key: "COLD", label: "❄️ Cold", color: "#64748B", count: counts.COLD },
+                  ]}
+                />
+              </div>
+              <div className="flex items-center gap-3 pl-2 pr-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Follow-up</span>
+                <FilterChips
+                  value={followupSeq}
+                  onChange={(v) => { setFollowupSeq(v); setPage(1); }}
+                  options={[
+                    { key: "", label: "All" },
+                    { key: "1", label: "F1", color: "#2E75B6" },
+                    { key: "2", label: "F2", color: "#2E75B6" },
+                    { key: "3", label: "F3", color: "#2E75B6" },
+                    { key: "4", label: "F4", color: "#2E75B6" },
+                    { key: "5", label: "F5", color: "#2E75B6" },
+                    { key: "gt5", label: "More than F5", color: "#6366F1" },
+                  ]}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-3 pl-2 pr-2">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Follow-up</span>
-              <FilterChips
-                value={followupSeq}
-                onChange={(v) => { setFollowupSeq(v); setPage(1); }}
-                options={[
-                  { key: "", label: "All" },
-                  { key: "1", label: "F1", color: "#2E75B6" },
-                  { key: "2", label: "F2", color: "#2E75B6" },
-                  { key: "3", label: "F3", color: "#2E75B6" },
-                  { key: "4", label: "F4", color: "#2E75B6" },
-                  { key: "5", label: "F5", color: "#2E75B6" },
-                  { key: "gt5", label: "More than F5", color: "#6366F1" },
-                ]}
-              />
-            </div>
-          </div>
+          )}
 
           <div className="relative flex-1 sm:flex-none">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -757,7 +772,9 @@ export default function LeadListPage() {
         <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             <FilterSelect label="Stage" value={stage} onChange={(v) => { setStage(v); setPage(1); }} options={["NEW", "ENQUIRED", "NOT_REACHABLE", "TEST_RIDE_SCHEDULED", "TEST_RIDE_COMPLETED", "QUOTATION_SHARED", "BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].map(s => ({ value: s, label: STAGE_LABELS[s] ?? s.replace(/_/g, " ") }))} />
-            <FilterSelect label="Channel" value={channel} onChange={(v) => { setChannel(v); setPage(1); }} options={["WALKIN", "TELE", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"].map(c => ({ value: c, label: c }))} />
+            {!(isServiceRoute || isMetaRoute) && (
+              <FilterSelect label="Channel" value={channel} onChange={(v) => { setChannel(v); setPage(1); }} options={["WALKIN", "TELE", "DIGITAL", "SOCIAL", "REFERENCE", "WEBSITE", "SERVICE"].map(c => ({ value: c, label: c }))} />
+            )}
             <FilterSelect label="Source" value={sourceId} onChange={(v) => { setSourceId(v); setPage(1); }} options={(sources ?? []).map((s: any) => ({ value: String(s.id), label: s.name }))} />
             <FilterSelect label="Model" value={modelId} onChange={(v) => { setModelId(v); setPage(1); }} options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))} />
             <FilterSelect label="Assigned To" value={executiveName} onChange={(v) => { setExecutiveName(v); setPage(1); }} options={(executives ?? []).map((ex: any) => ({ value: ex.name, label: ex.name }))} />
@@ -780,7 +797,7 @@ export default function LeadListPage() {
         rows={leads}
         rowKey={(l) => l.id}
         loading={isLoading}
-        emptyIcon={ClipboardList}
+        emptyIcon={isMetaRoute ? Megaphone : isTeleRoute ? Headset : isServiceRoute ? Wrench : ClipboardList}
         emptyMessage="No leads found — try adjusting your filters"
         onRowClick={(l) => {
           const mainElement = document.getElementById("main-scroll-container");
