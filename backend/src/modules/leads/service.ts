@@ -92,6 +92,7 @@ export class LeadService {
       enquiryType: { connect: { id: BigInt(data.enquiryTypeId) } },
       ...(data.purchaseType && { purchaseType: data.purchaseType }),
       exchangeFlag: data.exchangeFlag ?? false,
+      ...(data.exchangeRemark !== undefined && { exchangeRemark: data.exchangeRemark }),
       ...(data.modelId && {
         model: { connect: { id: BigInt(data.modelId) } },
       }),
@@ -290,6 +291,9 @@ async getByPhoneNumber(phoneNo: string) {
       }),
       ...(data.exchangeFlag !== undefined && {
         exchangeFlag: data.exchangeFlag,
+      }),
+      ...(data.exchangeRemark !== undefined && {
+        exchangeRemark: data.exchangeRemark,
       }),
       ...(data.modelId && {
         model: { connect: { id: BigInt(data.modelId) } },

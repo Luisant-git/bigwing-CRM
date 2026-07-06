@@ -287,6 +287,7 @@ model Lead {
   enquiryTypeId       BigInt             @map("enquiry_type_id")
   purchaseType        String?            @map("purchase_type") @db.VarChar(20)
   exchangeFlag        Boolean            @default(false) @map("exchange_flag")
+  exchangeRemark      String?            @map("exchange_remark")
   modelId             BigInt?            @map("model_id")
   variantId           BigInt?            @map("variant_id")
   colourId            BigInt?            @map("colour_id")
