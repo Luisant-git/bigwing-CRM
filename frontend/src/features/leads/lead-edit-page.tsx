@@ -113,6 +113,7 @@ export default function LeadEditPage() {
           interestLevel: val(lead.interestLevel) ?? "",
           purchaseType: val(lead.purchaseType) ?? "",
           exchangeFlag: lead.exchangeFlag ?? false,
+          exchangeRemark: lead.exchangeRemark ?? "",
           testRideFlag: lead.testRideFlag ?? false,
           remark: (lead.remark || "").split("\n").filter((line: string) => !line.trim().startsWith("Generated from Facebook Lead Ads") && !line.trim().startsWith("Historical Meta Lead ID")).join("\n").trim(),
           telecallerRemark: lead.telecallerRemark ?? "",
@@ -166,6 +167,7 @@ export default function LeadEditPage() {
     if (form.interestLevel) body.interestLevel = form.interestLevel;
     if (form.purchaseType) body.purchaseType = form.purchaseType;
     body.exchangeFlag = form.exchangeFlag;
+    body.exchangeRemark = form.exchangeFlag && form.exchangeRemark ? form.exchangeRemark : null;
     if (form.remark !== undefined) body.remark = form.remark;
     if (form.telecallerRemark !== undefined) body.telecallerRemark = form.telecallerRemark;
     if (form.referredFromBranch !== undefined) body.referredFromBranch = form.referredFromBranch;
@@ -308,23 +310,23 @@ export default function LeadEditPage() {
         {/* Interest & Purchase */}
         {(lead.channel?.name ?? lead.channel) !== "SERVICE" && (
           <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <SelectField
                 label="Month for Purchase"
                 value={
-                  form.interestLevel === "HOT" ? "1_MONTH" :
-                  form.interestLevel === "WARM" ? "2_MONTHS" :
-                  form.interestLevel === "COLD" ? "MORE_THAN_2_MONTHS" : ""
+                  form.interestLevel === "HOT" ? "1_TO_4_WEEKS" :
+                  form.interestLevel === "WARM" ? "5_TO_8_WEEKS" :
+                  form.interestLevel === "COLD" ? "MORE_THAN_8_WEEKS" : ""
                 }
                 onChange={(v) => {
-                  if (v === "1_MONTH") set("interestLevel", "HOT");
-                  if (v === "2_MONTHS") set("interestLevel", "WARM");
-                  if (v === "MORE_THAN_2_MONTHS") set("interestLevel", "COLD");
+                  if (v === "1_TO_4_WEEKS") set("interestLevel", "HOT");
+                  if (v === "5_TO_8_WEEKS") set("interestLevel", "WARM");
+                  if (v === "MORE_THAN_8_WEEKS") set("interestLevel", "COLD");
                 }}
                 options={[
-                  { value: "1_MONTH", label: "1 month" },
-                  { value: "2_MONTHS", label: "2 months" },
-                  { value: "MORE_THAN_2_MONTHS", label: "More than 2 months" },
+                  { value: "1_TO_4_WEEKS", label: "1 to 4 weeks" },
+                  { value: "5_TO_8_WEEKS", label: "5 to 8 weeks" },
+                  { value: "MORE_THAN_8_WEEKS", label: "More than 8 weeks" },
                 ]}
               />
               <SelectField
@@ -338,31 +340,97 @@ export default function LeadEditPage() {
                 ]}
                 current={lead.interestLevel}
               />
-              <SelectField
-                label="Purchase Type"
-                value={form.purchaseType}
-                onChange={(v) => {
-                  set("purchaseType", v);
-                  // Exchange is only meaningful alongside Cash/Finance; reset when cleared
-                  if (!v) set("exchangeFlag", false);
-                }}
-                options={[
-                  { value: "CASH", label: "Cash" },
-                  { value: "FINANCE", label: "Finance" },
-                ]}
-                current={lead.purchaseType}
-                icon={CircleDollarSign}
-              />
             </div>
-            {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
-              <div className="mt-3 flex gap-3">
-                <ToggleChip
-                  label="Exchange"
-                  active={form.exchangeFlag ?? false}
-                  onChange={(v) => set("exchangeFlag", v)}
-                />
+            
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                    <CircleDollarSign size={12} />
+                    Purchase Type
+                  </label>
+                  {lead.purchaseType && (
+                    <span className="text-[10px] text-gray-400">
+                      Current: <span className="font-semibold text-gray-600">{lead.purchaseType}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "CASH", label: "Cash" },
+                    { value: "FINANCE", label: "Finance" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        set("purchaseType", opt.value);
+                        if (!opt.value) set("exchangeFlag", false);
+                      }}
+                      className={`rounded-lg border px-3 py-2 text-[12px] font-bold transition-all ${
+                        form.purchaseType === opt.value
+                          ? "bg-[#2E75B6] border-[#2E75B6] text-white shadow-md"
+                          : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+              {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                    Exchange
+                  </label>
+                  <div className="flex h-[42px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-2">
+                    <label className={`flex items-center gap-2.5 cursor-pointer rounded-md px-3 py-1.5 transition-all ${form.exchangeFlag === true ? 'bg-[#2E75B6]/10' : 'hover:bg-gray-50'}`}>
+                      <div className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${form.exchangeFlag === true ? 'border-[#2E75B6] bg-[#2E75B6]' : 'border-gray-300 bg-white'}`}>
+                        {form.exchangeFlag === true && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className={`text-[13px] font-bold ${form.exchangeFlag === true ? 'text-[#2E75B6]' : 'text-gray-600'}`}>Yes</span>
+                      <input 
+                        type="radio" 
+                        name="exchangeFlag" 
+                        className="hidden" 
+                        checked={form.exchangeFlag === true}
+                        onChange={() => set("exchangeFlag", true)}
+                      />
+                    </label>
+                    <label className={`flex items-center gap-2.5 cursor-pointer rounded-md px-3 py-1.5 transition-all ${form.exchangeFlag === false ? 'bg-[#2E75B6]/10' : 'hover:bg-gray-50'}`}>
+                      <div className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${form.exchangeFlag === false ? 'border-[#2E75B6] bg-[#2E75B6]' : 'border-gray-300 bg-white'}`}>
+                        {form.exchangeFlag === false && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className={`text-[13px] font-bold ${form.exchangeFlag === false ? 'text-[#2E75B6]' : 'text-gray-600'}`}>No</span>
+                      <input 
+                        type="radio" 
+                        name="exchangeFlag" 
+                        className="hidden" 
+                        checked={form.exchangeFlag === false}
+                        onChange={() => {
+                          set("exchangeFlag", false);
+                          set("exchangeRemark", "");
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+              {form.exchangeFlag && (
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                    Exchange Details
+                  </label>
+                  <textarea
+                    value={form.exchangeRemark ?? ""}
+                    onChange={(e) => set("exchangeRemark", e.target.value)}
+                    placeholder="e.g. Vehicle make, model, year, condition..."
+                    rows={3}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)] resize-none"
+                  />
+                </div>
+              )}
+            </div>
           </Section>
         )}
 

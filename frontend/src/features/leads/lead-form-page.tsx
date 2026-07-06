@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, ClipboardList, Bike, User as UserIcon, Target, FileText,
@@ -13,6 +13,7 @@ import { Breadcrumb } from "@/components/ui";
 
 export default function LeadFormPage() {
   const navigate = useNavigate();
+  const searchParams = useSearch({ strict: false }) as any;
   const qc = useQueryClient();
   const { data: sources } = useLookup("enquiry-sources");
   const { data: types } = useLookup("enquiry-types");
@@ -24,12 +25,14 @@ export default function LeadFormPage() {
   const [selectedModel, setSelectedModel] = useState("");
   const { data: variants } = useLookup("vehicle-variants", selectedModel ? { modelId: selectedModel } : undefined);
 
-  const [enquiryFor, setEnquiryFor] = useState<"SALES" | "SERVICE">("SALES");
+  const [enquiryFor, setEnquiryFor] = useState<"SALES" | "SERVICE">(
+    searchParams.type === "service" ? "SERVICE" : "SALES"
+  );
   const [form, setForm] = useState({
     firstName: "", lastName: "", mobile: "",
     channel: "TELE", sourceId: "", enquiryTypeId: "", modelId: "",
     variantId: "", colourId: "", executiveName: "", interestLevel: "",
-    purchaseType: "", exchangeFlag: false,
+    purchaseType: "", exchangeFlag: false, exchangeRemark: "",
     enquiryDate: new Date().toISOString().split("T")[0],
     remark: "",
     telecallerRemark: "",
@@ -87,6 +90,7 @@ export default function LeadFormPage() {
       interestLevel: form.interestLevel || undefined,
       purchaseType: form.purchaseType || undefined,
       exchangeFlag: form.exchangeFlag,
+      exchangeRemark: form.exchangeFlag && form.exchangeRemark ? form.exchangeRemark : undefined,
       testRideFlag: false,
       enquiryDate: form.enquiryDate,
       remark: form.remark || undefined,
@@ -277,6 +281,24 @@ export default function LeadFormPage() {
         {enquiryFor === "SALES" && (
           <Section icon={Target} title="Interest & Purchase" subtitle="How likely to convert">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <SelectField
+                label="Month for Purchase"
+                value={
+                  form.interestLevel === "HOT" ? "1_TO_4_WEEKS" :
+                  form.interestLevel === "WARM" ? "5_TO_8_WEEKS" :
+                  form.interestLevel === "COLD" ? "MORE_THAN_8_WEEKS" : ""
+                }
+                onChange={(v) => {
+                  if (v === "1_TO_4_WEEKS") set("interestLevel", "HOT");
+                  if (v === "5_TO_8_WEEKS") set("interestLevel", "WARM");
+                  if (v === "MORE_THAN_8_WEEKS") set("interestLevel", "COLD");
+                }}
+                options={[
+                  { value: "1_TO_4_WEEKS", label: "1 to 4 weeks" },
+                  { value: "5_TO_8_WEEKS", label: "5 to 8 weeks" },
+                  { value: "MORE_THAN_8_WEEKS", label: "More than 8 weeks" },
+                ]}
+              />
               <div>
                 <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
                   Interest Level
@@ -303,25 +325,89 @@ export default function LeadFormPage() {
                   ))}
                 </div>
               </div>
-              <SelectField
-                label="Purchase Type"
-                value={form.purchaseType}
-                onChange={(v) => {
-                  set("purchaseType", v);
-                  // Exchange is only meaningful alongside Cash/Finance; reset when cleared
-                  if (!v) set("exchangeFlag", false);
-                }}
-                options={[
-                  { value: "CASH", label: "Cash" },
-                  { value: "FINANCE", label: "Finance" },
-                ]}
-              />
             </div>
-            {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
-              <div className="mt-3 flex gap-3">
-                <ToggleChip label="Exchange" active={form.exchangeFlag} onChange={(v) => set("exchangeFlag", v)} />
+            
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                  Purchase Type
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "CASH", label: "Cash" },
+                    { value: "FINANCE", label: "Finance" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        set("purchaseType", opt.value);
+                        if (!opt.value) set("exchangeFlag", false);
+                      }}
+                      className={`rounded-lg border px-3 py-2 text-[12px] font-bold transition-all ${
+                        form.purchaseType === opt.value
+                          ? "bg-[#2E75B6] border-[#2E75B6] text-white shadow-md"
+                          : "border-gray-200 bg-white text-gray-500 hover:bg-gray-50"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            )}
+              {(form.purchaseType === "CASH" || form.purchaseType === "FINANCE") && (
+                <div>
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                    Exchange
+                  </label>
+                  <div className="flex h-[42px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-2">
+                    <label className={`flex items-center gap-2.5 cursor-pointer rounded-md px-3 py-1.5 transition-all ${form.exchangeFlag === true ? 'bg-[#2E75B6]/10' : 'hover:bg-gray-50'}`}>
+                      <div className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${form.exchangeFlag === true ? 'border-[#2E75B6] bg-[#2E75B6]' : 'border-gray-300 bg-white'}`}>
+                        {form.exchangeFlag === true && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className={`text-[13px] font-bold ${form.exchangeFlag === true ? 'text-[#2E75B6]' : 'text-gray-600'}`}>Yes</span>
+                      <input 
+                        type="radio" 
+                        name="exchangeFlag" 
+                        className="hidden" 
+                        checked={form.exchangeFlag === true}
+                        onChange={() => set("exchangeFlag", true)}
+                      />
+                    </label>
+                    <label className={`flex items-center gap-2.5 cursor-pointer rounded-md px-3 py-1.5 transition-all ${form.exchangeFlag === false ? 'bg-[#2E75B6]/10' : 'hover:bg-gray-50'}`}>
+                      <div className={`flex h-4 w-4 items-center justify-center rounded-full border transition-colors ${form.exchangeFlag === false ? 'border-[#2E75B6] bg-[#2E75B6]' : 'border-gray-300 bg-white'}`}>
+                        {form.exchangeFlag === false && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className={`text-[13px] font-bold ${form.exchangeFlag === false ? 'text-[#2E75B6]' : 'text-gray-600'}`}>No</span>
+                      <input 
+                        type="radio" 
+                        name="exchangeFlag" 
+                        className="hidden" 
+                        checked={form.exchangeFlag === false}
+                        onChange={() => {
+                          set("exchangeFlag", false);
+                          set("exchangeRemark", "");
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+              {form.exchangeFlag && (
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                    Exchange Details
+                  </label>
+                  <textarea
+                    value={form.exchangeRemark ?? ""}
+                    onChange={(e) => set("exchangeRemark", e.target.value)}
+                    placeholder="e.g. Vehicle make, model, year, condition..."
+                    rows={3}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)] resize-none"
+                  />
+                </div>
+              )}
+            </div>
           </Section>
         )}
 
