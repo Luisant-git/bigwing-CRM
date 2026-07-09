@@ -2,14 +2,16 @@
 export function normalizeMobile(
   value: any
 ): { valid: boolean; normalized: string; error?: string } {
-  if (!value) return { valid: false, normalized: "", error: "Mobile is required" };
-  const digits = String(value).replace(/\D/g, "");
-  const last10 = digits.slice(-10);
-  if (last10.length !== 10)
-    return { valid: false, normalized: last10, error: "Must be exactly 10 digits" };
-  if (!/^[6-9]/.test(last10))
-    return { valid: false, normalized: last10, error: "Must start with 6-9" };
-  return { valid: true, normalized: last10 };
+  if (!value) return { valid: true, normalized: "" };
+  const strValue = String(value).trim();
+  const digits = strValue.replace(/\D/g, "");
+  
+  if (!digits) {
+    return { valid: true, normalized: "" };
+  }
+  
+  // Truncate to 15 characters to fit db.VarChar(15)
+  return { valid: true, normalized: digits.slice(-15) };
 }
 
 // ─── Date normalization ─────────────────────────────────────────

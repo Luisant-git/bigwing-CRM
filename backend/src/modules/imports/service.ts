@@ -282,8 +282,8 @@ export class ImportService {
       const slice = parsed.slice(batchStart, batchStart + BATCH_SIZE);
 
       // Pre-fetch existing records for this batch to minimize individual lookups
-      const mobiles = slice.map(r => r.mapped.mobile).filter(Boolean);
-      const enquiryNos = slice.map(r => r.mapped.enquiryNo).filter(Boolean);
+      const mobiles = slice.map(r => r.mapped.mobile).filter(m => m !== undefined && m !== null);
+      const enquiryNos = slice.map(r => r.mapped.enquiryNo).filter(m => m !== undefined && m !== null);
 
       const [existingCustomers, existingLeads] = await Promise.all([
         prisma.customer.findMany({ where: { mobile: { in: mobiles } } }),
@@ -931,7 +931,7 @@ export class ImportService {
       }
       mapped.mobile = mob.normalized;
     } else {
-      errors.push({ column: "mobile", value: "", error: "Mobile is required" });
+      mapped.mobile = "";
     }
 
     // Normalize altMobile
