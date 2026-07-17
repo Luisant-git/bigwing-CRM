@@ -521,7 +521,11 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          <HiriseStatusCard dmsEnquiryNo={lead.dmsEnquiryNo} linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} />
+          <HiriseStatusCard 
+            dmsEnquiryNo={lead.dmsEnquiryNo} 
+            linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} 
+            enquiryType={lead.enquiryType?.name ?? lead.enquiryType}
+          />
 
           {/* Follow-ups */}
           <FollowupsSection 
@@ -677,7 +681,15 @@ function AssignForm({
 // Presence of `dmsEnquiryNo` means this lead was imported from the Hirise Honda
 // DMS export (VEHENQ* enquiry number). Absence means it was created in the CRM
 // directly and has not yet been pushed into Hirise.
-function HiriseStatusCard({ dmsEnquiryNo, linkedDmsEnquiryNo }: { dmsEnquiryNo?: string | null; linkedDmsEnquiryNo?: string | null }) {
+function HiriseStatusCard({ 
+  dmsEnquiryNo, 
+  linkedDmsEnquiryNo, 
+  enquiryType 
+}: { 
+  dmsEnquiryNo?: string | null; 
+  linkedDmsEnquiryNo?: string | null; 
+  enquiryType?: string | null;
+}) {
   const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
   const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
   return (
@@ -692,7 +704,12 @@ function HiriseStatusCard({ dmsEnquiryNo, linkedDmsEnquiryNo }: { dmsEnquiryNo?:
         </span>
       </div>
       {entered && (
-        <p className="mt-2 text-xs text-gray-500">DMS Ref: {refNo}</p>
+        <div className="mt-2 space-y-1">
+          <p className="text-xs text-gray-500">DMS Ref: {refNo}</p>
+          {enquiryType && (
+            <p className="text-xs text-gray-500">Enquiry Type: {enquiryType}</p>
+          )}
+        </div>
       )}
     </div>
   );
