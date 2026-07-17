@@ -713,7 +713,12 @@ function HiriseStatusCard({
         <div className="mt-2 space-y-1">
           <p className="text-xs text-gray-500">DMS Ref: {refNo}</p>
           {enquiryType && (
-            <p className="text-xs text-gray-500">Enquiry Type: {enquiryType}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Enquiry Type</span>
+              <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 shadow-sm">
+                {enquiryType}
+              </span>
+            </div>
           )}
         </div>
       )}
