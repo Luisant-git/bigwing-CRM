@@ -101,6 +101,35 @@ export class ImportController {
       next(err);
     }
   }
+
+  async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { importRepository } = await import("./repository.js");
+      const result = await importRepository.getHistory();
+      const mapped = result.map(b => ({
+        ...b,
+        id: Number(b.id),
+      }));
+      res.json({ success: true, data: mapped });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async downloadOriginalFile(req: Request, res: Response, next: NextFunction) {
+    try {
+      const batchId = BigInt(req.params.id as string);
+      const { importRepository } = await import("./repository.js");
+      const batch = await importRepository.findBatchById(batchId);
+      if (!batch) {
+        res.status(404).json({ success: false, error: { code: "NOT_FOUND", message: "Batch not found" } });
+        return;
+      }
+      res.download(`uploads/${batch.fileName}`);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const importController = new ImportController();

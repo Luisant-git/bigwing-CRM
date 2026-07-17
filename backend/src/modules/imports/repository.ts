@@ -34,6 +34,14 @@ export class ImportRepository {
     });
   }
 
+  async getHistory() {
+    const brand = brandContext.getStore();
+    return prisma.importBatch.findMany({
+      where: { brand },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   async createRowErrors(
     errors: {
       batchId: bigint;

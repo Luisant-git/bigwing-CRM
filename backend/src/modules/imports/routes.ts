@@ -39,6 +39,12 @@ router.get(
   (req, res, next) => importController.getActiveBatch(req, res, next)
 );
 
+router.get(
+  "/",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
+  (req, res, next) => importController.getHistory(req, res, next)
+);
+
 router.post(
   "/upload",
   rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
@@ -101,6 +107,12 @@ router.get(
   "/:id/errors.xlsx",
   rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
   (req, res, next) => importController.downloadErrors(req, res, next)
+);
+
+router.get(
+  "/:id/file",
+  rbac(["SUPER_ADMIN", "ADMIN", "MANAGER", "TELE_CALLER"]),
+  (req, res, next) => importController.downloadOriginalFile(req, res, next)
 );
 
 export { router as importRoutes };
