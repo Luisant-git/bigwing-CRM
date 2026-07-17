@@ -37,14 +37,15 @@ packages/db/prisma/migrations/*.sql.bak
 *.tsbuildinfo
 
 # Uploads (user-generated files — avatars, Excel imports)
-apps/api/uploads/*
-!apps/api/uploads/.gitkeep
-!apps/api/uploads/avatars/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/avatars/.gitkeep
 
 # Test / scratch files
-apps/api/test-*.xlsx
-apps/api/errs.xlsx
-apps/api/errors-report.xlsx
+backend/test-*.xlsx
+backend/test-*.ts
+backend/errs.xlsx
+backend/errors-report.xlsx
 
 # Claude scratchpad (should not be committed)
 .claude/
