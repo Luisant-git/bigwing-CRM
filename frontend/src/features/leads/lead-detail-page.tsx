@@ -168,7 +168,9 @@ export default function LeadDetailPage() {
         { label: "Home", to: "/" },
         (lead.channel?.name ?? lead.channel) === "SOCIAL"
           ? { label: "Meta Leads", to: "/meta-leads", icon: ClipboardList }
-          : { label: "Leads", to: "/leads", icon: ClipboardList },
+          : (lead.channel?.name ?? lead.channel) === "TELE"
+            ? { label: "Tele Leads", to: "/tele-leads", icon: ClipboardList }
+            : { label: "Leads", to: "/leads", icon: ClipboardList },
         { label: lead.enquiryNo },
       ]} />
       {/* Header */}
@@ -179,9 +181,13 @@ export default function LeadDetailPage() {
               if (window.history.length > 2) {
                 window.history.back();
               } else {
-                const isMeta = (lead.channel?.name ?? lead.channel) === "SOCIAL";
+                const channelName = lead.channel?.name ?? lead.channel;
+                const isMeta = channelName === "SOCIAL";
+                const isTele = channelName === "TELE";
                 if (isMeta) {
                   navigate({ to: "/meta-leads", search: {} as any });
+                } else if (isTele) {
+                  navigate({ to: "/tele-leads", search: {} as any });
                 } else {
                   navigate({ to: "/leads", search: {} as any });
                 }
@@ -217,7 +223,7 @@ export default function LeadDetailPage() {
               Tele Follow-up
             </button>
           </Tooltip>
-          {(lead.channel?.name ?? lead.channel) === "SOCIAL" && (
+          {["SOCIAL", "TELE"].includes(lead.channel?.name ?? lead.channel) && (
             <Tooltip content="Update call status">
               <button
                 onClick={() => setShowCallStatusForm(true)}
@@ -588,7 +594,7 @@ export default function LeadDetailPage() {
             currentRemark={lead.telecallerRemark}
             currentStatus={lead.metaStatus}
             currentNextFollowup={lead.nextFollowupAt}
-            isSocial={(lead.channel?.name ?? lead.channel) === "SOCIAL"}
+            isSocial={["SOCIAL", "TELE"].includes(lead.channel?.name ?? lead.channel)}
             onSubmit={(d) => teleMut.mutate(d)}
             loading={teleMut.isPending}
           />

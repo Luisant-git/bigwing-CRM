@@ -284,18 +284,28 @@ export default function LeadFormPage() {
               <SelectField
                 label="Month for Purchase"
                 value={
-                  form.interestLevel === "HOT" ? "1_TO_4_WEEKS" :
-                  form.interestLevel === "WARM" ? "5_TO_8_WEEKS" :
-                  form.interestLevel === "COLD" ? "MORE_THAN_8_WEEKS" : ""
+                  form.purchaseWeek || (
+                    form.interestLevel === "HOT" ? "1_WEEK" :
+                    form.interestLevel === "WARM" ? "5_WEEKS" :
+                    form.interestLevel === "COLD" ? "MORE_THAN_8_WEEKS" : ""
+                  )
                 }
                 onChange={(v) => {
-                  if (v === "1_TO_4_WEEKS") set("interestLevel", "HOT");
-                  if (v === "5_TO_8_WEEKS") set("interestLevel", "WARM");
-                  if (v === "MORE_THAN_8_WEEKS") set("interestLevel", "COLD");
+                  set("purchaseWeek", v);
+                  if (["1_WEEK", "2_WEEKS", "3_WEEKS", "4_WEEKS"].includes(v)) set("interestLevel", "HOT");
+                  else if (["5_WEEKS", "6_WEEKS", "7_WEEKS", "8_WEEKS"].includes(v)) set("interestLevel", "WARM");
+                  else if (v === "MORE_THAN_8_WEEKS") set("interestLevel", "COLD");
+                  else set("interestLevel", "");
                 }}
                 options={[
-                  { value: "1_TO_4_WEEKS", label: "1 to 4 weeks" },
-                  { value: "5_TO_8_WEEKS", label: "5 to 8 weeks" },
+                  { value: "1_WEEK", label: "1 week" },
+                  { value: "2_WEEKS", label: "2 weeks" },
+                  { value: "3_WEEKS", label: "3 weeks" },
+                  { value: "4_WEEKS", label: "4 weeks" },
+                  { value: "5_WEEKS", label: "5 weeks" },
+                  { value: "6_WEEKS", label: "6 weeks" },
+                  { value: "7_WEEKS", label: "7 weeks" },
+                  { value: "8_WEEKS", label: "8 weeks" },
                   { value: "MORE_THAN_8_WEEKS", label: "More than 8 weeks" },
                 ]}
               />
@@ -312,7 +322,12 @@ export default function LeadFormPage() {
                     <button
                       key={opt.value}
                       type="button"
-                      onClick={() => set("interestLevel", opt.value)}
+                      onClick={() => {
+                        set("interestLevel", opt.value);
+                        if (opt.value === "HOT") set("purchaseWeek", "1_WEEK");
+                        if (opt.value === "WARM") set("purchaseWeek", "5_WEEKS");
+                        if (opt.value === "COLD") set("purchaseWeek", "MORE_THAN_8_WEEKS");
+                      }}
                       className={`rounded-lg border px-3 py-2 text-[12px] font-bold transition-all ${
                         form.interestLevel === opt.value
                           ? "text-white shadow-md"
