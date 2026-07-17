@@ -16,6 +16,7 @@ import CustomerFormPage from "@/features/customers/customer-form-page";
 import ReportsPage from "@/features/reports/reports-page";
 import UserListPage from "@/features/users/user-list-page";
 import ImportPage from "@/features/imports/import-page";
+import ImportLogsPage from "@/features/imports/import-logs-page";
 import CataloguePage from "@/features/vehicle-catalogue/catalogue-page";
 import LeadEditPage from "@/features/leads/lead-edit-page";
 import CustomerEditPage from "@/features/customers/customer-edit-page";
@@ -170,6 +171,12 @@ const importRoute = createRoute({
   component: ImportPage,
 });
 
+const importLogsRoute = createRoute({
+  getParentRoute: () => layoutRoute,
+  path: "/import-logs",
+  component: ImportLogsPage,
+});
+
 const catalogueRoute = createRoute({
   getParentRoute: () => layoutRoute,
   path: "/vehicle-catalogue",
@@ -220,6 +227,7 @@ const routeTree = rootRoute.addChildren([
     reportsRoute,
     usersRoute,
     importRoute,
+    importLogsRoute,
     catalogueRoute,
     pipelineRoute,
     settingsRoute,

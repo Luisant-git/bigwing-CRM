@@ -42,6 +42,7 @@ const navItems = [
   { to: "/customers", label: "Customers", icon: UserCircle },
   { to: "/users", label: "Users", icon: Users },
   { to: "/import", label: "Import", icon: FileSpreadsheet },
+  { to: "/import-logs", label: "Dev Logs", icon: FileSpreadsheet, isSeniorOnly: true },
   { to: "/vehicle-catalogue", label: "Catalogue", icon: Bike },
   { to: "/settings", label: "Settings", icon: Settings },
 ];
@@ -149,11 +150,13 @@ export default function AppLayout() {
         {(() => {
           const isTele = user?.roles?.includes("TELE_CALLER");
           const isAdmin = user?.roles?.some(r => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r));
+          const isSeniorDeveloper = user?.email === "seniordeveloper@bigwing.in";
           return navItems
             .filter((item) => {
+              if (item.isSeniorOnly && !isSeniorDeveloper) return false;
               if (isTele) {
                 if (item.to === "/leads") return false;
-                return !["/users", "/import", "/settings"].includes(item.to);
+                return !["/users", "/import", "/import-logs", "/settings"].includes(item.to);
               }
               return true;
             })
