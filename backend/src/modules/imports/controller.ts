@@ -109,6 +109,7 @@ export class ImportController {
       const mapped = result.map(b => ({
         ...b,
         id: Number(b.id),
+        createdBy: Number(b.createdBy),
       }));
       res.json({ success: true, data: mapped });
     } catch (err) {
