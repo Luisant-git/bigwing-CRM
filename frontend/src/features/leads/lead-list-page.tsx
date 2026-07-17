@@ -417,7 +417,7 @@ export default function LeadListPage() {
       render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
       sortValue: (l: any) => l.enquiryDate,
     },
-    ...(tab.startsWith("meta") ? [
+    ...(tab.startsWith("meta") || isTeleRoute ? [
       {
         key: "metaStatus",
         label: "Call Status",
@@ -657,7 +657,7 @@ export default function LeadListPage() {
           ))}
         </div>
         
-        {tab.startsWith("meta") && (
+        {(tab.startsWith("meta") || isTeleRoute) && (
           <div className="flex items-center gap-2 pb-2 sm:pb-0 pr-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">Call Status</span>
             <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1">

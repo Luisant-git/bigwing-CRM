@@ -21,6 +21,7 @@ export default function LeadFormPage() {
   const { data: colours } = useLookup("vehicle-colours");
   const { data: executives } = useLookup("sales-executives");
   const { data: branches } = useLookup("referred-branches");
+  const { data: metaStatuses } = useLookup("meta-statuses");
 
   const [selectedModel, setSelectedModel] = useState("");
   const { data: variants } = useLookup("vehicle-variants", selectedModel ? { modelId: selectedModel } : undefined);
@@ -38,6 +39,8 @@ export default function LeadFormPage() {
     telecallerRemark: "",
     referredFromBranch: "",
     purchaseWeek: "",
+    metaStatus: "",
+    nextFollowupAt: "",
     // Service fields
     typeOfService: "",
     expectedServiceDate: "",
@@ -97,6 +100,8 @@ export default function LeadFormPage() {
       remark: form.remark || undefined,
       telecallerRemark: form.telecallerRemark || undefined,
       referredFromBranch: form.referredFromBranch || undefined,
+      metaStatus: form.metaStatus || undefined,
+      nextFollowupAt: form.nextFollowupAt ? new Date(form.nextFollowupAt).toISOString() : undefined,
       // Service fields
       typeOfService: form.typeOfService || undefined,
       expectedServiceDate: form.expectedServiceDate || undefined,
@@ -446,6 +451,24 @@ export default function LeadFormPage() {
                 {form.remark.length} / 300 characters
               </p>
             </div>
+            {["SOCIAL", "TELE"].includes(form.channel) && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <SelectField
+                  label="Call Status"
+                  value={form.metaStatus}
+                  onChange={(v) => set("metaStatus", v)}
+                  options={(metaStatuses ?? []).map((s: any) => ({ value: s.name, label: s.name }))}
+                  required={true}
+                />
+                <InputField
+                  label="Reminder Time"
+                  type="datetime-local"
+                  value={form.nextFollowupAt}
+                  onChange={(v: string) => set("nextFollowupAt", v)}
+                  required={true}
+                />
+              </div>
+            )}
           </div>
         </Section>
 
