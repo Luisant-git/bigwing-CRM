@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileSpreadsheet, Download } from "lucide-react";
 import api from "@/lib/api";
 import { Breadcrumb } from "@/components/ui";
+import { useBrandStore } from "@/stores/brand";
 
 async function triggerBlobDownload(url: string, filename: string) {
   const res = await api.get(url, { responseType: "blob" });
@@ -16,8 +17,9 @@ async function triggerBlobDownload(url: string, filename: string) {
 }
 
 export default function ImportLogsPage() {
+  const { brand } = useBrandStore();
   const { data: history } = useQuery({
-    queryKey: ["import-history"],
+    queryKey: ["import-history", brand],
     queryFn: () => api.get("/import").then((r) => r.data.data),
   });
 
