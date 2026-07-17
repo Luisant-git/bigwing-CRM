@@ -37,6 +37,7 @@ export default function LeadFormPage() {
     remark: "",
     telecallerRemark: "",
     referredFromBranch: "",
+    purchaseWeek: "",
     // Service fields
     typeOfService: "",
     expectedServiceDate: "",
