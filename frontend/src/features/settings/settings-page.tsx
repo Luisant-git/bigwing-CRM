@@ -15,6 +15,7 @@ const LOOKUP_SECTIONS = [
   { key: "closure-reasons", label: "Closure Reasons", description: "Why a lead was lost or closed" },
   { key: "referred-branches", label: "Referred Branches", description: "Other Honda branches that refer enquiries" },
   { key: "sales-executives", label: "Sales Executives", description: "Manage names and contact numbers of Sales Executives" },
+  { key: "service-executives", label: "Service Executives", description: "Manage names and contact numbers of Service Executives" },
   { key: "meta-statuses", label: "Call Statuses", description: "Manage telecaller call statuses (e.g. Completed, Not Answered, etc.)" },
 ];
 
@@ -91,7 +92,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
     queryKey: ["lookups", "referred-branches", { includeInactive: false }],
     queryFn: () =>
       api.get(`/lookups/referred-branches`).then((r) => r.data.data),
-    enabled: apiName === "sales-executives",
+    enabled: apiName === "sales-executives" || apiName === "service-executives",
   });
 
   const createMut = useMutation({
@@ -138,7 +139,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
       if (!newBranchName.trim()) return;
     } else {
       if (!newName.trim()) return;
-      if (apiName === "sales-executives" && !newBranchName.trim()) {
+      if ((apiName === "sales-executives" || apiName === "service-executives") && !newBranchName.trim()) {
         toast.error("Branch Name is required");
         return;
       }
@@ -146,7 +147,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
     createMut.mutate({
       name: apiName === "referred-branches" ? newBranchName.trim() : newName.trim(),
       ...(apiName === "meta-statuses" && { color: newColor.trim() }),
-      ...(apiName === "sales-executives" && { 
+      ...((apiName === "sales-executives" || apiName === "service-executives") && { 
         mobile: newMobile.trim(),
         branchName: newBranchName.trim(), 
         networkCode: newNetworkCode.trim(), 
@@ -219,7 +220,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
               </div>
             </div>
           )}
-          {apiName === "sales-executives" && (
+          {(apiName === "sales-executives" || apiName === "service-executives") && (
             <>
               <div>
                 <label className="mb-1 block text-[13px] font-medium text-gray-700">Mobile Number</label>
@@ -485,9 +486,9 @@ function EditRow({
         onSave({ 
           name: apiName === "referred-branches" ? branchName.trim() : name.trim(), 
           ...(apiName === "meta-statuses" && { color: color.trim() }),
-          ...(apiName === "sales-executives" && { mobile: mobile.trim() }),
-          ...((apiName === "referred-branches" || apiName === "sales-executives") && { branchName: branchName.trim() }),
-          ...((apiName === "referred-branches" || apiName === "sales-executives") && { networkCode: networkCode.trim() }),
+          ...((apiName === "sales-executives" || apiName === "service-executives") && { mobile: mobile.trim() }),
+          ...((apiName === "referred-branches" || apiName === "sales-executives" || apiName === "service-executives") && { branchName: branchName.trim() }),
+          ...((apiName === "referred-branches" || apiName === "sales-executives" || apiName === "service-executives") && { networkCode: networkCode.trim() }),
           ...(apiName === "referred-branches" && { networkType: networkType.trim() }),
           ...(apiName === "referred-branches" && { inventoryLocation: inventoryLocation.trim() }),
           displayOrder: Number(order) || 0 
@@ -515,7 +516,7 @@ function EditRow({
           title="Status Color"
         />
       )}
-      {apiName === "sales-executives" && (
+      {(apiName === "sales-executives" || apiName === "service-executives") && (
         <input
           placeholder="Mobile"
           value={mobile}
@@ -531,7 +532,7 @@ function EditRow({
           className="w-40 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
         />
       )}
-      {apiName === "sales-executives" && (
+      {(apiName === "sales-executives" || apiName === "service-executives") && (
         <select
           value={branchName}
           onChange={(e) => {
@@ -552,13 +553,13 @@ function EditRow({
           ))}
         </select>
       )}
-      {(apiName === "referred-branches" || apiName === "sales-executives") && (
+      {(apiName === "referred-branches" || apiName === "sales-executives" || apiName === "service-executives") && (
         <input
           placeholder="Network Code"
           value={networkCode}
           onChange={(e) => setNetworkCode(e.target.value)}
-          readOnly={apiName === "sales-executives"}
-          className={`w-32 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none ${apiName === "sales-executives" ? "bg-gray-50" : ""}`}
+          readOnly={apiName === "sales-executives" || apiName === "service-executives"}
+          className={`w-32 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none ${(apiName === "sales-executives" || apiName === "service-executives") ? "bg-gray-50" : ""}`}
         />
       )}
       {apiName === "referred-branches" && (

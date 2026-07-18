@@ -20,6 +20,7 @@ export default function LeadFormPage() {
   const { data: models } = useLookup("vehicle-models");
   const { data: colours } = useLookup("vehicle-colours");
   const { data: executives } = useLookup("sales-executives");
+  const { data: serviceExecutives } = useLookup("service-executives");
   const { data: branches } = useLookup("referred-branches");
   const { data: metaStatuses } = useLookup("meta-statuses");
 
@@ -488,7 +489,7 @@ export default function LeadFormPage() {
               label="Assigned To"
               value={form.executiveName}
               onChange={(v) => set("executiveName", v)}
-              options={(executives ?? [])
+              options={((enquiryFor === "SERVICE" ? serviceExecutives : executives) ?? [])
                 .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
                 .map((ex: any) => ({ value: ex.name, label: ex.name }))}
               disabled={!form.referredFromBranch}

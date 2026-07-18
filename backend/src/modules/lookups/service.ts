@@ -13,6 +13,7 @@ const lookupModels = {
   "vehicle-colours": () => prisma.vehicleColour,
   "referred-branches": () => prisma.referredBranch,
   "sales-executives": () => prisma.salesExecutive,
+  "service-executives": () => prisma.serviceExecutive,
   "meta-statuses": () => prisma.metaStatusLookup,
   "active-stages": () => ({} as any), // Dummy for mapping
 } as const;
@@ -25,6 +26,7 @@ const EDITABLE_LOOKUPS = new Set([
   "closure-reasons",
   "referred-branches",
   "sales-executives",
+  "service-executives",
   "meta-statuses",
 ]);
 
@@ -172,7 +174,7 @@ export class LookupService {
       return { ...base, modelId: Number(item.modelId) };
     }
 
-    if (name === "sales-executives") {
+    if (name === "sales-executives" || name === "service-executives") {
       return { ...base, mobile: item.mobile, branchName: item.branchName, networkCode: item.networkCode };
     }
 

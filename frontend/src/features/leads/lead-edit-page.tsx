@@ -36,6 +36,7 @@ export default function LeadEditPage() {
   const { data: models } = useLookup("vehicle-models");
   const { data: colours } = useLookup("vehicle-colours");
   const { data: executives } = useLookup("sales-executives");
+  const { data: serviceExecutives } = useLookup("service-executives");
   const { data: branches } = useLookup("referred-branches");
   const { data: metaStatuses } = useLookup("meta-statuses");
 
@@ -68,7 +69,10 @@ export default function LeadEditPage() {
       const colId = lead.colour?.id ?? findId(colours, val(lead.colour));
       const varId = lead.variant?.id ?? findId(variants, val(lead.variant));
       
-      const exactExecName = findName(executives, val(lead.executiveName) ?? lead.assignedTo?.fullName) || (val(lead.executiveName) ?? (lead.assignedTo?.fullName || ""));
+      const channelStr = val(lead.channel);
+      const activeExecs = channelStr === "SERVICE" ? serviceExecutives : executives;
+      
+      const exactExecName = findName(activeExecs, val(lead.executiveName) ?? lead.assignedTo?.fullName) || (val(lead.executiveName) ?? (lead.assignedTo?.fullName || ""));
       const exactBranchName = findName(branches, val(lead.referredFromBranch)) || (val(lead.referredFromBranch) ?? "");
 
       console.log("DEBUG PREFILL:", {
@@ -109,7 +113,7 @@ export default function LeadEditPage() {
           variantId: varId ? String(varId) : "",
           colourId: colId ? String(colId) : "",
           // Use find to get the exact case/spacing from the lookup array if available, otherwise use raw
-          executiveName: executives?.find((e: any) => e.name?.toLowerCase().trim() === (val(lead.executiveName) ?? (lead.assignedTo?.fullName || "")).toLowerCase().trim())?.name || (val(lead.executiveName) ?? (lead.assignedTo?.fullName || "")),
+          executiveName: activeExecs?.find((e: any) => e.name?.toLowerCase().trim() === (val(lead.executiveName) ?? (lead.assignedTo?.fullName || "")).toLowerCase().trim())?.name || (val(lead.executiveName) ?? (lead.assignedTo?.fullName || "")),
           interestLevel: val(lead.interestLevel) ?? "",
           purchaseType: val(lead.purchaseType) ?? "",
           exchangeFlag: lead.exchangeFlag ?? false,
@@ -130,7 +134,7 @@ export default function LeadEditPage() {
 
       if (modId && !selectedModel) setSelectedModel(String(modId));
     }
-  }, [lead, sources, types, models, colours, variants]);
+  }, [lead, sources, types, models, colours, variants, serviceExecutives]);
 
   const set = (field: string, value: any) => {
     setForm((f: any) => ({ ...f, [field]: value }));
@@ -473,7 +477,8 @@ export default function LeadEditPage() {
               value={form.executiveName}
               onChange={(v) => set("executiveName", v)}
               options={(() => {
-                const opts = (executives ?? [])
+                const activeExecs = (lead.channel?.name ?? lead.channel) === "SERVICE" ? serviceExecutives : executives;
+                const opts = (activeExecs ?? [])
                   .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
                   .map((ex: any) => ({ value: ex.name, label: ex.name }));
                 if (form.executiveName && !opts.some((o: any) => o.value === form.executiveName)) {
