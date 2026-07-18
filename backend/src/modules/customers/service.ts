@@ -183,7 +183,8 @@ export class CustomerService {
   // ─── Helpers ──────────────────────────────────────────────────
 
   normalizeMobile(mobile: string): string {
-    return mobile.replace(/^\+?91/, "").slice(-10);
+    const digits = mobile.replace(/\D/g, "");
+    return digits.slice(-10);
   }
 
   formatCustomer(c: any) {
