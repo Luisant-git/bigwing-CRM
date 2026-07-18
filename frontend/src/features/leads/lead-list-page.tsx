@@ -117,7 +117,7 @@ export default function LeadListPage() {
   if (tab === "meta-completed") params.contactStatus = "COMPLETED";
   if (tab === "service") params.channel = "SERVICE";
   else if (isServiceRoute) params.channel = "SERVICE";
-  else if (isTeleRoute) params.channel = "TELE,SERVICE";
+  else if (isTeleRoute) params.channel = "TELE";
   else if (channel) params.channel = channel;
   else if (!isMetaRoute) params.channel = "WALKIN,DIGITAL,REFERENCE,WEBSITE";
   if (sourceId) params.sourceId = sourceId;
@@ -226,7 +226,7 @@ export default function LeadListPage() {
   if (tab === "meta-completed") countParams.contactStatus = "COMPLETED";
   if (tab === "service") countParams.channel = "SERVICE";
   else if (isServiceRoute) countParams.channel = "SERVICE";
-  else if (isTeleRoute) countParams.channel = "TELE,SERVICE";
+  else if (isTeleRoute) countParams.channel = "TELE";
   else if (channel) countParams.channel = channel;
   if (sourceId) countParams.sourceId = sourceId;
   if (modelId) countParams.modelId = modelId;
