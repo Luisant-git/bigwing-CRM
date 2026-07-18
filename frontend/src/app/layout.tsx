@@ -34,7 +34,7 @@ const navItems = [
   { to: "/quick-start", label: "Quick Start", icon: Rocket },
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   // { to: "/reports", label: "Analytics", icon: BarChart3 },
-  { to: "/leads", label: "Leads", icon: ClipboardList, search: { tab: "all" } },
+  { to: "/leads", label: "Highrise Leads", icon: ClipboardList, search: { tab: "all" } },
   { to: "/service-leads", label: "Service Leads", icon: Wrench, search: { tab: "all" } },
   { to: "/tele-leads", label: "Tele Leads", icon: Headset, search: { tab: "all" } },
   { to: "/meta-leads", label: "Meta Leads", icon: Megaphone },
@@ -161,17 +161,12 @@ export default function AppLayout() {
               return true;
             })
             .map((item) => {
-              let dynamicLabel = item.label;
-              if (item.to === "/leads" && isAdmin) {
-                 dynamicLabel = "Highrise Leads";
-              }
-              
               return isCollapsed ? (
-                <Tooltip key={item.to} content={dynamicLabel} side="right">
+                <Tooltip key={item.to} content={item.label} side="right">
                   <Link
                     to={item.to}
-                search={(item as any).search}
-                onClick={() => setMobileOpen(false)}
+                    search={(item as any).search}
+                    onClick={() => setMobileOpen(false)}
                 className="relative flex h-10 w-10 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/5 hover:text-white"
                 activeOptions={{ includeHash: true }}
                 activeProps={{
@@ -219,7 +214,7 @@ export default function AppLayout() {
                       className={`shrink-0 transition-opacity ${isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`} 
                       style={{ color: isActive ? "var(--brand-primary)" : "inherit" }}
                     />
-                    {dynamicLabel}
+                    {item.label}
                   </div>
                   {item.to === "/meta-leads" && (uncontactedMeta ?? 0) > 0 && (
                     <span className="flex h-5 items-center justify-center rounded-full bg-orange-500 px-2 text-[10px] font-bold text-white shadow-sm">
