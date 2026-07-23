@@ -28,6 +28,7 @@ model User {
   refreshTokens RefreshToken[]
   userRoles     UserRole[]
   assignedLeads Lead[]         @relation("AssignedTo")
+  createdLeads  Lead[]         @relation("LeadCreatedBy")
   followups     LeadFollowup[] @relation("FollowupCreatedBy")
   branchId      BigInt?        @map("branch_id")
   brandAccess   String         @default("BOTH") @map("brand_access") @db.VarChar(20)
@@ -335,6 +336,7 @@ model Lead {
   executiveName       String?            @map("executive_name") @db.VarChar(100)
   brand               String             @default("BIGWING") @db.VarChar(20)
   assignedUser        User?              @relation("AssignedTo", fields: [assignedTo], references: [id])
+  createdByUser       User?              @relation("LeadCreatedBy", fields: [createdBy], references: [id])
   closureReason       ClosureReason?     @relation(fields: [closureReasonId], references: [id])
   colour              VehicleColour?     @relation(fields: [colourId], references: [id])
   customer            Customer           @relation(fields: [customerId], references: [id])

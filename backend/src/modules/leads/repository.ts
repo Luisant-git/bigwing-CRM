@@ -23,6 +23,7 @@ const listIncludes = {
   variant: { select: { id: true, name: true } },
   colour: { select: { id: true, name: true } },
   assignedUser: { select: { id: true, fullName: true } },
+  createdByUser: { select: { id: true, username: true } },
   _count: { select: { followups: true } },
   followups: {
     orderBy: { seqNo: "desc" },

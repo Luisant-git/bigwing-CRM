@@ -392,6 +392,20 @@ export default function LeadListPage() {
         );
       },
     },
+    {
+      key: "createdBy",
+      label: "Created By",
+      render: (l: any) => {
+        if (!l.createdByUsername) return <span className="text-gray-300 italic text-[11px] whitespace-nowrap">System</span>;
+        return (
+          <div className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#2E75B6]">
+              @{l.createdByUsername}
+            </span>
+          </div>
+        );
+      },
+    },
     ...(tab === "overdue" ? [
       {
         key: "overdueDays",

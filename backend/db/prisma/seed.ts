@@ -225,52 +225,7 @@ async function main() {
   }
   console.log(`  ✅ ${allBranches.length} referred branches seeded`);
 
-  // ─── Dev / Test Users ───────────────────────────────────────────
-  const devUsers = [
-    {
-      email: "manager@bigwing.in",
-      fullName: "Rajesh Kumar",
-      mobile: "9876543210",
-      role: "MANAGER",
-    },
-    {
-      email: "sales1@bigwing.in",
-      fullName: "Priya Sharma",
-      mobile: "9876543211",
-      role: "SALES_EXECUTIVE",
-    },
-    {
-      email: "sales2@bigwing.in",
-      fullName: "Arun Nair",
-      mobile: "9876543212",
-      role: "SALES_EXECUTIVE",
-    },
-    {
-      email: "telecaller@bigwing.in",
-      fullName: "Meena Reddy",
-      mobile: "9876543213",
-      role: "TELE_CALLER",
-    },
-  ];
-  const devPassword = await bcrypt.hash("BigWing@2026", 12);
-  for (const u of devUsers) {
-    const role = await prisma.role.findUnique({ where: { name: u.role } });
-    if (!role) continue;
-    await prisma.user.upsert({
-      where: { username: u.email.split("@")[0] },
-      update: {},
-      create: {
-        username: u.email.split("@")[0],
-        email: u.email,
-        password: devPassword,
-        fullName: u.fullName,
-        mobile: u.mobile,
-        isActive: true,
-        userRoles: { create: { roleId: role.id } },
-      },
-    });
-  }
-  console.log(`  ✅ ${devUsers.length} dev users seeded`);
+
 
   // ─── Requested Telecaller User ──────────────────────────────────
   const reqTeleEmail = "telecaller@example.com";
