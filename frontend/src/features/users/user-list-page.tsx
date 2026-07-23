@@ -176,9 +176,10 @@ function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d:
 
   return (
     <form onSubmit={(e) => { 
-      e.preventDefault(); 
+      e.preventDefault();
       onSubmit({
         ...form,
+        email: form.email ? form.email : undefined,
         branchId: form.role !== "ADMIN" && form.branchId ? Number(form.branchId) : undefined,
       }); 
     }} className="space-y-3">
