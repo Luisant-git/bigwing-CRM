@@ -34,9 +34,10 @@ async function main() {
   });
 
   const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
+    where: { username: "admin" },
     update: {},
     create: {
+      username: "admin",
       email: adminEmail,
       password: adminPassword,
       fullName: "Super Admin",
@@ -56,7 +57,7 @@ async function main() {
   ];
   for (let i = 0; i < sources.length; i++) {
     await prisma.enquirySource.upsert({
-      where: { name: sources[i] },
+      where: { brand_name: { brand: "BIGWING", name: sources[i] } },
       update: {},
       create: { name: sources[i], displayOrder: (i + 1) * 10 },
     });
@@ -67,7 +68,7 @@ async function main() {
   const types = ["New", "Service", "Spares", "Insurance", "Accessories"];
   for (let i = 0; i < types.length; i++) {
     await prisma.enquiryTypeLookup.upsert({
-      where: { name: types[i] },
+      where: { brand_name: { brand: "BIGWING", name: types[i] } },
       update: {},
       create: { name: types[i], displayOrder: (i + 1) * 10 },
     });
@@ -82,7 +83,7 @@ async function main() {
   ];
   for (let i = 0; i < reasons.length; i++) {
     await prisma.closureReason.upsert({
-      where: { name: reasons[i] },
+      where: { brand_name: { brand: "BIGWING", name: reasons[i] } },
       update: {},
       create: { name: reasons[i], displayOrder: (i + 1) * 10 },
     });
@@ -97,7 +98,7 @@ async function main() {
   ];
   for (const il of interestLevels) {
     await prisma.interestLevelLookup.upsert({
-      where: { name: il.name },
+      where: { brand_name: { brand: "BIGWING", name: il.name } },
       update: {},
       create: il,
     });
@@ -119,7 +120,7 @@ async function main() {
   ];
   for (let i = 0; i < models.length; i++) {
     await prisma.vehicleModel.upsert({
-      where: { name: models[i].name },
+      where: { brand_name: { brand: "BIGWING", name: models[i].name } },
       update: {},
       create: { ...models[i], displayOrder: (i + 1) * 10 },
     });
@@ -142,7 +143,7 @@ async function main() {
   let variantCount = 0;
   for (const [modelName, variants] of Object.entries(variantMap)) {
     const model = await prisma.vehicleModel.findUnique({
-      where: { name: modelName },
+      where: { brand_name: { brand: "BIGWING", name: modelName } },
     });
     if (!model) continue;
     for (let i = 0; i < variants.length; i++) {
@@ -177,7 +178,7 @@ async function main() {
   ];
   for (let i = 0; i < colours.length; i++) {
     await prisma.vehicleColour.upsert({
-      where: { name: colours[i] },
+      where: { brand_name: { brand: "BIGWING", name: colours[i] } },
       update: {},
       create: { name: colours[i], displayOrder: (i + 1) * 10 },
     });
@@ -256,9 +257,10 @@ async function main() {
     const role = await prisma.role.findUnique({ where: { name: u.role } });
     if (!role) continue;
     await prisma.user.upsert({
-      where: { email: u.email },
+      where: { username: u.email.split("@")[0] },
       update: {},
       create: {
+        username: u.email.split("@")[0],
         email: u.email,
         password: devPassword,
         fullName: u.fullName,
@@ -276,9 +278,10 @@ async function main() {
   const teleRole = await prisma.role.findUnique({ where: { name: "TELE_CALLER" } });
   if (teleRole) {
     await prisma.user.upsert({
-      where: { email: reqTeleEmail },
+      where: { username: "telecaller_req" },
       update: {},
       create: {
+        username: "telecaller_req",
         email: reqTeleEmail,
         password: reqTelePassword,
         fullName: "Tele",

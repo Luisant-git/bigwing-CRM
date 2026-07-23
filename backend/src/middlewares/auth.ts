@@ -4,7 +4,8 @@ import { env } from "../config/env.js";
 
 export interface JwtPayload {
   userId: bigint;
-  email: string;
+  username: string;
+  email?: string;
   roles: string[];
 }
 

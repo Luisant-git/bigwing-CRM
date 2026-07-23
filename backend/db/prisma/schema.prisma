@@ -11,7 +11,8 @@ datasource db {
 
 model User {
   id            BigInt         @id @default(autoincrement())
-  email         String         @unique @db.VarChar(120)
+  email         String?        @unique @db.VarChar(120)
+  username      String         @unique @db.VarChar(120)
   password      String         @db.VarChar(255)
   fullName      String         @map("full_name") @db.VarChar(160)
   mobile        String?        @db.VarChar(15)

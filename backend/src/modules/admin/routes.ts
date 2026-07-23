@@ -90,14 +90,14 @@ router.post("/purge", rbac(["SUPER_ADMIN"]), async (req, res, next) => {
  * lookups, settings), but gated on a specific email rather than a role so that
  * regular SUPER_ADMINs can't trigger it from the UI by accident.
  *
- * Gate: req.user.email must be exactly `seniordeveloper@bigwing.in`.
+ * Gate: req.user.username must be exactly `developer`.
  * Body: { confirm: "TRUNCATE" } — the UI requires the operator to type this.
  */
-const SENIOR_DEVELOPER_EMAIL = "seniordeveloper@bigwing.in";
+const SENIOR_DEVELOPER_USERNAME = "developer";
 
 router.post("/truncate", async (req, res, next) => {
   try {
-    if (req.user?.email !== SENIOR_DEVELOPER_EMAIL) {
+    if (req.user?.username !== SENIOR_DEVELOPER_USERNAME) {
       throw new AppError(403, "FORBIDDEN", "Truncate is restricted to the senior developer account");
     }
     if (req.body?.confirm !== "TRUNCATE") {
@@ -141,7 +141,7 @@ router.post("/truncate", async (req, res, next) => {
         entityType: "system",
         entityId: BigInt(0),
         action: "DELETE",
-        changes: { action: "TRUNCATE_ALL", by: SENIOR_DEVELOPER_EMAIL, before },
+        changes: { action: "TRUNCATE_ALL", by: SENIOR_DEVELOPER_USERNAME, before },
         ipAddress: req.ip,
       },
     });

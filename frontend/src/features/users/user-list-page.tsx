@@ -52,7 +52,7 @@ export default function UserListPage() {
           <Avatar name={u.fullName} gender={u.gender} url={u.avatarUrl} size={34} />
           <div>
             <p className="font-semibold text-gray-800">{u.fullName}</p>
-            <p className="text-[11px] text-gray-400">{u.email}</p>
+            <p className="text-[11px] text-gray-400">@{u.username}</p>
           </div>
         </div>
       ),
@@ -166,7 +166,7 @@ export default function UserListPage() {
 }
 
 function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d: any) => void; loading: boolean; onCancel: () => void; isSuperAdmin: boolean }) {
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "", brandAccess: "BOTH" });
+  const [form, setForm] = useState({ username: "", email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "", brandAccess: "BOTH" });
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
 
   const { data: branches } = useQuery({
@@ -187,17 +187,21 @@ function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d:
         <input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
       </div>
       <div>
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Email *</label>
-        <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Username *</label>
+        <input value={form.username} onChange={(e) => set("username", e.target.value)} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
       </div>
+      {/* <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Email</label>
+        <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
+      </div> */}
       <div>
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Password *</label>
         <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required minLength={8} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Mobile</label>
-          <input value={form.mobile} onChange={(e) => set("mobile", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Mobile *</label>
+          <input value={form.mobile} onChange={(e) => set("mobile", e.target.value)} required className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
         </div>
         <div>
           <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Gender</label>

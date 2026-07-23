@@ -3,7 +3,8 @@ import api from "@/lib/api";
 
 interface User {
   id: number;
-  email: string;
+  username: string;
+  email?: string;
   fullName: string;
   roles: string[];
   brandAccess?: string;
@@ -13,7 +14,7 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hydrate: () => void;
 }
@@ -23,8 +24,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
 
-  login: async (email, password) => {
-    const { data } = await api.post("/auth/login", { email, password });
+  login: async (username, password) => {
+    const { data } = await api.post("/auth/login", { username, password });
     const { accessToken, refreshToken, user } = data.data;
     localStorage.setItem("accessToken", accessToken);
     localStorage.setItem("refreshToken", refreshToken);
@@ -54,6 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           set({
             user: {
               id: payload.userId,
+              username: payload.username,
               email: payload.email,
               fullName: payload.fullName || "",
               roles: payload.roles,

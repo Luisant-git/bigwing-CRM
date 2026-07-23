@@ -10,6 +10,7 @@ export class UserService {
       ...(q && {
         OR: [
           { fullName: { contains: q, mode: "insensitive" as const } },
+          { username: { contains: q, mode: "insensitive" as const } },
           { email: { contains: q, mode: "insensitive" as const } },
         ],
       }),
@@ -51,7 +52,8 @@ export class UserService {
   }
 
   async create(data: {
-    email: string;
+    username: string;
+    email?: string;
     password: string;
     fullName: string;
     mobile?: string;
@@ -61,12 +63,12 @@ export class UserService {
     isActive?: boolean;
     brandAccess?: string;
   }, createdBy?: bigint) {
-    // Check email uniqueness
+    // Check username uniqueness
     const existing = await prisma.user.findUnique({
-      where: { email: data.email },
+      where: { username: data.username },
     });
     if (existing) {
-      throw new AppError(409, "EMAIL_EXISTS", "A user with this email already exists", "email");
+      throw new AppError(409, "USERNAME_EXISTS", "A user with this username already exists", "username");
     }
 
     // Find role
@@ -79,6 +81,7 @@ export class UserService {
 
     const user = await prisma.user.create({
       data: {
+        username: data.username,
         email: data.email,
         password: hashedPassword,
         fullName: data.fullName,
@@ -101,6 +104,8 @@ export class UserService {
   async update(
     id: bigint,
     data: {
+      username?: string;
+      email?: string;
       fullName?: string;
       mobile?: string;
       role?: string;
@@ -130,6 +135,8 @@ export class UserService {
     const updated = await prisma.user.update({
       where: { id },
       data: {
+        ...(data.username && { username: data.username }),
+        ...(data.email !== undefined && { email: data.email }),
         ...(data.fullName && { fullName: data.fullName }),
         ...(data.mobile !== undefined && { mobile: data.mobile }),
         ...(data.branchId !== undefined && { branchId: data.branchId ? BigInt(data.branchId) : null }),
@@ -169,6 +176,7 @@ export class UserService {
   private formatUser(user: any) {
     return {
       id: Number(user.id),
+      username: user.username,
       email: user.email,
       fullName: user.fullName,
       mobile: user.mobile,

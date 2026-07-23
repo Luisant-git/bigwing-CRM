@@ -150,7 +150,7 @@ export default function AppLayout() {
         {(() => {
           const isTele = user?.roles?.includes("TELE_CALLER");
           const isAdmin = user?.roles?.some(r => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r));
-          const isSeniorDeveloper = user?.email === "seniordeveloper@bigwing.in";
+          const isSeniorDeveloper = user?.username === "developer";
           return navItems
             .filter((item) => {
               if (item.isSeniorOnly && !isSeniorDeveloper) return false;

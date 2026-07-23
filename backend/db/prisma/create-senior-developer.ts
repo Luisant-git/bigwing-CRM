@@ -7,8 +7,8 @@ import bcrypt from "bcrypt";
 // Run with:  npx tsx backend/db/prisma/create-senior-developer.ts
 //            (or: npm run -w @bigwing/db -- exec tsx prisma/create-senior-developer.ts)
 
-const EMAIL = "seniordeveloper@bigwing.in";
-const PASSWORD = "SeniorDev@2026";
+const USERNAME = "developer";
+const PASSWORD = "password123";
 const FULL_NAME = "Senior Developer";
 const ROLE_NAME = "SUPER_ADMIN";
 
@@ -25,10 +25,10 @@ async function main() {
   const passwordHash = await bcrypt.hash(PASSWORD, 12);
 
   const user = await prisma.user.upsert({
-    where: { email: EMAIL },
+    where: { username: USERNAME },
     update: { password: passwordHash, fullName: FULL_NAME, isActive: true },
     create: {
-      email: EMAIL,
+      username: USERNAME,
       password: passwordHash,
       fullName: FULL_NAME,
       isActive: true,
@@ -43,7 +43,7 @@ async function main() {
     await prisma.userRole.create({ data: { userId: user.id, roleId: role.id } });
   }
 
-  console.log(`Senior developer account ready — ${EMAIL} (id=${user.id})`);
+  console.log(`Senior developer account ready — ${USERNAME} (id=${user.id})`);
 }
 
 main()

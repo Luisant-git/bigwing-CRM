@@ -24,7 +24,7 @@ const paginationSchema = z.object({
 
 // ─── Auth ───────────────────────────────────────────────────────
 export const loginSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1),
   password: z.string().min(8).max(128),
 });
 
@@ -42,7 +42,8 @@ export const resetPasswordSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1).max(120),
+  email: z.string().email().optional(),
   password: z.string().min(8).max(128),
   fullName: z.string().min(1).max(160),
   role: z.nativeEnum(UserRole).default(UserRole.VIEWER),
@@ -50,10 +51,11 @@ export const registerSchema = z.object({
 
 // ─── User ───────────────────────────────────────────────────────
 export const createUserSchema = z.object({
-  email: z.string().email(),
+  username: z.string().min(1).max(120),
+  email: z.string().email().optional(),
   password: z.string().min(8).max(128),
   fullName: z.string().min(1).max(160),
-  mobile: mobileSchema.optional(),
+  mobile: mobileSchema,
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   role: z.nativeEnum(UserRole),
   branchId: z.coerce.number().optional(),
@@ -62,6 +64,8 @@ export const createUserSchema = z.object({
 });
 
 export const updateUserSchema = z.object({
+  username: z.string().min(1).max(120).optional(),
+  email: z.string().email().optional(),
   fullName: z.string().min(1).max(160).optional(),
   mobile: mobileSchema.optional(),
   role: z.nativeEnum(UserRole).optional(),

@@ -7,7 +7,7 @@ import { RoadAnimation } from "@/components/road-animation";
 import PostLoginLoader from "./post-login-loader";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await login(email, password);
+      await login(username, password);
       // Show 3-second bike animation before going to dashboard
       setShowPostLoader(true);
     } catch (err: any) {
@@ -106,16 +106,16 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                Email Address
+                Username
               </label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
                 autoFocus
                 className="w-full rounded-lg border border-[#D4D9E0] bg-[#FAFBFC] px-3.5 py-3 text-sm transition-all focus:border-[#2E75B6] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
-                placeholder="admin@bigwing.in"
+                placeholder="Enter username"
               />
             </div>
 

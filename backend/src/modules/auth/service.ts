@@ -10,15 +10,16 @@ const BCRYPT_ROUNDS = 12;
 
 export class AuthService {
   async register(data: {
-    email: string;
+    username: string;
+    email?: string;
     password: string;
     fullName: string;
     role?: string;
   }) {
-    // Check email uniqueness
-    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    // Check username uniqueness
+    const existing = await prisma.user.findUnique({ where: { username: data.username } });
     if (existing) {
-      throw new AppError(409, "EMAIL_EXISTS", "A user with this email already exists");
+      throw new AppError(409, "USERNAME_EXISTS", "A user with this username already exists");
     }
 
     // Find role (default to VIEWER if not specified)
@@ -32,6 +33,7 @@ export class AuthService {
 
     const user = await prisma.user.create({
       data: {
+        username: data.username,
         email: data.email,
         password: hashedPassword,
         fullName: data.fullName,
@@ -44,7 +46,7 @@ export class AuthService {
     });
 
     const roles = user.userRoles.map((ur) => ur.role.name);
-    const accessToken = this.generateAccessToken(user.id, user.email, roles, user.fullName, user.brandAccess ?? "BOTH");
+    const accessToken = this.generateAccessToken(user.id, user.username, roles, user.fullName, user.brandAccess ?? "BOTH");
     const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
@@ -52,6 +54,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: Number(user.id),
+        username: user.username,
         email: user.email,
         fullName: user.fullName,
         roles,
@@ -60,23 +63,23 @@ export class AuthService {
     };
   }
 
-  async login(email: string, password: string) {
+  async login(username: string, password: string) {
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { username },
       include: { userRoles: { include: { role: true } } },
     });
 
     if (!user || !user.isActive) {
-      throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
+      throw new AppError(401, "INVALID_CREDENTIALS", "Invalid username or password");
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      throw new AppError(401, "INVALID_CREDENTIALS", "Invalid email or password");
+      throw new AppError(401, "INVALID_CREDENTIALS", "Invalid username or password");
     }
 
     const roles = user.userRoles.map((ur) => ur.role.name);
-    const accessToken = this.generateAccessToken(user.id, user.email, roles, user.fullName, user.brandAccess ?? "BOTH");
+    const accessToken = this.generateAccessToken(user.id, user.username, roles, user.fullName, user.brandAccess ?? "BOTH");
     const refreshToken = await this.generateRefreshToken(user.id);
 
     // Update last login
@@ -90,6 +93,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: Number(user.id),
+        username: user.username,
         email: user.email,
         fullName: user.fullName,
         roles,
@@ -123,7 +127,7 @@ export class AuthService {
     const roles = storedToken.user.userRoles.map((ur) => ur.role.name);
     const accessToken = this.generateAccessToken(
       storedToken.user.id,
-      storedToken.user.email,
+      storedToken.user.username,
       roles,
       storedToken.user.fullName,
       storedToken.user.brandAccess ?? "BOTH"
@@ -160,8 +164,8 @@ export class AuthService {
 
   // ─── Private helpers ────────────────────────────────────────────
 
-  private generateAccessToken(userId: bigint, email: string, roles: string[], fullName: string, brandAccess: string): string {
-    const payload = { userId: Number(userId), email, roles, fullName, brandAccess };
+  private generateAccessToken(userId: bigint, username: string, roles: string[], fullName: string, brandAccess: string): string {
+    const payload = { userId: Number(userId), username, roles, fullName, brandAccess };
     return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as jwt.SignOptions);
   }
 

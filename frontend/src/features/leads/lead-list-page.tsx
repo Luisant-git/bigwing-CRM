@@ -485,7 +485,7 @@ export default function LeadListPage() {
           </div>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2">
-          {tab.startsWith("meta") && currentUser?.email === "seniordeveloper@bigwing.in" && (
+          {tab.startsWith("meta") && currentUser?.username === "developer" && (
             <button
               onClick={handleTruncateMeta}
               disabled={isTruncating}

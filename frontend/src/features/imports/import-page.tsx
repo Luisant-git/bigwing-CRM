@@ -9,7 +9,7 @@ import { useBrandStore } from "@/stores/brand";
 
 // The Truncate button is a dev-only maintenance/testing helper. It is shown
 // exclusively for this account; the backend enforces the same check.
-const SENIOR_DEVELOPER_EMAIL = "seniordeveloper@bigwing.in";
+const SENIOR_DEVELOPER_USERNAME = "developer";
 
 // Helper to handle blob downloads from auth-protected routes
 async function triggerBlobDownload(url: string, filename: string) {
@@ -74,7 +74,7 @@ export default function ImportPage() {
 
   const qc = useQueryClient();
   const currentUser = useAuthStore((s) => s.user);
-  const isSeniorDeveloper = currentUser?.email === SENIOR_DEVELOPER_EMAIL;
+  const isSeniorDeveloper = currentUser?.username === SENIOR_DEVELOPER_USERNAME;
 
   const truncateMut = useMutation({
     mutationFn: () => api.post("/admin/truncate", { confirm: "TRUNCATE" }),
