@@ -108,7 +108,7 @@ async function syncLeads() {
                 }
 
                 const existingCustomer = await prisma.customer.findFirst({
-                  where: { mobile }
+                  where: { mobile, isDeleted: false }
                 });
 
                 const leadPayload: any = {
