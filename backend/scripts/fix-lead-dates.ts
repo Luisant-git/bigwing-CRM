@@ -18,10 +18,19 @@ async function fixDates() {
 
   let count = 0;
   for (const lead of historicalLeads) {
-    // We use a raw query because Prisma usually blocks manual updates to @default(now()) fields
+    // Because Facebook returns the newest leads first, the Newest leads got the Lowest IDs.
+    // The CRM UI sorts by enquiryDate DESC, then createdAt DESC.
+    // enquiryDate has no time component in the database.
+    // To make the Newest leads appear at the top, we need them to have the HIGHEST createdAt.
+    // We achieve this by adding (1,000,000 - ID) seconds to their enquiryDate.
+    
+    const baseTime = lead.enquiryDate.getTime();
+    const syntheticTime = baseTime + (1000000 - Number(lead.id)) * 1000;
+    const newCreatedAt = new Date(syntheticTime);
+
     await prisma.$executeRaw`
       UPDATE core.lead 
-      SET created_at = ${lead.enquiryDate} 
+      SET created_at = ${newCreatedAt} 
       WHERE id = ${lead.id}
     `;
     
