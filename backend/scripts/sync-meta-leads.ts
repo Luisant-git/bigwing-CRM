@@ -148,6 +148,17 @@ async function syncLeads() {
                     console.log(`- Skipped duplicate lead ${lead.id} but restored true timestamp`);
                 } else {
                    await leadService.create(leadPayload);
+                   
+                   // CRITICAL FIX: leadService.create just inserted this with the current server time!
+                   // We MUST immediately update its createdAt to the TRUE Facebook timestamp so sorting works!
+                   const trueTime = new Date(lead.created_time || Date.now());
+                   const freshlyInserted = await prisma.lead.findFirst({
+                       where: { remark: { contains: `Historical Meta Lead ID: ${lead.id}` } }
+                   });
+                   if (freshlyInserted) {
+                       await prisma.$executeRaw`UPDATE core.lead SET created_at = ${trueTime} WHERE id = ${freshlyInserted.id}`;
+                   }
+                   
                    console.log(`✔ Imported lead ${lead.id} for mobile ${mobile}`);
                 }
              });
