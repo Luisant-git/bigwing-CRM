@@ -134,15 +134,21 @@ async function syncLeads() {
                 }
 
                 // Avoid inserting duplicates using the unique lead ID inside the remark
-                const isDuplicate = await prisma.lead.findFirst({
-                   where: { remark: { contains: `Historical Meta Lead ID: ${lead.id}` } }
+                const leadRemark = `Generated from Facebook Lead Ads. Form: ${form.name}\nHistorical Meta Lead ID: ${lead.id}`;
+                const existingLead = await prisma.lead.findFirst({
+                    where: { remark: { contains: `Historical Meta Lead ID: ${lead.id}` } }
                 });
-                
-                if (!isDuplicate) {
+
+                if (existingLead) {
+                    // We already imported this lead, but its createdAt might be wiped or synthetically ordered.
+                    // Let's restore the true Facebook timestamp perfectly.
+                    const trueTime = new Date(lead.created_time || Date.now());
+                    await prisma.$executeRaw`UPDATE core.lead SET created_at = ${trueTime} WHERE id = ${existingLead.id}`;
+                    
+                    console.log(`- Skipped duplicate lead ${lead.id} but restored true timestamp`);
+                } else {
                    await leadService.create(leadPayload);
                    console.log(`✔ Imported lead ${lead.id} for mobile ${mobile}`);
-                } else {
-                   console.log(`- Skipped duplicate lead ${lead.id}`);
                 }
              });
           }
