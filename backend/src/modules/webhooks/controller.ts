@@ -7,14 +7,17 @@ import { AppError } from "../../middlewares/errorHandler.js";
 const leadService = new LeadService();
 
 export const verifyMetaWebhook = (req: Request, res: Response) => {
-  const VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
+  const tokens = Object.keys(process.env)
+    .filter(key => key.startsWith("META_WEBHOOK_VERIFY_TOKEN"))
+    .map(key => process.env[key])
+    .filter(Boolean) as string[];
 
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
 
   if (mode && token) {
-    if (mode === "subscribe" && token === VERIFY_TOKEN) {
+    if (mode === "subscribe" && tokens.includes(token as string)) {
       logger.info("WEBHOOK_VERIFIED");
       res.status(200).send(challenge);
     } else {
@@ -27,7 +30,10 @@ export const verifyMetaWebhook = (req: Request, res: Response) => {
 
 export const handleMetaWebhook = async (req: Request, res: Response) => {
   const body = req.body;
-  const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN;
+  const accessTokens = Object.keys(process.env)
+    .filter(key => key.startsWith("META_PAGE_ACCESS_TOKEN"))
+    .map(key => process.env[key])
+    .filter(Boolean) as string[];
 
   if (body.object !== "page") {
     res.sendStatus(404);
@@ -44,22 +50,31 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           const leadgenId = change.value.leadgen_id;
           const formId = change.value.form_id;
           
-          if (!PAGE_ACCESS_TOKEN) {
-            logger.error("META_PAGE_ACCESS_TOKEN is not configured");
+          if (accessTokens.length === 0) {
+            logger.error("META_PAGE_ACCESS_TOKENS is not configured");
             continue;
           }
+
+          let leadData: any = null;
+          let usedToken = "";
 
           // Fetch lead details from Facebook Graph API
-          const response = await fetch(
-            `https://graph.facebook.com/v19.0/${leadgenId}?access_token=${PAGE_ACCESS_TOKEN}`
-          );
+          for (const token of accessTokens) {
+             const response = await fetch(
+               `https://graph.facebook.com/v19.0/${leadgenId}?access_token=${token}`
+             );
+             if (response.ok) {
+                leadData = await response.json();
+                usedToken = token;
+                break;
+             }
+          }
           
-          if (!response.ok) {
-            logger.error(`Failed to fetch lead ${leadgenId} from Meta: ${response.statusText}`);
+          if (!leadData) {
+            logger.error(`Failed to fetch lead ${leadgenId} from Meta with any provided access token`);
             continue;
           }
 
-          const leadData: any = await response.json();
           logger.info(`Received Meta Lead: ${leadgenId}`);
 
           // Extract fields (Facebook usually sends field_data array)
@@ -111,7 +126,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           // 1. Fetch Form Name from Meta to use as Source
           let formName = formId;
           try {
-              const formResponse = await fetch(`https://graph.facebook.com/v19.0/${formId}?access_token=${PAGE_ACCESS_TOKEN}`);
+              const formResponse = await fetch(`https://graph.facebook.com/v19.0/${formId}?access_token=${usedToken}`);
               const formData: any = await formResponse.json();
               if (formData && formData.name) {
                   formName = formData.name;
