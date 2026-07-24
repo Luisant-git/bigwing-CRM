@@ -3,6 +3,7 @@ import { logger } from "../../config/index.js";
 import { LeadService } from "../leads/service.js";
 import { prisma } from "@bigwing/db";
 import { AppError } from "../../middlewares/errorHandler.js";
+import { brandContext } from "../../middlewares/index.js";
 
 const leadService = new LeadService();
 
@@ -30,10 +31,21 @@ export const verifyMetaWebhook = (req: Request, res: Response) => {
 
 export const handleMetaWebhook = async (req: Request, res: Response) => {
   const body = req.body;
-  const accessTokens = Object.keys(process.env)
-    .filter(key => key.startsWith("META_PAGE_ACCESS_TOKEN"))
-    .map(key => process.env[key])
-    .filter(Boolean) as string[];
+
+  const tokenToBrandMap: Record<string, string> = {};
+  Object.keys(process.env).forEach(key => {
+    if (key.startsWith("META_PAGE_ACCESS_TOKEN_")) {
+      const brandKey = key.replace("META_PAGE_ACCESS_TOKEN_", ""); // e.g. BIGWINGS or REDWINGS
+      const token = process.env[key];
+      if (token) {
+        // Remove trailing 'S' to match CRM brand keys (BIGWING, REDWING)
+        const brand = brandKey.endsWith("S") ? brandKey.slice(0, -1) : brandKey;
+        tokenToBrandMap[token] = brand;
+      }
+    }
+  });
+
+  const accessTokens = Object.keys(tokenToBrandMap);
 
   if (body.object !== "page") {
     res.sendStatus(404);
@@ -57,6 +69,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
 
           let leadData: any = null;
           let usedToken = "";
+          let determinedBrand = "BIGWING";
 
           // Fetch lead details from Facebook Graph API
           for (const token of accessTokens) {
@@ -66,6 +79,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
              if (response.ok) {
                 leadData = await response.json();
                 usedToken = token;
+                determinedBrand = tokenToBrandMap[token] || "BIGWING";
                 break;
              }
           }
@@ -75,9 +89,10 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             continue;
           }
 
-          logger.info(`Received Meta Lead: ${leadgenId}`);
+          logger.info(`Received Meta Lead: ${leadgenId} for brand: ${determinedBrand}`);
 
-          // Extract fields (Facebook usually sends field_data array)
+          await brandContext.run(determinedBrand, async () => {
+            // Extract fields (Facebook usually sends field_data array)
           let firstName = "";
           let lastName = "";
           let mobile = "";
@@ -193,6 +208,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
           }
 
           await leadService.create(leadPayload);
+          });
         }
       }
     }
