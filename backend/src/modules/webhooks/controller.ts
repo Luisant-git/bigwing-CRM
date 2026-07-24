@@ -134,7 +134,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
 
           if (!mobile) {
             logger.warn("Meta lead did not contain a valid phone number. Skipping.");
-            continue;
+            return;
           }
 
           // Prepare payload for CRM
