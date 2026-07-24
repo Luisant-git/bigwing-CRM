@@ -181,7 +181,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
 
           // 4. Check if customer already exists
           const existingCustomer = await prisma.customer.findFirst({
-            where: { mobile, isDeleted: false }
+            where: { mobile, isDeleted: false, brand: determinedBrand }
           });
 
           // 5. Create lead
