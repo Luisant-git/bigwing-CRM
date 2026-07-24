@@ -196,7 +196,7 @@ export const handleMetaWebhook = async (req: Request, res: Response) => {
             };
 
           if (existingCustomer) {
-            leadPayload.customerId = Number(existingCustomer.id);
+            leadPayload.customerId = existingCustomer.id;
           } else {
             leadPayload.customer = {
               firstName,

@@ -122,7 +122,7 @@ async function syncLeads() {
                 };
 
                 if (existingCustomer) {
-                  leadPayload.customerId = Number(existingCustomer.id);
+                  leadPayload.customerId = existingCustomer.id;
                 } else {
                   leadPayload.customer = {
                     firstName,
