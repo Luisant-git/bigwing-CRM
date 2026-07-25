@@ -138,7 +138,9 @@ export class LeadService {
       }),
       ...(data.metaFormName && { metaFormName: data.metaFormName }),
       ...(data.metaStatus && { metaStatus: data.metaStatus }),
-      createdBy,
+      ...(createdBy && {
+        createdByUser: { connect: { id: createdBy } },
+      }),
     });
 
     // Reduce stock for the variant if provided
