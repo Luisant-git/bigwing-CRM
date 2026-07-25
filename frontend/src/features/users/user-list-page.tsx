@@ -12,7 +12,7 @@ import { Navigate } from "@tanstack/react-router";
 
 export default function UserListPage() {
   const user = useAuthStore((s) => s.user);
-  const isTele = user?.roles?.includes("TELE_CALLER") || user?.roles?.includes("TELE_CALLER_TELE") || user?.roles?.includes("TELE_CALLER_META") || user?.roles?.includes("TELE_CALLER_BOTH");
+  const isTele = user?.roles?.includes("TELE_CALLER") || user?.roles?.includes("TELE_CALLER_TELE") || user?.roles?.includes("TELE_CALLER_META");
 
   if (isTele) {
     return <Navigate to="/" />;
@@ -217,7 +217,7 @@ function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d:
         <div>
           <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Role *</label>
           <select value={form.role} onChange={(e) => set("role", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
-            {["ADMIN","MANAGER","TELE_CALLER", "TELE_CALLER_TELE", "TELE_CALLER_META", "TELE_CALLER_BOTH", "SERVICE","VIEWER"].map(r => <option key={r} value={r}>{r.replace(/_/g," ")}</option>)}
+            {["ADMIN","MANAGER","TELE_CALLER", "TELE_CALLER_TELE", "TELE_CALLER_META", "SERVICE","VIEWER"].map(r => <option key={r} value={r}>{r.replace(/_/g," ")}</option>)}
           </select>
         </div>
         {form.role !== "ADMIN" && (

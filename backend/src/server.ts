@@ -204,7 +204,7 @@ app.get("/api/docs/openapi.json", (_req, res) => {
                     password: { type: "string", minLength: 8 },
                     fullName: { type: "string" },
                     mobile: { type: "string", pattern: "^[6-9]\\d{9}$" },
-                    role: { type: "string", enum: ["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER", "TELE_CALLER_TELE", "TELE_CALLER_META", "TELE_CALLER_BOTH", "SERVICE", "VIEWER"] },
+                    role: { type: "string", enum: ["SUPER_ADMIN", "ADMIN", "MANAGER", "SALES_EXECUTIVE", "TELE_CALLER", "TELE_CALLER_TELE", "TELE_CALLER_META", "SERVICE", "VIEWER"] },
                     isActive: { type: "boolean", default: true },
                   },
                 },

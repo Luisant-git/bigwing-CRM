@@ -24,7 +24,7 @@ export function rbac(allowedRoles: string[]) {
 
     let effectiveAllowedRoles = [...allowedRoles];
     if (effectiveAllowedRoles.includes("TELE_CALLER")) {
-      effectiveAllowedRoles.push("TELE_CALLER_TELE", "TELE_CALLER_META", "TELE_CALLER_BOTH");
+      effectiveAllowedRoles.push("TELE_CALLER_TELE", "TELE_CALLER_META");
     }
 
     const hasRole = req.user.roles.some((r) => effectiveAllowedRoles.includes(r));

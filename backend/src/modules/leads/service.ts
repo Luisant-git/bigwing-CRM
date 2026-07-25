@@ -20,7 +20,7 @@ export function ownDataFilter(user?: any): any {
   if (canSeeAll) return {};
 
   const isManager = roles.includes("MANAGER");
-  const isTelecaller = roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META") || roles.includes("TELE_CALLER_BOTH");
+  const isTelecaller = roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META");
   const isSalesExec = roles.includes("SALES_EXECUTIVE");
 
   if (isTelecaller || isSalesExec) {

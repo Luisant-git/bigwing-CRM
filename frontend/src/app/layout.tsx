@@ -150,7 +150,7 @@ export default function AppLayout() {
         {(() => {
           const isTeleTele = user?.roles?.includes("TELE_CALLER_TELE");
           const isTeleMeta = user?.roles?.includes("TELE_CALLER_META");
-          const isTeleBoth = user?.roles?.includes("TELE_CALLER_BOTH") || user?.roles?.includes("TELE_CALLER");
+          const isTeleBoth = user?.roles?.includes("TELE_CALLER");
           const isAnyTele = isTeleTele || isTeleMeta || isTeleBoth;
           const isAdmin = user?.roles?.some(r => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r));
           const isSeniorDeveloper = user?.username === "developer";

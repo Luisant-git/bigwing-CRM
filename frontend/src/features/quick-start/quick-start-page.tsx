@@ -34,7 +34,7 @@ export default function QuickStartPage() {
   const { user } = useAuthStore();
   const isTeleTele = user?.roles?.includes("TELE_CALLER_TELE");
   const isTeleMeta = user?.roles?.includes("TELE_CALLER_META");
-  const isTeleBoth = user?.roles?.includes("TELE_CALLER_BOTH") || user?.roles?.includes("TELE_CALLER");
+  const isTeleBoth = user?.roles?.includes("TELE_CALLER");
   const isAnyTele = isTeleTele || isTeleMeta || isTeleBoth;
 
   const visibleItems = menuItems.filter(item => {

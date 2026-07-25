@@ -21,7 +21,7 @@ const PIE_COLORS = ["#2E75B6", "#27AE60", "#F2994A", "#EB5757", "#9B59B6", "#2D9
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const roles = user?.roles ?? [];
-  const isTelecaller = roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META") || roles.includes("TELE_CALLER_BOTH");
+  const isTelecaller = roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META");
   const isAdmin = roles.includes("ADMIN") || roles.includes("SUPER_ADMIN") || roles.includes("MANAGER");
   
   const [view, setView] = useState<"general" | "social" | "tele" | "sales">("general");
