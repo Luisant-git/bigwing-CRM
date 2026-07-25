@@ -16,11 +16,14 @@ export class AuthService {
     fullName: string;
     role?: string;
   }) {
+    const trimmedUsername = data.username.trim();
     // Check username uniqueness
-    const existing = await prisma.user.findUnique({ where: { username: data.username } });
+    const existing = await prisma.user.findFirst({ where: { username: { equals: trimmedUsername, mode: 'insensitive' } } });
     if (existing) {
       throw new AppError(409, "USERNAME_EXISTS", "A user with this username already exists");
     }
+
+    data.username = trimmedUsername;
 
     // Find role (default to VIEWER if not specified)
     const roleName = data.role || "VIEWER";
@@ -64,8 +67,9 @@ export class AuthService {
   }
 
   async login(username: string, password: string) {
-    const user = await prisma.user.findUnique({
-      where: { username },
+    const trimmedUsername = username.trim();
+    const user = await prisma.user.findFirst({
+      where: { username: { equals: trimmedUsername, mode: 'insensitive' } },
       include: { userRoles: { include: { role: true } } },
     });
 
