@@ -29,6 +29,7 @@ export default function LoginPage() {
         err.response?.data?.error?.message || "Login failed. Please try again."
       );
       setLoading(false);
+      setTimeout(() => setError(""), 10000);
     }
   };
 

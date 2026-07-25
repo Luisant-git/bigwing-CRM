@@ -73,8 +73,12 @@ export class AuthService {
       include: { userRoles: { include: { role: true } } },
     });
 
-    if (!user || !user.isActive) {
+    if (!user) {
       throw new AppError(401, "INVALID_CREDENTIALS", "Invalid username or password");
+    }
+
+    if (!user.isActive) {
+      throw new AppError(401, "ACCOUNT_DEACTIVATED", "Your account is deactivated");
     }
 
     const validPassword = await bcrypt.compare(password, user.password);
