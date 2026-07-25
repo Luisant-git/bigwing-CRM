@@ -67,7 +67,10 @@ export class LeadService {
       }
       const existingCustomer = await customerRepository.findByMobile(normalizedMobile);
       
-      if (existingCustomer && !existingCustomer.isDeleted) {
+      if (existingCustomer) {
+        if (existingCustomer.isDeleted) {
+          await customerRepository.update(existingCustomer.id, { isDeleted: false });
+        }
         customerId = existingCustomer.id;
       } else {
         const customer = await customerService.create(data.customer, createdBy);

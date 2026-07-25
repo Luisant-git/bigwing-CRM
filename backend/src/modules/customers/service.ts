@@ -1,7 +1,8 @@
 import { customerRepository } from "./repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
-import { ALL_DATA_ROLES } from "../leads/service.js";
+
+const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 export class CustomerService {
   async list(page: number, pageSize: number, q?: string, tab?: string, user?: any) {
