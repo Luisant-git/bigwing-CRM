@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Users as UsersIcon, Shield, UserCheck, UserX } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Shield, UserCheck, UserX, Edit3, Trash2, Power } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/hooks";
@@ -20,6 +20,10 @@ export default function UserListPage() {
 
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editUser, setEditUser] = useState<any>(null);
+  const [deleteUser, setDeleteUser] = useState<any>(null);
+  const [statusUser, setStatusUser] = useState<any>(null);
+  
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -39,6 +43,18 @@ export default function UserListPage() {
   const createMut = useMutation({
     mutationFn: (body: any) => api.post("/users", body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast.success("User created"); setShowForm(false); },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, body }: { id: bigint; body: any }) => api.patch(`/users/${id}`, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast.success("User updated"); setEditUser(null); setStatusUser(null); },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: bigint) => api.delete(`/users/${id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["users"] }); toast.success("User deleted"); setDeleteUser(null); },
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
   });
 
@@ -110,6 +126,23 @@ export default function UserListPage() {
       render: (u) => <span className="text-gray-500">{formatDate(u.lastLogin)}</span>,
       sortValue: (u) => u.lastLogin ?? "",
     },
+    {
+      key: "action",
+      label: "Actions",
+      render: (u) => (
+        <div className="flex items-center gap-2">
+          <button onClick={() => setEditUser(u)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit">
+            <Edit3 size={16} />
+          </button>
+          <button onClick={() => setStatusUser(u)} className={`p-1.5 rounded ${u.isActive ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`} title={u.isActive ? "Deactivate" : "Activate"}>
+            <Power size={16} />
+          </button>
+          <button onClick={() => setDeleteUser(u)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete">
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -171,15 +204,52 @@ export default function UserListPage() {
         )}
       />
 
-      <FlyingModal open={showForm} onClose={() => setShowForm(false)} title="Create New User">
-        <UserForm onSubmit={(d) => createMut.mutate(d)} loading={createMut.isPending} onCancel={() => setShowForm(false)} isSuperAdmin={user?.roles?.includes("SUPER_ADMIN") ?? false} />
+      <FlyingModal open={showForm || !!editUser} onClose={() => { setShowForm(false); setEditUser(null); }} title={editUser ? "Edit User" : "Create New User"}>
+        <UserForm 
+          initialData={editUser}
+          onSubmit={(d) => editUser ? updateMut.mutate({ id: editUser.id, body: d }) : createMut.mutate(d)} 
+          loading={createMut.isPending || updateMut.isPending} 
+          onCancel={() => { setShowForm(false); setEditUser(null); }} 
+          isSuperAdmin={user?.roles?.includes("SUPER_ADMIN") ?? false} 
+        />
       </FlyingModal>
+
+      <ConfirmModal
+        open={!!deleteUser}
+        title="Delete User"
+        description={`Are you sure you want to delete ${deleteUser?.fullName}? This action cannot be undone.`}
+        onConfirm={() => deleteUser && deleteMut.mutate(deleteUser.id)}
+        onClose={() => setDeleteUser(null)}
+        loading={deleteMut.isPending}
+        confirmText="Delete"
+      />
+
+      <ConfirmModal
+        open={!!statusUser}
+        title={statusUser?.isActive ? "Deactivate User" : "Activate User"}
+        description={`Are you sure you want to ${statusUser?.isActive ? "deactivate" : "activate"} ${statusUser?.fullName}?`}
+        onConfirm={() => statusUser && updateMut.mutate({ id: statusUser.id, body: { isActive: !statusUser.isActive } })}
+        onClose={() => setStatusUser(null)}
+        loading={updateMut.isPending}
+        confirmText={statusUser?.isActive ? "Deactivate" : "Activate"}
+        confirmStyle={statusUser?.isActive ? "bg-orange-600 hover:bg-orange-700" : "bg-green-600 hover:bg-green-700"}
+      />
     </div>
   );
 }
 
-function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d: any) => void; loading: boolean; onCancel: () => void; isSuperAdmin: boolean }) {
-  const [form, setForm] = useState({ username: "", email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "", brandAccess: "BOTH" });
+function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { initialData?: any; onSubmit: (d: any) => void; loading: boolean; onCancel: () => void; isSuperAdmin: boolean }) {
+  const [form, setForm] = useState({ 
+    username: initialData?.username || "", 
+    email: initialData?.email || "", 
+    password: "", 
+    fullName: initialData?.fullName || "", 
+    mobile: initialData?.mobile || "", 
+    gender: initialData?.gender || "MALE", 
+    role: initialData?.roles?.[0] || "TELE_CALLER", 
+    branchId: initialData?.branchId?.toString() || "", 
+    brandAccess: initialData?.brandAccess || "BOTH" 
+  });
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
 
   const { data: branches } = useQuery({
@@ -196,6 +266,7 @@ function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d:
       }
       onSubmit({
         ...form,
+        password: form.password ? form.password : undefined,
         email: form.email ? form.email : undefined,
         branchId: form.role !== "ADMIN" && form.branchId ? Number(form.branchId) : undefined,
       }); 
@@ -213,8 +284,8 @@ function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d:
         <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
       </div> */}
       <div>
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Password *</label>
-        <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required minLength={8} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Password {initialData ? "(Leave blank to keep current)" : "*"}</label>
+        <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required={!initialData} minLength={8} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -261,8 +332,24 @@ function UserForm({ onSubmit, loading, onCancel, isSuperAdmin }: { onSubmit: (d:
       )}
       <div className="flex gap-2 pt-2">
         <button type="button" onClick={onCancel} className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
-        <button type="submit" disabled={loading} className="flex-1 rounded-lg bg-[#2E75B6] py-2 text-sm font-semibold text-white hover:bg-[#245f96] disabled:opacity-50">{loading ? "Creating..." : "Create User"}</button>
+        <button type="submit" disabled={loading} className="flex-1 rounded-lg bg-[#2E75B6] py-2 text-sm font-semibold text-white hover:bg-[#245f96] disabled:opacity-50">{loading ? "Saving..." : "Save User"}</button>
       </div>
     </form>
+  );
+}
+
+function ConfirmModal({ open, title, description, onConfirm, onClose, loading, confirmText = "Confirm", confirmStyle = "bg-red-600 hover:bg-red-700" }: any) {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+        <h3 className="mb-2 text-lg font-bold text-gray-900">{title}</h3>
+        <p className="mb-6 text-sm text-gray-500">{description}</p>
+        <div className="flex gap-3">
+          <button onClick={onClose} disabled={loading} className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+          <button onClick={onConfirm} disabled={loading} className={`flex-1 rounded-lg py-2 text-sm font-medium text-white ${confirmStyle}`}>{loading ? "..." : confirmText}</button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -171,6 +171,20 @@ export class UserService {
     return { message: "Password reset successfully" };
   }
 
+  async delete(id: bigint) {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    }
+
+    // Delete related user roles and refresh tokens
+    await prisma.userRole.deleteMany({ where: { userId: id } });
+    await prisma.refreshToken.deleteMany({ where: { userId: id } });
+    
+    await prisma.user.delete({ where: { id } });
+    return { message: "User deleted successfully" };
+  }
+
   // ─── Private ────────────────────────────────────────────────────
 
   private formatUser(user: any) {

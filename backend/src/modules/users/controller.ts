@@ -61,6 +61,15 @@ export class UserController {
       next(err);
     }
   }
+
+  async delete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await userService.delete(BigInt(req.params.id as string));
+      res.json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const userController = new UserController();

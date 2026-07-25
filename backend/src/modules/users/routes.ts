@@ -44,4 +44,10 @@ router.post(
   (req, res, next) => userController.resetPassword(req, res, next)
 );
 
+router.delete(
+  "/:id",
+  rbac(["SUPER_ADMIN", "ADMIN"]),
+  (req, res, next) => userController.delete(req, res, next)
+);
+
 export { router as userRoutes };
