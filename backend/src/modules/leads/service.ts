@@ -61,8 +61,18 @@ export class LeadService {
     let customerId: bigint;
 
     if (data.customer) {
-      const customer = await customerService.create(data.customer, createdBy);
-      customerId = BigInt(customer.id);
+      let normalizedMobile = data.customer.mobile;
+      if (normalizedMobile) {
+         normalizedMobile = customerService.normalizeMobile(normalizedMobile);
+      }
+      const existingCustomer = await customerRepository.findByMobile(normalizedMobile);
+      
+      if (existingCustomer && !existingCustomer.isDeleted) {
+        customerId = existingCustomer.id;
+      } else {
+        const customer = await customerService.create(data.customer, createdBy);
+        customerId = BigInt(customer.id);
+      }
     } else if (data.customerId) {
       customerId = BigInt(data.customerId);
       const customer = await customerRepository.findById(customerId);
