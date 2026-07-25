@@ -22,7 +22,12 @@ export function rbac(allowedRoles: string[]) {
       return;
     }
 
-    const hasRole = req.user.roles.some((r) => allowedRoles.includes(r));
+    let effectiveAllowedRoles = [...allowedRoles];
+    if (effectiveAllowedRoles.includes("TELE_CALLER")) {
+      effectiveAllowedRoles.push("TELE_CALLER_TELE", "TELE_CALLER_META", "TELE_CALLER_BOTH");
+    }
+
+    const hasRole = req.user.roles.some((r) => effectiveAllowedRoles.includes(r));
     if (!hasRole) {
       res.status(403).json({
         success: false,

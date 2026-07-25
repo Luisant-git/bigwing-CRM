@@ -32,10 +32,18 @@ const menuItems = [
 
 export default function QuickStartPage() {
   const { user } = useAuthStore();
-  const isTele = user?.roles?.includes("TELE_CALLER");
+  const isTeleTele = user?.roles?.includes("TELE_CALLER_TELE");
+  const isTeleMeta = user?.roles?.includes("TELE_CALLER_META");
+  const isTeleBoth = user?.roles?.includes("TELE_CALLER_BOTH") || user?.roles?.includes("TELE_CALLER");
+  const isAnyTele = isTeleTele || isTeleMeta || isTeleBoth;
 
   const visibleItems = menuItems.filter(item => {
-    if (isTele && item.adminOnly) return false;
+    if (isAnyTele) {
+      if (item.adminOnly) return false;
+      if (item.to === "/leads") return false;
+      if (isTeleTele && item.to === "/meta-leads") return false;
+      if (isTeleMeta && item.to === "/tele-leads") return false;
+    }
     return true;
   });
 

@@ -1,0 +1,1 @@
+fetch('http://localhost:3005/api/v1/leads', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Brand': 'REDWING' }, body: JSON.stringify({ customer: { mobile: '9999999999', firstName: 'Test' }, channel: 'TELE', sourceId: 1, enquiryTypeId: 1 }) }).then(res => res.json()).then(console.log).catch(console.error);

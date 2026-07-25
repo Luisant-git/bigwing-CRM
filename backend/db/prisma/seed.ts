@@ -13,6 +13,9 @@ async function main() {
     { name: "MANAGER", description: "Team management, all data read" },
     { name: "SALES_EXECUTIVE", description: "Own leads, customers, follow-ups" },
     { name: "TELE_CALLER", description: "Tele-enquiry leads, follow-ups" },
+    { name: "TELE_CALLER_TELE", description: "Tele-enquiry leads only" },
+    { name: "TELE_CALLER_META", description: "Meta leads only" },
+    { name: "TELE_CALLER_BOTH", description: "Tele-enquiry and Meta leads" },
     { name: "SERVICE", description: "Service enquiries only" },
     { name: "VIEWER", description: "Read-only dashboard access" },
   ];

@@ -148,15 +148,23 @@ export default function AppLayout() {
 
       <nav className={`flex-1 space-y-0.5 overflow-y-auto ${isCollapsed ? "p-2" : "p-3"}`}>
         {(() => {
-          const isTele = user?.roles?.includes("TELE_CALLER");
+          const isTeleTele = user?.roles?.includes("TELE_CALLER_TELE");
+          const isTeleMeta = user?.roles?.includes("TELE_CALLER_META");
+          const isTeleBoth = user?.roles?.includes("TELE_CALLER_BOTH") || user?.roles?.includes("TELE_CALLER");
+          const isAnyTele = isTeleTele || isTeleMeta || isTeleBoth;
           const isAdmin = user?.roles?.some(r => ["SUPER_ADMIN", "ADMIN", "MANAGER"].includes(r));
           const isSeniorDeveloper = user?.username === "developer";
           return navItems
             .filter((item) => {
               if (item.isSeniorOnly && !isSeniorDeveloper) return false;
-              if (isTele) {
+              if (isAnyTele) {
                 if (item.to === "/leads") return false;
-                return !["/users", "/import", "/import-logs", "/settings"].includes(item.to);
+                if (["/users", "/import", "/import-logs", "/settings"].includes(item.to)) return false;
+                
+                if (isTeleTele && item.to === "/meta-leads") return false;
+                if (isTeleMeta && item.to === "/tele-leads") return false;
+
+                return true;
               }
               return true;
             })
