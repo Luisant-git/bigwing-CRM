@@ -179,7 +179,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
         {kpiCards.map((card) => (
           <Link
             key={card.label}
-            to="/leads"
+            to="/tele-leads"
             search={{ tab: card.tab }}
             className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md hover:ring-[#2E75B6]/20 active:scale-95 cursor-pointer touch-manipulation`}
           >
