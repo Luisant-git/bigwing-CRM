@@ -45,6 +45,7 @@ export class ReportService {
       delivered,
       booked,
       metaLeads,
+      completedMetaLeads,
     ] = await Promise.all([
       prisma.lead.count({ where: base }),
       prisma.lead.count({ where: { ...base, stage: "INVOICED" } }),
@@ -83,6 +84,7 @@ export class ReportService {
       prisma.lead.count({ where: { ...base, stage: "DELIVERED_CLOSED" } }),
       prisma.lead.count({ where: { ...base, stage: "BOOKED" } }),
       prisma.lead.count({ where: { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), channel: "SOCIAL" } }),
+      prisma.lead.count({ where: { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), channel: "SOCIAL", stage: "DELIVERED_CLOSED" } }),
     ]);
 
     return {
@@ -97,6 +99,7 @@ export class ReportService {
       delivered,
       lost,
       metaLeads,
+      completedMetaLeads,
     };
   }
 

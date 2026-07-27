@@ -102,6 +102,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
     { label: "Delivered", value: kpi?.delivered, icon: Truck, accent: "#059669", bg: "bg-emerald-50", tab: "all" },
     { label: "Lost", value: kpi?.lost, icon: XCircle, accent: "#EB5757", bg: "bg-red-50", tab: "all" },
     { label: "Meta Leads", value: kpi?.metaLeads, icon: Target, accent: "#8B5CF6", bg: "bg-purple-50", tab: "meta" },
+    { label: "Completed Meta Leads", value: kpi?.completedMetaLeads, icon: CheckCircle2, accent: "#10B981", bg: "bg-emerald-50", tab: "meta" },
   ];
 
   const closingStats = {
