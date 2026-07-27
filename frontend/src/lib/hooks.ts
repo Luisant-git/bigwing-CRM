@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import api from "./api";
+import { useBrandStore } from "@/stores/brand";
 
 export function useSessionState<T>(key: string, initialValue: T) {
   const [state, setState] = useState<T>(() => {
@@ -24,8 +25,9 @@ export function useSessionState<T>(key: string, initialValue: T) {
 }
 
 export function useLookup(name: string, params?: Record<string, any>) {
+  const brand = useBrandStore(s => s.brand);
   return useQuery({
-    queryKey: ["lookups", name, params],
+    queryKey: ["lookups", name, brand, params],
     queryFn: () =>
       api.get(`/lookups/${name}`, { params }).then((r) => r.data.data),
     staleTime: 5 * 60 * 1000,

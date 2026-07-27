@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
 import { FlyingModal } from "@/components/ui";
+import { useBrandStore } from "@/stores/brand";
 
 const LOOKUP_SECTIONS = [
   { key: "enquiry-sources", label: "Enquiry Sources", description: "Lead source channels (Google, Instagram, Walk-in, etc.)" },
@@ -82,14 +83,16 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
   const [newOrder, setNewOrder] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
+  const brand = useBrandStore((s) => s.brand);
+
   const { data, isLoading } = useQuery({
-    queryKey: ["lookups", apiName, { includeInactive: true }],
+    queryKey: ["lookups", apiName, brand, { includeInactive: true }],
     queryFn: () =>
       api.get(`/lookups/${apiName}`, { params: { includeInactive: true } }).then((r) => r.data.data),
   });
 
   const { data: branchesData } = useQuery({
-    queryKey: ["lookups", "referred-branches", { includeInactive: false }],
+    queryKey: ["lookups", "referred-branches", brand, { includeInactive: false }],
     queryFn: () =>
       api.get(`/lookups/referred-branches`).then((r) => r.data.data),
     enabled: apiName === "sales-executives" || apiName === "service-executives",
