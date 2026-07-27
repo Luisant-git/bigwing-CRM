@@ -210,7 +210,7 @@ export default function UserListPage() {
           onSubmit={(d) => editUser ? updateMut.mutate({ id: editUser.id, body: d }) : createMut.mutate(d)} 
           loading={createMut.isPending || updateMut.isPending} 
           onCancel={() => { setShowForm(false); setEditUser(null); }} 
-          canEditBrandAccess={user?.roles?.includes("SUPER_ADMIN") || user?.roles?.includes("ADMIN") ?? false} 
+          canEditBrandAccess={(user?.roles?.includes("SUPER_ADMIN") || user?.roles?.includes("ADMIN")) ?? false}
         />
       </FlyingModal>
 
