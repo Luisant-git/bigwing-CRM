@@ -32,7 +32,7 @@ export class AuthService {
       throw new AppError(400, "INVALID_ROLE", `Role '${roleName}' does not exist`);
     }
 
-    const hashedPassword = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
+    const hashedPassword = await bcrypt.hash(data.password.trim(), BCRYPT_ROUNDS);
 
     const user = await prisma.user.create({
       data: {
@@ -81,7 +81,13 @@ export class AuthService {
       throw new AppError(401, "ACCOUNT_DEACTIVATED", "Your account is deactivated");
     }
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    let validPassword = await bcrypt.compare(password, user.password);
+    
+    // Fallback: mobile keyboards sometimes add a trailing space. If raw password fails, try trimmed.
+    if (!validPassword && password !== password.trim()) {
+      validPassword = await bcrypt.compare(password.trim(), user.password);
+    }
+
     if (!validPassword) {
       throw new AppError(401, "INVALID_CREDENTIALS", "Invalid username or password");
     }
