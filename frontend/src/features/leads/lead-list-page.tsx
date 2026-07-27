@@ -406,20 +406,20 @@ export default function LeadListPage() {
         );
       },
     },
-    {
-      key: "updatedBy",
-      label: "Updated By",
-      render: (l: any) => {
-        if (!l.updatedByUsername) return <span className="text-gray-300 italic text-[11px] whitespace-nowrap">—</span>;
-        return (
-          <div className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#10B981]">
-              @{l.updatedByUsername}
-            </span>
-          </div>
-        );
-      },
-    },
+    // {
+    //   key: "updatedBy",
+    //   label: "Updated By",
+    //   render: (l: any) => {
+    //     if (!l.updatedByUsername) return <span className="text-gray-300 italic text-[11px] whitespace-nowrap">—</span>;
+    //     return (
+    //       <div className="flex items-center gap-1.5 whitespace-nowrap">
+    //         <span className="text-[11px] font-bold uppercase tracking-wider text-[#10B981]">
+    //           @{l.updatedByUsername}
+    //         </span>
+    //       </div>
+    //     );
+    //   },
+    // },
     ...(tab === "overdue" ? [
       {
         key: "overdueDays",

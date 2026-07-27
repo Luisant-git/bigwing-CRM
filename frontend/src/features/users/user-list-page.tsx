@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Search, Users as UsersIcon, Shield, UserCheck, UserX, Edit3, Trash2, Power, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
@@ -210,7 +210,7 @@ export default function UserListPage() {
           onSubmit={(d) => editUser ? updateMut.mutate({ id: editUser.id, body: d }) : createMut.mutate(d)} 
           loading={createMut.isPending || updateMut.isPending} 
           onCancel={() => { setShowForm(false); setEditUser(null); }} 
-          isSuperAdmin={user?.roles?.includes("SUPER_ADMIN") ?? false} 
+          canEditBrandAccess={user?.roles?.includes("SUPER_ADMIN") || user?.roles?.includes("ADMIN") ?? false} 
         />
       </FlyingModal>
 
@@ -238,7 +238,7 @@ export default function UserListPage() {
   );
 }
 
-function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { initialData?: any; onSubmit: (d: any) => void; loading: boolean; onCancel: () => void; isSuperAdmin: boolean }) {
+function UserForm({ initialData, onSubmit, loading, onCancel, canEditBrandAccess }: { initialData?: any; onSubmit: (d: any) => void; loading: boolean; onCancel: () => void; canEditBrandAccess: boolean }) {
   const [form, setForm] = useState({ 
     username: initialData?.username || "", 
     email: initialData?.email || "", 
@@ -250,6 +250,27 @@ function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { 
     branchId: initialData?.branchId?.toString() || "", 
     brandAccess: initialData?.brandAccess || "BOTH" 
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({
+        username: initialData.username || "",
+        email: initialData.email || "",
+        password: "",
+        fullName: initialData.fullName || "",
+        mobile: initialData.mobile || "",
+        gender: initialData.gender || "MALE",
+        role: initialData.roles?.[0] || "TELE_CALLER",
+        branchId: initialData.branchId?.toString() || "",
+        brandAccess: initialData.brandAccess || "BOTH"
+      });
+    } else {
+      setForm({
+        username: "", email: "", password: "", fullName: "", mobile: "", gender: "MALE", role: "TELE_CALLER", branchId: "", brandAccess: "BOTH"
+      });
+    }
+  }, [initialData]);
+
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
   const [showPassword, setShowPassword] = useState(false);
 
@@ -316,25 +337,29 @@ function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { 
             {["ADMIN","MANAGER","TELE_CALLER", "TELE_CALLER_TELE", "TELE_CALLER_META", "SERVICE","VIEWER"].map(r => <option key={r} value={r}>{r.replace(/_/g," ")}</option>)}
           </select>
         </div>
-        {form.role !== "ADMIN" && (
+        {canEditBrandAccess && (
           <div>
-            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Branch</label>
-            <select value={form.branchId} onChange={(e) => set("branchId", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
-              <option value="">-- None --</option>
-              {(branches ?? []).map((b: any) => (
-                <option key={b.id} value={b.id}>{b.branchName}</option>
-              ))}
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Brand Access *</label>
+            <select value={form.brandAccess} onChange={(e) => {
+              setForm(p => ({ ...p, brandAccess: e.target.value, branchId: "" }));
+            }} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
+              <option value="BOTH">Both (Bigwing & Redwing)</option>
+              <option value="BIGWING">Bigwing Only</option>
+              <option value="REDWING">Redwing Only</option>
             </select>
           </div>
         )}
       </div>
-      {isSuperAdmin && (
+      {form.role !== "ADMIN" && (
         <div>
-          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Brand Access *</label>
-          <select value={form.brandAccess} onChange={(e) => set("brandAccess", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
-            <option value="BOTH">Both (Bigwing & Redwing)</option>
-            <option value="BIGWING">Bigwing Only</option>
-            <option value="REDWING">Redwing Only</option>
+          <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Branch</label>
+          <select value={form.branchId} onChange={(e) => set("branchId", e.target.value)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
+            <option value="">-- None --</option>
+            {(branches ?? [])
+              .filter((b: any) => form.brandAccess === "BOTH" || b.brand === form.brandAccess)
+              .map((b: any) => (
+                <option key={b.id} value={b.id}>{b.branchName || b.name}</option>
+            ))}
           </select>
         </div>
       )}
