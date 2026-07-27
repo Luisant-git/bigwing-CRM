@@ -24,6 +24,7 @@ const listIncludes = {
   colour: { select: { id: true, name: true } },
   assignedUser: { select: { id: true, fullName: true } },
   createdByUser: { select: { id: true, username: true } },
+  updatedByUser: { select: { id: true, username: true } },
   _count: { select: { followups: true } },
   followups: {
     orderBy: { seqNo: "desc" },

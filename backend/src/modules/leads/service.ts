@@ -998,6 +998,7 @@ async getByPhoneNumber(phoneNo: string) {
         ? { id: Number(l.assignedUser.id), fullName: l.assignedUser.fullName }
         : null,
       createdByUsername: l.createdByUser?.username,
+      updatedByUsername: l.updatedByUser?.username,
       followupSeq: l._count?.followups ?? 0,
       stage: l.stage,
       interestLevel: l.interestLevel,
