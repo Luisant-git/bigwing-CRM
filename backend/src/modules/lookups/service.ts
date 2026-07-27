@@ -159,6 +159,7 @@ export class LookupService {
       name: item.name,
       displayOrder: item.displayOrder,
       isActive: item.isActive,
+      brand: item.brand,
     };
 
     if (name === "vehicle-models") {
