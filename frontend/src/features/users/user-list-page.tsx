@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus, Search, Users as UsersIcon, Shield, UserCheck, UserX, Edit3, Trash2, Power } from "lucide-react";
+import { Plus, Search, Users as UsersIcon, Shield, UserCheck, UserX, Edit3, Trash2, Power, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/hooks";
@@ -251,6 +251,7 @@ function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { 
     brandAccess: initialData?.brandAccess || "BOTH" 
   });
   const set = (f: string, v: string) => setForm((p) => ({ ...p, [f]: v }));
+  const [showPassword, setShowPassword] = useState(false);
 
   const { data: branches } = useQuery({
     queryKey: ["lookups", "referred-branches", { includeInactive: false }],
@@ -266,8 +267,9 @@ function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { 
       }
       onSubmit({
         ...form,
-        password: form.password ? form.password : undefined,
-        email: form.email ? form.email : undefined,
+        username: form.username.trim(),
+        password: form.password ? form.password.trim() : undefined,
+        email: form.email ? form.email.trim() : undefined,
         branchId: form.role !== "ADMIN" && form.branchId ? Number(form.branchId) : undefined,
       }); 
     }} className="space-y-3">
@@ -285,7 +287,12 @@ function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { 
       </div> */}
       <div>
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Password {initialData ? "(Leave blank to keep current)" : "*"}</label>
-        <input type="password" value={form.password} onChange={(e) => set("password", e.target.value)} required={!initialData} minLength={8} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none" />
+        <div className="relative">
+          <input type={showPassword ? "text" : "password"} value={form.password} onChange={(e) => set("password", e.target.value)} required={!initialData} minLength={8} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none pr-10" />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none" tabIndex={-1} title={showPassword ? "Hide password" : "Show password"}>
+            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
