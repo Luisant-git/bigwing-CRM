@@ -106,6 +106,7 @@ export class UserService {
     data: {
       username?: string;
       email?: string;
+      password?: string;
       fullName?: string;
       mobile?: string;
       role?: string;
@@ -132,18 +133,24 @@ export class UserService {
       await prisma.userRole.create({ data: { userId: id, roleId: role.id } });
     }
 
+    const updateData: any = {
+      ...(data.username && { username: data.username }),
+      ...(data.email !== undefined && { email: data.email }),
+      ...(data.fullName && { fullName: data.fullName }),
+      ...(data.mobile !== undefined && { mobile: data.mobile }),
+      ...(data.branchId !== undefined && { branchId: data.branchId ? BigInt(data.branchId) : null }),
+      ...(data.isActive !== undefined && { isActive: data.isActive }),
+      ...(data.brandAccess !== undefined && { brandAccess: data.brandAccess }),
+      updatedBy,
+    };
+
+    if (data.password) {
+      updateData.password = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
+    }
+
     const updated = await prisma.user.update({
       where: { id },
-      data: {
-        ...(data.username && { username: data.username }),
-        ...(data.email !== undefined && { email: data.email }),
-        ...(data.fullName && { fullName: data.fullName }),
-        ...(data.mobile !== undefined && { mobile: data.mobile }),
-        ...(data.branchId !== undefined && { branchId: data.branchId ? BigInt(data.branchId) : null }),
-        ...(data.isActive !== undefined && { isActive: data.isActive }),
-        ...(data.brandAccess !== undefined && { brandAccess: data.brandAccess }),
-        updatedBy,
-      },
+      data: updateData,
       include: { userRoles: { include: { role: true } } },
     });
 
