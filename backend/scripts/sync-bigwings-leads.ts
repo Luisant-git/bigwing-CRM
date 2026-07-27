@@ -121,6 +121,13 @@ async function syncLeads() {
                 };
 
                 if (existingCustomer) {
+                  const existingLeadForCustomer = await prisma.lead.findFirst({
+                     where: { customerId: existingCustomer.id }
+                  });
+                  if (existingLeadForCustomer) {
+                     console.log(`- Skipped lead ${lead.id} because customer ${mobile} already has a lead`);
+                     return;
+                  }
                   leadPayload.customerId = existingCustomer.id;
                 } else {
                   leadPayload.customer = {
