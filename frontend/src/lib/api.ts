@@ -12,9 +12,11 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   
-  const brandStore = localStorage.getItem("crm-brand-storage");
-  const brand = brandStore ? JSON.parse(brandStore).state?.brand : "bigwing";
-  config.headers["X-Brand"] = (brand || "bigwing").toUpperCase();
+  if (!config.headers["X-Brand"]) {
+    const brandStore = localStorage.getItem("crm-brand-storage");
+    const brand = brandStore ? JSON.parse(brandStore).state?.brand : "bigwing";
+    config.headers["X-Brand"] = (brand || "bigwing").toUpperCase();
+  }
   
   return config;
 });

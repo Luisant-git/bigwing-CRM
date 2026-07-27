@@ -7,7 +7,8 @@ export const brandMiddleware = (req: Request, res: Response, next: NextFunction)
   // Extract brand from query or header, default to BIGWING
   const brandHeader = req.headers["x-brand"] as string;
   const brandQuery = req.query.brand as string;
-  const brand = (brandQuery || brandHeader || "BIGWING").toUpperCase();
+  const rawBrand = (brandQuery || brandHeader || "BIGWING").toUpperCase();
+  const brand = (rawBrand === "BOTH" || rawBrand === "ALL") ? "" : rawBrand;
   
   if (req.path.includes("/import")) {
     // console.log(`[BrandMiddleware] Path: ${req.path}, Query: ${brandQuery}, Header: ${brandHeader}, Resolved: ${brand}`);

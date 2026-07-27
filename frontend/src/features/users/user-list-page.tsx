@@ -275,8 +275,8 @@ function UserForm({ initialData, onSubmit, loading, onCancel, canEditBrandAccess
   const [showPassword, setShowPassword] = useState(false);
 
   const { data: branches } = useQuery({
-    queryKey: ["lookups", "referred-branches", { includeInactive: false }],
-    queryFn: () => api.get("/lookups/referred-branches").then((r) => r.data.data),
+    queryKey: ["lookups", "referred-branches", "BOTH", { includeInactive: false }],
+    queryFn: () => api.get("/lookups/referred-branches", { headers: { "X-Brand": "BOTH" } }).then((r) => r.data.data),
   });
 
   return (
