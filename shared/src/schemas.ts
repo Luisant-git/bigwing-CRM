@@ -58,7 +58,7 @@ export const createUserSchema = z.object({
   mobile: mobileSchema,
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   role: z.nativeEnum(UserRole),
-  branchId: z.coerce.number().optional(),
+  branchId: z.coerce.number().nullable().optional(),
   brandAccess: z.enum(["BOTH", "BIGWING", "REDWING"]).optional(),
   isActive: z.boolean().default(true),
 });
@@ -69,8 +69,9 @@ export const updateUserSchema = z.object({
   email: z.string().email().optional(),
   fullName: z.string().min(1).max(160).optional(),
   mobile: mobileSchema.optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
   role: z.nativeEnum(UserRole).optional(),
-  branchId: z.coerce.number().optional(),
+  branchId: z.coerce.number().nullable().optional(),
   brandAccess: z.enum(["BOTH", "BIGWING", "REDWING"]).optional(),
   isActive: z.boolean().optional(),
 });

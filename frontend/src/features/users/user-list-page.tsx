@@ -270,7 +270,8 @@ function UserForm({ initialData, onSubmit, loading, onCancel, isSuperAdmin }: { 
         username: form.username.trim(),
         password: form.password ? form.password.trim() : undefined,
         email: form.email ? form.email.trim() : undefined,
-        branchId: form.role !== "ADMIN" && form.branchId ? Number(form.branchId) : undefined,
+        gender: form.gender,
+        branchId: form.role !== "ADMIN" && form.branchId ? Number(form.branchId) : null,
       }); 
     }} className="space-y-3">
       <div>

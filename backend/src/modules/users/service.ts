@@ -109,8 +109,9 @@ export class UserService {
       password?: string;
       fullName?: string;
       mobile?: string;
+      gender?: string;
       role?: string;
-      branchId?: number;
+      branchId?: number | null;
       isActive?: boolean;
       brandAccess?: string;
     },
@@ -135,9 +136,11 @@ export class UserService {
 
     const updateData: any = {
       ...(data.username && { username: data.username }),
+      ...(data.password && { password: await bcrypt.hash(data.password, BCRYPT_ROUNDS) }),
       ...(data.email !== undefined && { email: data.email }),
       ...(data.fullName && { fullName: data.fullName }),
       ...(data.mobile !== undefined && { mobile: data.mobile }),
+      ...(data.gender !== undefined && { gender: data.gender }),
       ...(data.branchId !== undefined && { branchId: data.branchId ? BigInt(data.branchId) : null }),
       ...(data.isActive !== undefined && { isActive: data.isActive }),
       ...(data.brandAccess !== undefined && { brandAccess: data.brandAccess }),
