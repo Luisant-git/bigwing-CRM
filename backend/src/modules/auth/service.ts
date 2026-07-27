@@ -83,9 +83,14 @@ export class AuthService {
 
     let validPassword = await bcrypt.compare(password, user.password);
     
-    // Fallback: mobile keyboards sometimes add a trailing space. If raw password fails, try trimmed.
+    // Fallback 1: User typed a space, but DB doesn't have it
     if (!validPassword && password !== password.trim()) {
       validPassword = await bcrypt.compare(password.trim(), user.password);
+    }
+
+    // Fallback 2: User typed normally, but DB HAS a space saved accidentally
+    if (!validPassword) {
+      validPassword = await bcrypt.compare(password + " ", user.password);
     }
 
     if (!validPassword) {
