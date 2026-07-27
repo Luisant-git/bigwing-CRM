@@ -386,7 +386,8 @@ export class ReportService {
   // ─── Tele-caller Dashboard (source × stage matrix) ───────────
 
   async telecallerDashboard(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
+    const defaultChannel = f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { in: ["TELE", "SOCIAL"] } };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...defaultChannel };
 
     const groups = await prisma.lead.groupBy({
       by: ["sourceId", "stage"],
@@ -424,7 +425,9 @@ export class ReportService {
   }
 
   async telecallerDetailedDashboard(f: ReportFilter, user?: any) {
-    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...(f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { not: "SOCIAL" } }) };
+    const fWithSocial = { ...f, channel: f.channel || "TELE,SOCIAL" };
+    const defaultChannel = f.channel ? { channel: { in: f.channel.split(",") } } : { channel: { in: ["TELE", "SOCIAL"] } };
+    const base = { isDeleted: false, ...dateWhere(f), ...ownDataFilter(user), ...defaultChannel };
 
     const [
       sources,
@@ -512,7 +515,7 @@ export class ReportService {
         modelId: g.modelId ? Number(g.modelId) : null,
         count: g._count.id
       })),
-      kpi: await this.dashboard(f, user)
+      kpi: await this.dashboard(fWithSocial, user)
     };
   }
 

@@ -14,7 +14,7 @@ export class CustomerService {
       AND: []
     };
 
-    if (!canSeeAll && (roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META") || roles.includes("SALES_EXECUTIVE"))) {
+    if (!canSeeAll && (roles.includes("SALES_EXECUTIVE"))) {
       where.AND.push({
         OR: [
           { createdBy: BigInt(user.userId) },

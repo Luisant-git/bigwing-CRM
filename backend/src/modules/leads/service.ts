@@ -23,8 +23,13 @@ export function ownDataFilter(user?: any): any {
   const isTelecaller = roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META");
   const isSalesExec = roles.includes("SALES_EXECUTIVE");
 
-  if (isTelecaller || isSalesExec) {
-    // Telecallers and sales executives may see their own leads, assigned leads,
+  if (isTelecaller) {
+    // Telecallers can see all leads (like managers/admins)
+    return {};
+  }
+
+  if (isSalesExec) {
+    // Sales executives may see their own leads, assigned leads,
     // and Meta Facebook leads arriving through the webhook.
     return {
       OR: [
