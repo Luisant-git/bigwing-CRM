@@ -101,7 +101,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
     { label: "Invoiced", value: kpi?.invoiced, icon: FileCheck, accent: "#27AE60", bg: "bg-green-50", tab: "all" },
     { label: "Delivered", value: kpi?.delivered, icon: Truck, accent: "#059669", bg: "bg-emerald-50", tab: "all" },
     { label: "Lost", value: kpi?.lost, icon: XCircle, accent: "#EB5757", bg: "bg-red-50", tab: "all" },
-    { label: "My Completed Leads", value: kpi?.myCompleted, icon: CheckCircle2, accent: "#10B981", bg: "bg-emerald-50", tab: "all" },
+    { label: "Meta Leads Completed", value: kpi?.completedMetaLeads, icon: CheckCircle2, accent: "#10B981", bg: "bg-emerald-50", tab: "meta-completed", route: "/meta-leads" },
   ];
 
   const closingStats = {
@@ -180,7 +180,7 @@ export default function TelecallerDashboard({ dateFrom: propDateFrom, dateTo: pr
         {kpiCards.map((card) => (
           <Link
             key={card.label}
-            to="/tele-leads"
+            to={card.route || "/tele-leads"}
             search={{ tab: card.tab }}
             className={`group relative overflow-hidden rounded-xl ${card.bg} p-4 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md hover:ring-[#2E75B6]/20 active:scale-95 cursor-pointer touch-manipulation`}
           >
