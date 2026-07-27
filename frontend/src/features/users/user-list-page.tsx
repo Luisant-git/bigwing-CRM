@@ -341,7 +341,15 @@ function UserForm({ initialData, onSubmit, loading, onCancel, canEditBrandAccess
           <div>
             <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500">Brand Access *</label>
             <select value={form.brandAccess} onChange={(e) => {
-              setForm(p => ({ ...p, brandAccess: e.target.value, branchId: "" }));
+              const newBrand = e.target.value;
+              const validBranches = (branches ?? []).filter((b: any) => newBrand === "BOTH" || b.brand === newBrand);
+              const currentValid = validBranches.some((b: any) => b.id.toString() === form.branchId);
+              
+              setForm(p => ({ 
+                ...p, 
+                brandAccess: newBrand, 
+                branchId: currentValid ? p.branchId : (validBranches[0]?.id?.toString() || "")
+              }));
             }} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none">
               <option value="BOTH">Both (Bigwing & Redwing)</option>
               <option value="BIGWING">Bigwing Only</option>
