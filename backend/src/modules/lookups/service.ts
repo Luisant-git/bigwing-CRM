@@ -61,9 +61,14 @@ export class LookupService {
       where.modelId = BigInt(modelId);
     }
 
+    const orderBy: any[] = [{ displayOrder: "asc" }];
+    if (name !== "locations") {
+      orderBy.push({ name: "asc" });
+    }
+
     const items = await model.findMany({
       where,
-      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+      orderBy,
     });
 
     return items.map((item: any) => this.formatItem(item, name));
@@ -93,12 +98,14 @@ export class LookupService {
         ...(data.networkType !== undefined && { networkType: data.networkType }),
         ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
         ...(data.color !== undefined && { color: data.color }),
-        ...(data.regionName !== undefined && { regionName: data.regionName }),
-        ...(data.divisionName !== undefined && { divisionName: data.divisionName }),
-        ...(data.officeName !== undefined && { officeName: data.officeName }),
-        ...(data.pincode !== undefined && { pincode: data.pincode }),
-        ...(data.district !== undefined && { district: data.district }),
-        ...(data.stateName !== undefined && { stateName: data.stateName }),
+        ...(name === "locations" && {
+          regionName: data.regionName || data["Region Name"] || "",
+          divisionName: data.divisionName || data["Division Name"] || "",
+          officeName: data.officeName || data["Office Name"] || "",
+          pincode: String(data.pincode || data["Pincode"] || ""),
+          district: data.district || data["District"] || "",
+          stateName: data.stateName || data["State Name"] || "",
+        }),
         displayOrder: data.displayOrder ?? 0,
         isActive: data.isActive ?? true,
       },
@@ -132,12 +139,14 @@ export class LookupService {
         ...(data.networkType !== undefined && { networkType: data.networkType }),
         ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
         ...(data.color !== undefined && { color: data.color }),
-        ...(data.regionName !== undefined && { regionName: data.regionName }),
-        ...(data.divisionName !== undefined && { divisionName: data.divisionName }),
-        ...(data.officeName !== undefined && { officeName: data.officeName }),
-        ...(data.pincode !== undefined && { pincode: data.pincode }),
-        ...(data.district !== undefined && { district: data.district }),
-        ...(data.stateName !== undefined && { stateName: data.stateName }),
+        ...(name === "locations" && {
+          ...(data.regionName !== undefined ? { regionName: data.regionName } : data["Region Name"] !== undefined ? { regionName: data["Region Name"] } : {}),
+          ...(data.divisionName !== undefined ? { divisionName: data.divisionName } : data["Division Name"] !== undefined ? { divisionName: data["Division Name"] } : {}),
+          ...(data.officeName !== undefined ? { officeName: data.officeName } : data["Office Name"] !== undefined ? { officeName: data["Office Name"] } : {}),
+          ...(data.pincode !== undefined ? { pincode: String(data.pincode) } : data["Pincode"] !== undefined ? { pincode: String(data["Pincode"]) } : {}),
+          ...(data.district !== undefined ? { district: data.district } : data["District"] !== undefined ? { district: data["District"] } : {}),
+          ...(data.stateName !== undefined ? { stateName: data.stateName } : data["State Name"] !== undefined ? { stateName: data["State Name"] } : {}),
+        }),
         ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
