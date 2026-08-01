@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Plus, GripVertical, Pencil, Check, X, ToggleLeft, ToggleRight, Settings as SettingsIcon, Trash2, ChevronLeft
+  Plus, GripVertical, Pencil, Check, X, ToggleLeft, ToggleRight, Settings as SettingsIcon, Trash2, ChevronLeft, Download, Upload
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
@@ -18,6 +18,7 @@ const LOOKUP_SECTIONS = [
   { key: "sales-executives", label: "Sales Executives", description: "Manage names and contact numbers of Sales Executives" },
   { key: "service-executives", label: "Service Executives", description: "Manage names and contact numbers of Service Executives" },
   { key: "meta-statuses", label: "Call Statuses", description: "Manage telecaller call statuses (e.g. Completed, Not Answered, etc.)" },
+  { key: "locations", label: "Locations", description: "Manage regions, divisions, offices and pincodes" },
 ];
 
 export default function SettingsPage() {
@@ -39,16 +40,16 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Left nav */}
         <div className={`w-full shrink-0 rounded-xl bg-[#F0F2F5] py-3 lg:w-[260px] ${isMobileDetail ? "hidden lg:block" : "block"}`}>
-          <p className="mb-2 px-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+          <p className="mb-2 px-4 text-[11px] font-bold uppercase tracking-wider text-gray-500">
             Lookup Tables
           </p>
           {LOOKUP_SECTIONS.map((s) => (
             <button
               key={s.key}
               onClick={() => { setActiveSection(s.key); setIsMobileDetail(true); }}
-              className={`block w-full border-l-[3px] px-4 py-3 sm:py-2.5 text-left text-[14px] sm:text-[13px] transition-colors ${
+              className={`block w-full border-l-[3px] px-4 py-3 sm:py-2.5 text-left text-[14px] sm:text-[13px] font-bold transition-colors ${
                 activeSection === s.key
-                  ? "border-[#2E75B6] bg-white font-semibold text-[#2E75B6]"
+                  ? "border-[#2E75B6] bg-white text-[#2E75B6]"
                   : "border-transparent text-gray-600 hover:bg-[#E8EAED]"
               }`}
             >
@@ -81,6 +82,12 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
   const [newNetworkType, setNewNetworkType] = useState("");
   const [newInventoryLocation, setNewInventoryLocation] = useState("");
   const [newOrder, setNewOrder] = useState("");
+  const [newRegionName, setNewRegionName] = useState("");
+  const [newDivisionName, setNewDivisionName] = useState("");
+  const [newOfficeName, setNewOfficeName] = useState("");
+  const [newPincode, setNewPincode] = useState("");
+  const [newDistrict, setNewDistrict] = useState("");
+  const [newStateName, setNewStateName] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const brand = useBrandStore((s) => s.brand);
@@ -112,6 +119,12 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
       setNewNetworkType("");
       setNewInventoryLocation("");
       setNewOrder("");
+      setNewRegionName("");
+      setNewDivisionName("");
+      setNewOfficeName("");
+      setNewPincode("");
+      setNewDistrict("");
+      setNewStateName("");
     },
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed"),
   });
@@ -136,9 +149,52 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
     onError: (err: any) => toast.error(err.response?.data?.error?.message || "Failed to delete item"),
   });
 
+  const handleExport = async () => {
+    try {
+      const res = await api.get(`/lookups/${apiName}/export`, { responseType: "blob" });
+      const blobUrl = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `${apiName}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (err: any) {
+      toast.error("Failed to export data");
+    }
+  };
+
+  const importMut = useMutation({
+    mutationFn: (file: File) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      return api.post(`/lookups/${apiName}/import`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["lookups", apiName] });
+      const imported = res.data.data.imported;
+      const errors = res.data.data.errors;
+      if (errors > 0) {
+        toast.success(`Imported ${imported} items, ${errors} failed`);
+      } else {
+        toast.success(`Imported ${imported} items successfully`);
+      }
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error?.message || "Import failed"),
+  });
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) importMut.mutate(file);
+    e.target.value = ''; // Reset input
+  };
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (apiName === "referred-branches") {
+    if (apiName === "locations") {
+      if (!newOfficeName.trim()) return;
+    } else if (apiName === "referred-branches") {
       if (!newBranchName.trim()) return;
     } else {
       if (!newName.trim()) return;
@@ -161,6 +217,14 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
         networkType: newNetworkType.trim(),
         inventoryLocation: newInventoryLocation.trim()
       }),
+      ...(apiName === "locations" && { 
+        regionName: newRegionName.trim(), 
+        divisionName: newDivisionName.trim(), 
+        officeName: newOfficeName.trim(), 
+        pincode: newPincode.trim(), 
+        district: newDistrict.trim(), 
+        stateName: newStateName.trim()
+      }),
       displayOrder: newOrder ? Number(newOrder) : 0,
     });
   };
@@ -177,12 +241,27 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
             <p className="mt-0.5 text-[11px] sm:text-sm text-gray-500 leading-snug line-clamp-2 sm:line-clamp-none">{description}</p>
           </div>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="flex shrink-0 items-center gap-1 sm:gap-1.5 rounded-lg bg-[#2E75B6] px-2.5 sm:px-4 py-1.5 sm:py-2 text-[12px] sm:text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
-        >
-          <Plus size={14} className="sm:h-4 sm:w-4" /> Add Item
-        </button>
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1 sm:gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 sm:px-3 py-1.5 sm:py-2 text-[12px] sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+            title="Export to Excel"
+          >
+            <Download size={14} className="sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Export</span>
+          </button>
+          
+          <label className={`cursor-pointer flex items-center gap-1 sm:gap-1.5 rounded-lg border border-gray-300 bg-white px-2.5 sm:px-3 py-1.5 sm:py-2 text-[12px] sm:text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors ${importMut.isPending ? 'opacity-50 cursor-not-allowed' : ''}`} title="Import from Excel">
+            <Upload size={14} className="sm:h-4 sm:w-4" /> <span className="hidden sm:inline">{importMut.isPending ? 'Importing...' : 'Import'}</span>
+            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} className="hidden" disabled={importMut.isPending} />
+          </label>
+
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-1 sm:gap-1.5 rounded-lg bg-[#2E75B6] px-2.5 sm:px-4 py-1.5 sm:py-2 text-[12px] sm:text-sm font-semibold text-white hover:bg-[#245f96] transition-colors"
+          >
+            <Plus size={14} className="sm:h-4 sm:w-4" /> <span className="hidden sm:inline">Add Item</span>
+          </button>
+        </div>
       </div>
 
       {/* Add form Modal */}
@@ -191,7 +270,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
           onSubmit={handleCreate}
           className="flex flex-col gap-4"
         >
-          {apiName !== "referred-branches" && (
+          {apiName !== "referred-branches" && apiName !== "locations" && (
             <div>
               <label className="mb-1 block text-[13px] font-medium text-gray-700">Name *</label>
               <input
@@ -203,6 +282,66 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
                 className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
               />
             </div>
+          )}
+          {apiName === "locations" && (
+            <>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Region Name</label>
+                <input
+                  placeholder="Enter region name"
+                  value={newRegionName}
+                  onChange={(e) => setNewRegionName(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Division Name</label>
+                <input
+                  placeholder="Enter division name"
+                  value={newDivisionName}
+                  onChange={(e) => setNewDivisionName(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Office Name *</label>
+                <input
+                  placeholder="Enter office name"
+                  value={newOfficeName}
+                  onChange={(e) => setNewOfficeName(e.target.value)}
+                  required
+                  autoFocus
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">Pincode</label>
+                <input
+                  placeholder="Enter pincode"
+                  value={newPincode}
+                  onChange={(e) => setNewPincode(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">District</label>
+                <input
+                  placeholder="Enter district"
+                  value={newDistrict}
+                  onChange={(e) => setNewDistrict(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-[13px] font-medium text-gray-700">State Name</label>
+                <input
+                  placeholder="Enter state name"
+                  value={newStateName}
+                  onChange={(e) => setNewStateName(e.target.value)}
+                  className="w-full rounded-lg border border-[#D4D9E0] px-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.15)]"
+                />
+              </div>
+            </>
           )}
           {apiName === "meta-statuses" && (
             <div>
@@ -311,7 +450,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
               </div>
             </>
           )}
-          {apiName !== "referred-branches" && (
+          {apiName !== "referred-branches" && apiName !== "locations" && (
             <div>
               <label className="mb-1 block text-[13px] font-medium text-gray-700">Display Order</label>
               <input
@@ -369,15 +508,49 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
                   <div className="flex-1 flex items-center justify-between gap-6 pr-6">
                     <div className="flex-1 flex flex-col min-w-[200px]">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                        {apiName === "referred-branches" ? "Branch Name" : "Name"}
+                        {apiName === "referred-branches" ? "Branch Name" : apiName === "locations" ? "Office Name" : "Name"}
                       </span>
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="text-[13px] font-semibold text-gray-800 truncate">
-                          {apiName !== "referred-branches" ? item.name : item.branchName}
+                          {apiName === "referred-branches" ? item.branchName : apiName === "locations" ? item.officeName : item.name}
                         </span>
                         {item.mobile && <span className="text-sm text-gray-500 whitespace-nowrap">({item.mobile})</span>}
                       </div>
                     </div>
+                    {apiName === "locations" && (
+                      <>
+                        {item.regionName && (
+                          <div className="w-28 flex-shrink-0 flex flex-col">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Region</span>
+                            <span className="text-[13px] font-medium text-gray-700 truncate">{item.regionName}</span>
+                          </div>
+                        )}
+                        {item.divisionName && (
+                          <div className="w-28 flex-shrink-0 flex flex-col">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Division</span>
+                            <span className="text-[13px] font-medium text-gray-700 truncate">{item.divisionName}</span>
+                          </div>
+                        )}
+                        {item.district && (
+                          <div className="w-28 flex-shrink-0 flex flex-col">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">District</span>
+                            <span className="text-[13px] font-medium text-gray-700 truncate">{item.district}</span>
+                          </div>
+                        )}
+                        {item.stateName && (
+                          <div className="w-28 flex-shrink-0 flex flex-col">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">State</span>
+                            <span className="text-[13px] font-medium text-gray-700 truncate">{item.stateName}</span>
+                          </div>
+                        )}
+                        {item.pincode && (
+                          <div className="w-20 flex-shrink-0 flex flex-col">
+                            <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Pincode</span>
+                            <span className="text-[13px] font-medium text-gray-700 truncate">{item.pincode}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
                     {apiName === "meta-statuses" && item.color && (
                       <div className="w-16 flex-shrink-0 flex flex-col items-center">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Color</span>
@@ -409,7 +582,7 @@ function LookupEditor({ label, apiName, description, onBack }: { label: string; 
                       </div>
                     )}
                   </div>
-                  {apiName !== "referred-branches" && (
+                  {apiName !== "referred-branches" && apiName !== "locations" && (
                     <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500 whitespace-nowrap shrink-0">
                       Order: {item.displayOrder}
                     </span>
@@ -481,6 +654,12 @@ function EditRow({
   const [networkType, setNetworkType] = useState(item.networkType ?? "");
   const [inventoryLocation, setInventoryLocation] = useState(item.inventoryLocation ?? "");
   const [order, setOrder] = useState(String(item.displayOrder ?? 0));
+  const [regionName, setRegionName] = useState(item.regionName ?? "");
+  const [divisionName, setDivisionName] = useState(item.divisionName ?? "");
+  const [officeName, setOfficeName] = useState(item.officeName ?? "");
+  const [pincode, setPincode] = useState(item.pincode ?? "");
+  const [district, setDistrict] = useState(item.district ?? "");
+  const [stateName, setStateName] = useState(item.stateName ?? "");
 
   return (
     <form
@@ -494,13 +673,21 @@ function EditRow({
           ...((apiName === "referred-branches" || apiName === "sales-executives" || apiName === "service-executives") && { networkCode: networkCode.trim() }),
           ...(apiName === "referred-branches" && { networkType: networkType.trim() }),
           ...(apiName === "referred-branches" && { inventoryLocation: inventoryLocation.trim() }),
+          ...(apiName === "locations" && {
+            regionName: regionName.trim(),
+            divisionName: divisionName.trim(),
+            officeName: officeName.trim(),
+            pincode: pincode.trim(),
+            district: district.trim(),
+            stateName: stateName.trim(),
+          }),
           displayOrder: Number(order) || 0 
         });
       }}
       className="flex items-center gap-2 rounded-xl bg-blue-50 p-3 ring-1 ring-blue-200"
     >
       <GripVertical size={14} className="text-blue-300 shrink-0" />
-      {apiName !== "referred-branches" && (
+      {apiName !== "referred-branches" && apiName !== "locations" && (
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -581,7 +768,48 @@ function EditRow({
           />
         </>
       )}
-      {apiName !== "referred-branches" && (
+      {apiName === "locations" && (
+        <>
+          <input
+            placeholder="Region"
+            value={regionName}
+            onChange={(e) => setRegionName(e.target.value)}
+            className="w-24 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+          <input
+            placeholder="Division"
+            value={divisionName}
+            onChange={(e) => setDivisionName(e.target.value)}
+            className="w-24 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+          <input
+            placeholder="Office Name"
+            value={officeName}
+            onChange={(e) => setOfficeName(e.target.value)}
+            required
+            className="w-32 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+          <input
+            placeholder="Pincode"
+            value={pincode}
+            onChange={(e) => setPincode(e.target.value)}
+            className="w-20 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+          <input
+            placeholder="District"
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+            className="w-24 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+          <input
+            placeholder="State"
+            value={stateName}
+            onChange={(e) => setStateName(e.target.value)}
+            className="w-24 shrink-0 rounded-lg border border-[#2E75B6] px-3 py-1.5 text-sm focus:outline-none"
+          />
+        </>
+      )}
+      {apiName !== "referred-branches" && apiName !== "locations" && (
         <input
           type="number"
           placeholder="Order"

@@ -9,7 +9,7 @@ import {
 import toast from "react-hot-toast";
 import api from "@/lib/api";
 import { useLookup, useUsers } from "@/lib/hooks";
-import { Breadcrumb } from "@/components/ui";
+import { Breadcrumb, SearchableSelect } from "@/components/ui";
 
 export default function LeadFormPage() {
   const navigate = useNavigate();
@@ -23,6 +23,7 @@ export default function LeadFormPage() {
   const { data: serviceExecutives } = useLookup("service-executives");
   const { data: branches } = useLookup("referred-branches");
   const { data: metaStatuses } = useLookup("meta-statuses");
+  const { data: locations } = useLookup("locations");
 
   const [selectedModel, setSelectedModel] = useState("");
   const { data: variants } = useLookup("vehicle-variants", selectedModel ? { modelId: selectedModel } : undefined);
@@ -188,7 +189,14 @@ export default function LeadFormPage() {
             <InputField label="First Name *" icon={UserIcon} value={form.firstName} onChange={(v) => set("firstName", v)} required placeholder="Suresh" />
             <InputField label="Last Name" value={form.lastName} onChange={(v) => set("lastName", v)} placeholder="Kumar" />
             <InputField label="Mobile *" icon={Phone} value={form.mobile} onChange={(v) => set("mobile", v.replace(/\D/g, ''))} required placeholder="10-digit" maxLength={10} type="tel" />
-            <InputField label="Location" icon={MapPin} value={form.location} onChange={(v) => set("location", v)} placeholder="HSR Layout" />
+            <SearchableSelect 
+              label="Location" 
+              icon={MapPin} 
+              value={form.location} 
+              onChange={(v) => set("location", v)} 
+              options={(locations ?? []).map((l: any) => ({ value: l.officeName, label: l.officeName }))} 
+              placeholder="Search location..." 
+            />
           </div>
         </Section>
 

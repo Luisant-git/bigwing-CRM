@@ -16,6 +16,7 @@ const lookupModels = {
   "service-executives": () => prisma.serviceExecutive,
   "meta-statuses": () => prisma.metaStatusLookup,
   "active-stages": () => ({} as any), // Dummy for mapping
+  "locations": () => prisma.location,
 } as const;
 
 // Lookups that support admin CRUD via this module
@@ -28,6 +29,7 @@ const EDITABLE_LOOKUPS = new Set([
   "sales-executives",
   "service-executives",
   "meta-statuses",
+  "locations",
 ]);
 
 type LookupName = keyof typeof lookupModels;
@@ -67,28 +69,36 @@ export class LookupService {
     return items.map((item: any) => this.formatItem(item, name));
   }
 
-  async create(name: LookupName, data: { name: string; color?: string; mobile?: string; branchName?: string; networkCode?: string; networkType?: string; inventoryLocation?: string; displayOrder?: number; isActive?: boolean }) {
+  async create(name: LookupName, data: { name?: string; color?: string; mobile?: string; branchName?: string; networkCode?: string; networkType?: string; inventoryLocation?: string; displayOrder?: number; isActive?: boolean; regionName?: string; divisionName?: string; officeName?: string; pincode?: string; district?: string; stateName?: string; }) {
     if (!this.isEditableLookup(name)) {
       throw new AppError(400, "NOT_EDITABLE", `Lookup '${name}' is managed via its dedicated module`);
     }
 
     const model = lookupModels[name]() as any;
 
-    // Check uniqueness
-    const existing = await model.findFirst({ where: { name: data.name } });
-    if (existing) {
-      throw new AppError(409, "NAME_EXISTS", `An item with this name already exists`, "name");
+    // Check uniqueness (not for locations as they don't have a single name field)
+    if (name !== "locations" && data.name) {
+      const existing = await model.findFirst({ where: { name: data.name } });
+      if (existing) {
+        throw new AppError(409, "NAME_EXISTS", `An item with this name already exists`, "name");
+      }
     }
 
     const item = await model.create({
       data: {
-        name: data.name,
+        ...(name !== "locations" && { name: data.name }),
         ...(data.mobile !== undefined && { mobile: data.mobile }),
         ...(data.branchName !== undefined && { branchName: data.branchName }),
         ...(data.networkCode !== undefined && { networkCode: data.networkCode }),
         ...(data.networkType !== undefined && { networkType: data.networkType }),
         ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
         ...(data.color !== undefined && { color: data.color }),
+        ...(data.regionName !== undefined && { regionName: data.regionName }),
+        ...(data.divisionName !== undefined && { divisionName: data.divisionName }),
+        ...(data.officeName !== undefined && { officeName: data.officeName }),
+        ...(data.pincode !== undefined && { pincode: data.pincode }),
+        ...(data.district !== undefined && { district: data.district }),
+        ...(data.stateName !== undefined && { stateName: data.stateName }),
         displayOrder: data.displayOrder ?? 0,
         isActive: data.isActive ?? true,
       },
@@ -107,7 +117,7 @@ export class LookupService {
     const existing = await model.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, "NOT_FOUND", "Item not found");
 
-    if (data.name && data.name !== existing.name) {
+    if (name !== "locations" && data.name && data.name !== existing.name) {
       const dup = await model.findFirst({ where: { name: data.name } });
       if (dup) throw new AppError(409, "NAME_EXISTS", "An item with this name already exists", "name");
     }
@@ -115,13 +125,19 @@ export class LookupService {
     const updated = await model.update({
       where: { id },
       data: {
-        ...(data.name !== undefined && { name: data.name }),
+        ...(name !== "locations" && data.name !== undefined && { name: data.name }),
         ...(data.mobile !== undefined && { mobile: data.mobile }),
         ...(data.branchName !== undefined && { branchName: data.branchName }),
         ...(data.networkCode !== undefined && { networkCode: data.networkCode }),
         ...(data.networkType !== undefined && { networkType: data.networkType }),
         ...(data.inventoryLocation !== undefined && { inventoryLocation: data.inventoryLocation }),
         ...(data.color !== undefined && { color: data.color }),
+        ...(data.regionName !== undefined && { regionName: data.regionName }),
+        ...(data.divisionName !== undefined && { divisionName: data.divisionName }),
+        ...(data.officeName !== undefined && { officeName: data.officeName }),
+        ...(data.pincode !== undefined && { pincode: data.pincode }),
+        ...(data.district !== undefined && { district: data.district }),
+        ...(data.stateName !== undefined && { stateName: data.stateName }),
         ...(data.displayOrder !== undefined && { displayOrder: data.displayOrder }),
         ...(data.isActive !== undefined && { isActive: data.isActive }),
       },
@@ -156,7 +172,7 @@ export class LookupService {
   private formatItem(item: any, name: LookupName) {
     const base = {
       id: Number(item.id),
-      name: item.name,
+      ...(name !== "locations" && { name: item.name }),
       displayOrder: item.displayOrder,
       isActive: item.isActive,
       brand: item.brand,
@@ -185,6 +201,18 @@ export class LookupService {
 
     if (name === "meta-statuses") {
       return { ...base, color: item.color };
+    }
+
+    if (name === "locations") {
+      return {
+        ...base,
+        regionName: item.regionName,
+        divisionName: item.divisionName,
+        officeName: item.officeName,
+        pincode: item.pincode,
+        district: item.district,
+        stateName: item.stateName,
+      };
     }
 
     return base;

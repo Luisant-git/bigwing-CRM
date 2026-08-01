@@ -457,3 +457,89 @@ export function FlyingModal({
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────
+// Searchable Select — dropdown with search filter
+// ─────────────────────────────────────────────────────────────
+export function SearchableSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = "Search...",
+  required = false,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  required?: boolean;
+  icon?: any;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = options.filter(o => 
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const selectedLabel = options.find(o => o.value === value)?.label || value;
+
+  return (
+    <div className="relative">
+      <label className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+        {Icon && <Icon size={12} />}
+        {label}
+      </label>
+      <div 
+        className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm cursor-pointer flex justify-between items-center ${
+          value ? "border-[#2E75B6]/40 text-gray-800" : "border-gray-200 text-gray-400"
+        }`}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="truncate">{selectedLabel || placeholder}</span>
+        <ChevronRight size={14} className={`transition-transform ${open ? "rotate-90" : ""}`} />
+      </div>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-lg bg-white shadow-lg ring-1 ring-black/5">
+            <div className="sticky top-0 bg-white p-2 border-b border-gray-100">
+              <input 
+                type="text" 
+                placeholder="Type to search..." 
+                className="w-full rounded bg-gray-50 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#2E75B6]"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                autoFocus
+                onClick={e => e.stopPropagation()}
+              />
+            </div>
+            {filteredOptions.length > 0 ? (
+              <div className="p-1">
+                {filteredOptions.map(o => (
+                  <div
+                    key={o.value}
+                    className="cursor-pointer rounded px-3 py-2 text-sm hover:bg-gray-50 text-gray-700"
+                    onClick={() => {
+                      onChange(o.value);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                  >
+                    {o.label}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3 text-center text-sm text-gray-400">No results found</div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

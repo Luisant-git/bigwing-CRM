@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "@/lib/api";
-import { Breadcrumb } from "@/components/ui";
+import { useLookup } from "@/lib/hooks";
+import { Breadcrumb, SearchableSelect } from "@/components/ui";
 import { PageLoader } from "@/components/spinner";
 
 export default function CustomerEditPage() {
@@ -19,6 +20,8 @@ export default function CustomerEditPage() {
     queryKey: ["customers", id],
     queryFn: () => api.get(`/customers/${id}`).then((r) => r.data.data),
   });
+
+  const { data: locations } = useLookup("locations");
 
   const [form, setForm] = useState({
     firstName: "", lastName: "", mobile: "", altMobile: "",
@@ -125,7 +128,14 @@ export default function CustomerEditPage() {
             <InputField label="Mobile *" icon={Phone} value={form.mobile} onChange={(v) => set("mobile", v)} required />
             <InputField label="Alt Mobile" icon={Phone} value={form.altMobile} onChange={(v) => set("altMobile", v)} />
             <InputField label="Email" icon={Mail} value={form.email} onChange={(v) => set("email", v)} type="email" />
-            <InputField label="Location" icon={MapPin} value={form.location} onChange={(v) => set("location", v)} />
+            <SearchableSelect 
+              label="Location" 
+              icon={MapPin} 
+              value={form.location} 
+              onChange={(v) => set("location", v)} 
+              options={(locations ?? []).map((l: any) => ({ value: l.officeName, label: l.officeName }))} 
+              placeholder="Search location..." 
+            />
           </div>
         </Section>
 

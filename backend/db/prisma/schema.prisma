@@ -574,3 +574,21 @@ model AppSetting {
   @@map("app_setting")
   @@schema("app")
 }
+
+model Location {
+  id           BigInt   @id @default(autoincrement())
+  regionName   String   @map("region_name") @db.VarChar(120)
+  divisionName String   @map("division_name") @db.VarChar(120)
+  officeName   String   @map("office_name") @db.VarChar(120)
+  pincode      String   @db.VarChar(20)
+  district     String   @db.VarChar(120)
+  stateName    String   @map("state_name") @db.VarChar(120)
+  displayOrder Int      @default(0) @map("display_order")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  brand        String   @default("BIGWING") @db.VarChar(20)
+
+  @@map("location")
+  @@schema("master")
+}
