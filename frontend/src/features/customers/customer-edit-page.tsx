@@ -224,8 +224,8 @@ function Section({
   icon: any; title: string; subtitle?: string; children: React.ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
-      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-[#F8FAFC] to-white px-5 py-3">
+    <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+      <div className="flex items-center gap-3 border-b border-gray-100 bg-gradient-to-r from-[#F8FAFC] to-white px-5 py-3 rounded-t-2xl">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2E75B6]/10 text-[#2E75B6]">
           <Icon size={16} />
         </div>
