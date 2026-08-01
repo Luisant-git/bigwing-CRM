@@ -440,10 +440,17 @@ export default function LeadListPage() {
 
     {
       key: "enquiryDate",
-      label: "Enquiry Date",
+      label: "Hi-Rise Date",
       sortable: true,
       render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
       sortValue: (l: any) => l.enquiryDate,
+    },
+    {
+      key: "createdAt",
+      label: "Entered Date & Time",
+      sortable: true,
+      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{formatDateTime(l.createdAt)}</span>,
+      sortValue: (l: any) => l.createdAt,
     },
     ...(tab.startsWith("meta") || isTeleRoute ? [
       {
