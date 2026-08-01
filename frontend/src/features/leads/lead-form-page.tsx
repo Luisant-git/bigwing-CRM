@@ -79,6 +79,12 @@ export default function LeadFormPage() {
       return;
     }
 
+    const finalChannel = enquiryFor === "SERVICE" ? "SERVICE" : form.channel;
+    if (["TELE", "SOCIAL", "SERVICE"].includes(finalChannel) && !form.executiveName) {
+      toast.error(`Assigned To is required for ${finalChannel === "SOCIAL" ? "meta/social" : finalChannel.toLowerCase()} leads`);
+      return;
+    }
+
     mut.mutate({
       customer: { 
         firstName: form.firstName, 
@@ -501,6 +507,7 @@ export default function LeadFormPage() {
                 .filter((ex: any) => !form.referredFromBranch || ex.branchName === form.referredFromBranch)
                 .map((ex: any) => ({ value: ex.name, label: ex.name }))}
               disabled={!form.referredFromBranch}
+              required={["TELE", "SOCIAL", "SERVICE"].includes(enquiryFor === "SERVICE" ? "SERVICE" : form.channel)}
             />
           </div>
         </Section>

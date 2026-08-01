@@ -575,25 +575,30 @@ export class ReportService {
     const matrixMap = new Map<string, any>();
     
     // We need to fetch leads with their followup counts to calculate the matrix
-    const leadData = await prisma.lead.findMany({
+      const leadData = await prisma.lead.findMany({
       where: base,
       select: {
         executiveName: true,
         assignedTo: true,
         assignedUser: { select: { fullName: true } },
         stage: true,
+        channel: true,
         nextFollowupAt: true,
         _count: { select: { followups: true } }
       }
     });
 
+    const matrixMap = new Map<string, any>();
+    const serviceMatrixMap = new Map<string, any>();
+    
     for (const l of leadData) {
       let rawName = l.assignedUser?.fullName || l.executiveName || "Unassigned";
-      // Convert to uppercase and strip out all special characters (keep only letters, numbers, and spaces)
       let name = rawName.trim().toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
       
-      if (!matrixMap.has(name)) {
-        matrixMap.set(name, {
+      const targetMap = l.channel === "SERVICE" ? serviceMatrixMap : matrixMap;
+
+      if (!targetMap.has(name)) {
+        targetMap.set(name, {
           name,
           booking: 0,
           enquiry: 0,
@@ -604,7 +609,7 @@ export class ReportService {
           totalFollowups: 0
         });
       }
-      const m = matrixMap.get(name);
+      const m = targetMap.get(name);
       m.totalEnquiry++;
       m.totalFollowups += l._count.followups;
       
@@ -615,39 +620,50 @@ export class ReportService {
       else if (l.stage === "QUOTATION_SHARED") m.quotation++;
     }
 
-    const performanceMatrix = [...matrixMap.values()].map(m => ({
+    const mapToSortedArray = (map: Map<string, any>) => [...map.values()].map(m => ({
       ...m,
       avgFollowups: m.totalEnquiry > 0 ? Number((m.totalFollowups / m.totalEnquiry).toFixed(1)) : 0,
       conversionRate: m.totalEnquiry > 0 ? Number(((m.invoiced / m.totalEnquiry) * 100).toFixed(2)) : 0
     })).sort((a, b) => b.totalEnquiry - a.totalEnquiry);
 
-    // Process Executive Breakdown (Today/Overdue) using the same leadData
+    const performanceMatrix = mapToSortedArray(matrixMap);
+    const servicePerformanceMatrix = mapToSortedArray(serviceMatrixMap);
+
     const execBreakdownMap = new Map<string, any>();
+    const serviceBreakdownMap = new Map<string, any>();
+    
     for (const l of leadData) {
       let rawName = l.assignedUser?.fullName || l.executiveName || "Unassigned";
-      // Convert to uppercase and strip out all special characters
       let name = rawName.trim().toUpperCase().replace(/[^A-Z0-9 ]/g, "").trim();
 
-      if (!execBreakdownMap.has(name)) {
-        execBreakdownMap.set(name, { 
+      const targetMap = l.channel === "SERVICE" ? serviceBreakdownMap : execBreakdownMap;
+
+      if (!targetMap.has(name)) {
+        targetMap.set(name, { 
           name,
           today: 0, overdue: 0, upcoming: 0, noFollowup: 0, totalActive: 0, total: 0 
         });
       }
-      const e = execBreakdownMap.get(name);
+      const e = targetMap.get(name);
       e.total++;
       
       const isClosed = ["BOOKED", "INVOICED", "DELIVERED_CLOSED", "LOST"].includes(l.stage);
       if (!isClosed) {
         e.totalActive++;
-        if (!l.nextFollowupAt) e.noFollowup++;
-        else if (l.nextFollowupAt < todayStart) e.overdue++;
-        else if (l.nextFollowupAt < todayEnd) e.today++;
-        else e.upcoming++;
+        if (!l.nextFollowupAt) {
+          e.noFollowup++;
+        } else {
+          const d = l.nextFollowupAt.getTime();
+          if (d < todayStart.getTime()) e.overdue++;
+          else if (d < todayEnd.getTime()) e.today++;
+          else e.upcoming++;
+        }
       }
     }
 
-    // Process Monthly Trend
+    const executives = [...execBreakdownMap.values()].sort((a, b) => b.totalActive - a.totalActive);
+    const serviceExecutives = [...serviceBreakdownMap.values()].sort((a, b) => b.totalActive - a.totalActive);
+
     const monthMap = new Map<string, any>();
     for (const g of monthlyGroups) {
       const date = g.enquiryDate;
@@ -663,18 +679,20 @@ export class ReportService {
       if (g.stage === "LOST") m.lost += g._count.id;
     }
 
+    const trends = [...monthMap.values()].sort((a, b) => b.month.localeCompare(a.month));
+
     return {
       kpi: {
         ...kpi,
         totalData: kpi.totalEnquiries
       },
       performanceMatrix,
-      executives: [...execBreakdownMap.values()],
-      trends: [...monthMap.values()].sort((a, b) => a.month.localeCompare(b.month))
+      servicePerformanceMatrix,
+      executives,
+      serviceExecutives,
+      trends
     };
   }
 }
 
 export const reportService = new ReportService();
-
-

@@ -161,6 +161,13 @@ export default function LeadEditPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const finalChannel = lead.channel;
+    if (["TELE", "SOCIAL", "SERVICE"].includes(finalChannel) && !form.executiveName) {
+      toast.error(`Assigned To is required for ${finalChannel === "SOCIAL" ? "meta/social" : finalChannel.toLowerCase()} leads`);
+      return;
+    }
+
     const body: any = {};
     if (form.sourceId) body.sourceId = Number(form.sourceId);
     if (form.enquiryTypeId) body.enquiryTypeId = Number(form.enquiryTypeId);
@@ -488,6 +495,7 @@ export default function LeadEditPage() {
               })()}
               current={lead.executiveName || lead.assignedTo?.fullName}
               disabled={!form.referredFromBranch}
+              required={["TELE", "SOCIAL", "SERVICE"].includes(lead.channel)}
             />
           </div>
         </Section>
