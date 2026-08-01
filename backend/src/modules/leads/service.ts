@@ -357,7 +357,7 @@ async getByPhoneNumber(phoneNo: string) {
           : null,
       }),
       ...(data.metaStatus !== undefined && { metaStatus: data.metaStatus }),
-      updatedBy,
+      ...(updatedBy ? { updatedByUser: { connect: { id: updatedBy } } } : {}),
       rowVersion: { increment: 1 },
     };
 
@@ -386,7 +386,7 @@ async getByPhoneNumber(phoneNo: string) {
 
     const updateData: any = {
       stage: data.stage,
-      updatedBy: changedBy,
+      ...(changedBy ? { updatedByUser: { connect: { id: changedBy } } } : {}),
       rowVersion: { increment: 1 },
     };
 
@@ -450,7 +450,7 @@ async getByPhoneNumber(phoneNo: string) {
     }
 
     const updateData: any = {
-      updatedBy,
+      ...(updatedBy ? { updatedByUser: { connect: { id: updatedBy } } } : {}),
       rowVersion: { increment: 1 },
     };
 
