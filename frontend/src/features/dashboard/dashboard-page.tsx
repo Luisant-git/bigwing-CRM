@@ -14,6 +14,7 @@ import { PageLoader } from "@/components/spinner";
 import { useAuthStore } from "@/stores/auth";
 import TelecallerDashboard from "./telecaller-dashboard";
 import SalesExecutiveDashboard from "./sales-executive-dashboard";
+import ServiceExecutiveDashboard from "./service-executive-dashboard";
 import { useState } from "react";
 
 const PIE_COLORS = ["#2E75B6", "#27AE60", "#F2994A", "#EB5757", "#9B59B6", "#2D9CDB", "#E8792F", "#6C757D"];
@@ -24,7 +25,7 @@ export default function DashboardPage() {
   const isTelecaller = roles.includes("TELE_CALLER") || roles.includes("TELE_CALLER_TELE") || roles.includes("TELE_CALLER_META");
   const isAdmin = roles.includes("ADMIN") || roles.includes("SUPER_ADMIN") || roles.includes("MANAGER");
   
-  const [view, setView] = useState<"general" | "social" | "tele" | "sales">("general");
+  const [view, setView] = useState<"general" | "social" | "tele" | "sales" | "service">("general");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -142,6 +143,12 @@ export default function DashboardPage() {
                 Sales Performance
               </button>
               <button
+                onClick={() => setView("service")}
+                className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "service" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
+                Service Performance
+              </button>
+              <button
                 onClick={() => setView("social")}
                 className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-bold transition-all ${view === "social" ? "bg-white text-[#2E75B6] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
               >
@@ -160,6 +167,8 @@ export default function DashboardPage() {
 
       {view === "sales" && isAdmin ? (
         <SalesExecutiveDashboard dateFrom={dateFrom} dateTo={dateTo} />
+      ) : view === "service" && isAdmin ? (
+        <ServiceExecutiveDashboard dateFrom={dateFrom} dateTo={dateTo} />
       ) : view === "tele" && isAdmin ? (
         <TelecallerDashboard dateFrom={dateFrom} dateTo={dateTo} isNested={true} />
       ) : kpiLoading ? (

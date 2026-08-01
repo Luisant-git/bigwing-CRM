@@ -1,23 +1,21 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format } from "date-fns";
 import { 
   ClipboardList, CheckCircle2, XCircle, TrendingUp, 
   Clock, AlertTriangle, CalendarClock, Ban, UserCheck, 
-  BarChart3, Info, X
+  BarChart3, X
 } from "lucide-react";
 import api from "@/lib/api";
 import { PageLoader } from "@/components/spinner";
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Badge } from "@/components/ui";
 
 interface Props {
   dateFrom?: string;
   dateTo?: string;
 }
 
-export default function SalesExecutiveDashboard({ dateFrom: propDateFrom, dateTo: propDateTo }: Props) {
+export default function ServiceExecutiveDashboard({ dateFrom: propDateFrom, dateTo: propDateTo }: Props) {
   const navigate = useNavigate();
   const [internalDateFrom, setInternalDateFrom] = useState("");
   const [internalDateTo, setInternalDateTo] = useState("");
@@ -26,13 +24,13 @@ export default function SalesExecutiveDashboard({ dateFrom: propDateFrom, dateTo
   const dateTo = propDateTo || internalDateTo;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["reports", "sales-executive-detailed", dateFrom, dateTo],
-    queryFn: () => api.get("/reports/sales-executive-detailed", { params: { dateFrom, dateTo } }).then((r) => r.data.data),
+    queryKey: ["reports", "service-executive-detailed", dateFrom, dateTo],
+    queryFn: () => api.get("/reports/sales-executive-detailed", { params: { dateFrom, dateTo, channel: "SERVICE" } }).then((r) => r.data.data),
   });
 
-  if (isLoading) return <PageLoader message="Generating sales report..." />;
+  if (isLoading) return <PageLoader message="Generating service report..." />;
 
-  const { kpi, performanceMatrix = [], executives = [], trends = [] } = data || {};
+  const { kpi, servicePerformanceMatrix = [], serviceExecutives = [], trends = [] } = data || {};
 
   return (
     <div className="space-y-6">
@@ -40,8 +38,8 @@ export default function SalesExecutiveDashboard({ dateFrom: propDateFrom, dateTo
       {!propDateFrom && !propDateTo && (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 max-w-full overflow-hidden">
           <div>
-            <h1 className="text-xl font-bold text-[#1F3864]">Sales Performance Dashboard</h1>
-            <p className="text-sm text-gray-500">Comprehensive executive and follow-up metrics</p>
+            <h1 className="text-xl font-bold text-[#1F3864]">Service Performance Dashboard</h1>
+            <p className="text-sm text-gray-500">Comprehensive service advisor and follow-up metrics</p>
           </div>
           <div className="flex w-full sm:w-auto items-center gap-2 overflow-x-auto no-scrollbar">
             <input
@@ -71,25 +69,25 @@ export default function SalesExecutiveDashboard({ dateFrom: propDateFrom, dateTo
         </div>
       )}
 
-      {/* KPI Cards Row - Matches Top Row of Excel */}
+      {/* KPI Cards Row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-10">
         <KPICard label="Total Data" value={kpi?.totalData} icon={ClipboardList} color="#1F3864" />
-        <KPICard label="Enquiries" value={kpi?.totalEnquiries} icon={TrendingUp} color="#2E75B6" onClick={() => navigate({ to: "/leads", search: { tab: "all" } })} />
-        <KPICard label="Booked" value={kpi?.booked} icon={TrendingUp} color="#6366F1" onClick={() => navigate({ to: "/leads", search: { tab: "booked" } })} />
+        <KPICard label="Enquiries" value={kpi?.totalEnquiries} icon={TrendingUp} color="#2E75B6" onClick={() => navigate({ to: "/service-leads", search: { tab: "all" } })} />
+        <KPICard label="Booked" value={kpi?.booked} icon={TrendingUp} color="#6366F1" onClick={() => navigate({ to: "/service-leads", search: { tab: "booked" } })} />
         <KPICard label="Invoiced" value={kpi?.invoiced} icon={CheckCircle2} color="#27AE60" />
         <KPICard label="Lost" value={kpi?.lost} icon={XCircle} color="#EB5757" />
-        <KPICard label="Active" value={kpi?.active} icon={TrendingUp} color="#3B82F6" onClick={() => navigate({ to: "/leads", search: { tab: "active" } })} />
-        <KPICard label="Today" value={kpi?.today} icon={Clock} color="#0891B2" onClick={() => navigate({ to: "/leads", search: { tab: "today" } })} />
-        <KPICard label="Overdue" value={kpi?.overdue} icon={AlertTriangle} color="#EB5757" onClick={() => navigate({ to: "/leads", search: { tab: "overdue" } })} />
-        <KPICard label="Upcoming" value={kpi?.upcoming} icon={CalendarClock} color="#F2994A" onClick={() => navigate({ to: "/leads", search: { tab: "upcoming" } })} />
-        <KPICard label="No Followup" value={kpi?.noFollowup} icon={Ban} color="#D97706" onClick={() => navigate({ to: "/leads", search: { tab: "no-followup" } })} />
+        <KPICard label="Active" value={kpi?.active} icon={TrendingUp} color="#3B82F6" onClick={() => navigate({ to: "/service-leads", search: { tab: "active" } })} />
+        <KPICard label="Today" value={kpi?.today} icon={Clock} color="#0891B2" onClick={() => navigate({ to: "/service-leads", search: { tab: "today" } })} />
+        <KPICard label="Overdue" value={kpi?.overdue} icon={AlertTriangle} color="#EB5757" onClick={() => navigate({ to: "/service-leads", search: { tab: "overdue" } })} />
+        <KPICard label="Upcoming" value={kpi?.upcoming} icon={CalendarClock} color="#F2994A" onClick={() => navigate({ to: "/service-leads", search: { tab: "upcoming" } })} />
+        <KPICard label="No Followup" value={kpi?.noFollowup} icon={Ban} color="#D97706" onClick={() => navigate({ to: "/service-leads", search: { tab: "no-followup" } })} />
       </div>
 
-      {/* Sales Executive Performance Matrix */}
-      <MatrixTable title="Sales Executive Performance Matrix" data={performanceMatrix} />
+      {/* Service Advisor Performance Matrix */}
+      <MatrixTable title="Service Advisor Performance Matrix" data={servicePerformanceMatrix} />
 
-      {/* Executive Active Status Breakdown */}
-      <StatusBreakdownTable title="Sales Follow-up Activity Status" data={executives} />
+      {/* Service Advisor Active Status Breakdown */}
+      <StatusBreakdownTable title="Service Follow-up Activity Status" data={serviceExecutives} />
 
       {/* Monthly Trend Table */}
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-black/5 overflow-hidden">
@@ -168,7 +166,7 @@ function MatrixTable({ title, data }: { title: string; data: any[] }) {
         <table className="w-full text-sm text-left border-collapse">
           <thead>
             <tr className="bg-gray-100 border-b border-gray-200">
-              <th className="px-4 py-3 font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200 min-w-[200px]">Executive Name</th>
+              <th className="px-4 py-3 font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200 min-w-[200px]">Service Advisor Name</th>
               <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Booking</th>
               <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Enquiry</th>
               <th className="px-4 py-3 text-center font-bold text-gray-700 uppercase text-[10px] border-r border-gray-200">Enquiry Lost</th>
