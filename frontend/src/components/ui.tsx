@@ -469,6 +469,7 @@ export function SearchableSelect({
   placeholder = "Search...",
   required = false,
   icon: Icon,
+  disabled = false,
 }: {
   label: string;
   value: string;
@@ -477,6 +478,7 @@ export function SearchableSelect({
   placeholder?: string;
   required?: boolean;
   icon?: any;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -494,10 +496,14 @@ export function SearchableSelect({
         {label}
       </label>
       <div 
-        className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm cursor-pointer flex justify-between items-center ${
-          value ? "border-[#2E75B6]/40 text-gray-800" : "border-gray-200 text-gray-400"
+        className={`w-full rounded-lg border px-3 py-2.5 text-sm flex justify-between items-center ${
+          disabled 
+            ? "cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400" 
+            : value 
+              ? "cursor-pointer bg-white border-[#2E75B6]/40 text-gray-800" 
+              : "cursor-pointer bg-white border-gray-200 text-gray-400"
         }`}
-        onClick={() => setOpen(!open)}
+        onClick={() => !disabled && setOpen(!open)}
       >
         <span className="truncate">{selectedLabel || placeholder}</span>
         <ChevronRight size={14} className={`transition-transform ${open ? "rotate-90" : ""}`} />

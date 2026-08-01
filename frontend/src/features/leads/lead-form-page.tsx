@@ -270,20 +270,20 @@ export default function LeadFormPage() {
         {/* Vehicle Interest */}
         <Section icon={Bike} title="Vehicle Interest" subtitle="Which vehicle is the customer interested in">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <SelectField
+            <SearchableSelect
               label="Model"
               value={form.modelId}
               onChange={(v) => { set("modelId", v); setSelectedModel(v); set("variantId", ""); }}
               options={(models ?? []).map((m: any) => ({ value: String(m.id), label: m.name }))}
             />
-            <SelectField
+            <SearchableSelect
               label="Variant"
               value={form.variantId}
               onChange={(v) => set("variantId", v)}
               options={(variants ?? []).map((v: any) => ({ value: String(v.id), label: v.name }))}
               disabled={!selectedModel}
             />
-            <SelectField
+            <SearchableSelect
               label="Colour"
               value={form.colourId}
               onChange={(v) => set("colourId", v)}
