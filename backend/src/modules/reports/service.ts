@@ -572,7 +572,6 @@ export class ReportService {
     ]);
 
     // Process Executive Performance Matrix
-    const matrixMap = new Map<string, any>();
     
     // We need to fetch leads with their followup counts to calculate the matrix
       const leadData = await prisma.lead.findMany({
