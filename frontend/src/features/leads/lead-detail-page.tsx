@@ -320,9 +320,7 @@ export default function LeadDetailPage() {
               <Field label="Variant">{lead.variant?.name ?? lead.variant ?? "—"}</Field>
               <Field label="Colour">{lead.colour?.name ?? lead.colour ?? "—"}</Field>
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
-              {Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
-                <Field label="Hi-Rise Date & Time">{formatDate(lead.enquiryDate)}</Field>
-              )}
+
               <Field label="Enquiry Entered Date & Time">{formatDateTime(lead.createdAt)}</Field>
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
@@ -534,6 +532,7 @@ export default function LeadDetailPage() {
             dmsEnquiryNo={lead.dmsEnquiryNo} 
             linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} 
             enquiryType={lead.enquiryType?.name ?? lead.enquiryType}
+            enquiryDate={lead.enquiryDate}
           />
 
           {/* Follow-ups */}
@@ -693,11 +692,13 @@ function AssignForm({
 function HiriseStatusCard({ 
   dmsEnquiryNo, 
   linkedDmsEnquiryNo, 
-  enquiryType 
+  enquiryType,
+  enquiryDate
 }: { 
   dmsEnquiryNo?: string | null; 
   linkedDmsEnquiryNo?: string | null; 
   enquiryType?: string | null;
+  enquiryDate?: Date | string | null;
 }) {
   const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
   const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
@@ -713,12 +714,21 @@ function HiriseStatusCard({
         </span>
       </div>
       {entered && (
-        <div className="mt-2 space-y-1">
-          <p className="text-xs text-gray-500">DMS Ref: {refNo}</p>
+        <div className="mt-4 space-y-3">
+          {enquiryDate && (
+            <div>
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Hi-Rise Date & Time</p>
+              <p className="text-sm font-medium text-gray-900 mt-0.5">{formatDate(enquiryDate)}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">DMS Ref</p>
+            <p className="text-sm font-medium text-gray-900 mt-0.5">{refNo}</p>
+          </div>
           {enquiryType && (
-            <div className="mt-3 flex items-center gap-2">
-              <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Enquiry Type</span>
-              <span className="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 shadow-sm">
+            <div>
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Enquiry Type</p>
+              <span className="inline-flex mt-0.5 items-center rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10 shadow-sm">
                 {enquiryType}
               </span>
             </div>
