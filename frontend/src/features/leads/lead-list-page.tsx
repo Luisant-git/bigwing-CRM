@@ -447,7 +447,7 @@ export default function LeadListPage() {
     },
     {
       key: "createdAt",
-      label: "Entered Date & Time",
+      label: "CRM Created Date & Time",
       sortable: true,
       render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{formatDateTime(l.createdAt)}</span>,
       sortValue: (l: any) => l.createdAt,
