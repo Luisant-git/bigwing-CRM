@@ -321,7 +321,7 @@ export default function LeadDetailPage() {
               <Field label="Colour">{lead.colour?.name ?? lead.colour ?? "—"}</Field>
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
 
-              <Field label="Enquiry Created Date">{formatDate(lead.enquiryDate)}</Field>
+              <Field label="Enquiry Created Date">{formatDate(lead.linkedDmsEnquiryDate || lead.enquiryDate)}</Field>
               {!(Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && !["TELE", "SOCIAL"].includes(lead.channel?.name ?? lead.channel)) && (
                 <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
               )}
@@ -539,7 +539,7 @@ export default function LeadDetailPage() {
             dmsEnquiryNo={lead.dmsEnquiryNo} 
             linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} 
             enquiryType={lead.enquiryType?.name ?? lead.enquiryType}
-            enquiryDate={lead.enquiryDate}
+            enquiryDate={lead.linkedDmsEnquiryDate || lead.enquiryDate}
           />
 
           {/* Follow-ups */}

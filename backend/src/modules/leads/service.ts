@@ -971,8 +971,10 @@ async getByPhoneNumber(phoneNo: string) {
 
   private formatLead(l: any) {
     let linkedDmsEnquiryNo = null;
+    let linkedDmsEnquiryDate = null;
     if (!l.dmsEnquiryNo && l.customer?.leads?.length > 0) {
       linkedDmsEnquiryNo = l.customer.leads[0].dmsEnquiryNo;
+      linkedDmsEnquiryDate = l.customer.leads[0].enquiryDate;
     }
 
     return {
@@ -1019,6 +1021,7 @@ async getByPhoneNumber(phoneNo: string) {
       metaStatus: l.metaStatus,
       dmsEnquiryNo: l.dmsEnquiryNo,
       linkedDmsEnquiryNo: linkedDmsEnquiryNo,
+      linkedDmsEnquiryDate: linkedDmsEnquiryDate,
       isDeleted: l.isDeleted,
       createdAt: l.createdAt,
       updatedAt: l.updatedAt,
@@ -1033,13 +1036,15 @@ private async formatLeadDetail(l: any) {
     : null;
 
   let linkedDmsEnquiryNo: string | null = null;
+  let linkedDmsEnquiryDate: Date | null = null;
   if (!l.dmsEnquiryNo && l.customerId) {
     const dmsLead = await prisma.lead.findFirst({
       where: { customerId: l.customerId, dmsEnquiryNo: { not: null }, id: { not: l.id }, isDeleted: false },
-      select: { dmsEnquiryNo: true }
+      select: { dmsEnquiryNo: true, enquiryDate: true }
     });
     if (dmsLead) {
       linkedDmsEnquiryNo = dmsLead.dmsEnquiryNo;
+      linkedDmsEnquiryDate = dmsLead.enquiryDate;
     }
   }
 
@@ -1057,6 +1062,7 @@ private async formatLeadDetail(l: any) {
 
     dmsEnquiryNo: l.dmsEnquiryNo,
     linkedDmsEnquiryNo,
+    linkedDmsEnquiryDate,
     closureReason: l.closureReason?.name,
 
      colour: l.colour
