@@ -519,7 +519,7 @@ export default function LeadDetailPage() {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <Calendar size={14} />
-                Created {formatDate(lead.createdAt)}
+                CRM Entered {formatDate(lead.createdAt)}
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Calendar size={14} />
@@ -698,7 +698,7 @@ function HiriseStatusCard({
   dmsEnquiryNo?: string | null; 
   linkedDmsEnquiryNo?: string | null; 
   enquiryType?: string | null;
-  enquiryDate?: Date | string | null;
+  enquiryDate?: string | null;
 }) {
   const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
   const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
