@@ -218,7 +218,7 @@ export class LeadService {
                 none: { seqNo: { gt: parseInt(followupSeq) } }
               }
         }] : []),
-        ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+        ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
         ...(hiriseStatus === "ENTERED" ? [{
@@ -537,7 +537,7 @@ async getByPhoneNumber(phoneNo: string) {
         }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
         ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
-        ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+        ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
         ...(hiriseStatus === "ENTERED" ? [{
           OR: [
             { dmsEnquiryNo: { not: null } },
@@ -659,7 +659,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
-          ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+          ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
           ...(hiriseStatus === "ENTERED" ? [{
@@ -748,7 +748,7 @@ async getByPhoneNumber(phoneNo: string) {
                   none: { seqNo: { gt: parseInt(followupSeq) } }
                 }
           }] : []),
-          ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
+          ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
           ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
           ...(hiriseStatus === "ENTERED" ? [{
