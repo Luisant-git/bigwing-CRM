@@ -250,6 +250,22 @@ export default function LeadListPage() {
     COLD: countQueries[2].data ?? 0,
   };
 
+  const extraCountQueries = useQueries({
+    queries: ["__CONTACTED__", "__NON_CONTACTED__", "__OPEN__"].map((st) => ({
+      queryKey: ["leads-count", tab, "extra", st, countParams],
+      queryFn: () =>
+        api
+          .get(activeTab.endpoint, { params: { ...countParams, metaStatus: st } })
+          .then((r) => r.data.meta?.total ?? 0),
+      staleTime: 30_000,
+    })),
+  });
+  const extraCounts = {
+    CONTACTED: extraCountQueries[0].data ?? 0,
+    NON_CONTACTED: extraCountQueries[1].data ?? 0,
+    OPEN: extraCountQueries[2].data ?? 0,
+  };
+
   const hiriseCountQueries = useQueries({
     queries: ["ENTERED", "NOT_ENTERED"].map((status) => ({
       queryKey: ["leads-hirise-count", tab, status, countParams],
@@ -580,6 +596,30 @@ export default function LeadListPage() {
         {(isTeleRoute || isMetaRoute) && (
           <>
             <SummaryCard
+              label="Contacted"
+              value={extraCounts.CONTACTED}
+              icon={Headset}
+              color="#3B82F6"
+              active={metaStatus === "__CONTACTED__"}
+              onClick={() => { setMetaStatus(metaStatus === "__CONTACTED__" ? "" : "__CONTACTED__"); setPage(1); }}
+            />
+            <SummaryCard
+              label="Non-Contacted"
+              value={extraCounts.NON_CONTACTED}
+              icon={MessageCircle}
+              color="#F59E0B"
+              active={metaStatus === "__NON_CONTACTED__"}
+              onClick={() => { setMetaStatus(metaStatus === "__NON_CONTACTED__" ? "" : "__NON_CONTACTED__"); setPage(1); }}
+            />
+            <SummaryCard
+              label="Open Leads"
+              value={extraCounts.OPEN}
+              icon={Megaphone}
+              color="#64748B"
+              active={metaStatus === "__OPEN__"}
+              onClick={() => { setMetaStatus(metaStatus === "__OPEN__" ? "" : "__OPEN__"); setPage(1); }}
+            />
+            <SummaryCard
               label="Hirise Entered"
               value={hiriseCounts.ENTERED}
               icon={CheckCircle}
@@ -702,6 +742,7 @@ export default function LeadListPage() {
                 className="border-0 bg-transparent py-1 text-xs font-medium text-gray-700 focus:outline-none w-36"
               >
                 <option value="">All statuses</option>
+                <option value="__OPEN__">Open Leads</option>
                 {(metaStatuses ?? []).map((status: any) => (
                   <option key={status.id} value={status.name}>
                     {status.name}

@@ -220,7 +220,7 @@ export class LeadService {
         }] : []),
         ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
-        ...(metaStatus ? [{ metaStatus }] : []),
+        ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
         ...(hiriseStatus === "ENTERED" ? [{
           OR: [
             { dmsEnquiryNo: { not: null } },
@@ -536,7 +536,7 @@ async getByPhoneNumber(phoneNo: string) {
               }
         }] : []),
         ...(metaForm ? [{ metaFormName: metaForm }] : []),
-        ...(metaStatus ? [{ metaStatus }] : []),
+        ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
         ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
         ...(hiriseStatus === "ENTERED" ? [{
           OR: [
@@ -661,7 +661,7 @@ async getByPhoneNumber(phoneNo: string) {
           }] : []),
           ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
-          ...(metaStatus ? [{ metaStatus }] : []),
+          ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
           ...(hiriseStatus === "ENTERED" ? [{
             OR: [
               { dmsEnquiryNo: { not: null } },
@@ -750,7 +750,7 @@ async getByPhoneNumber(phoneNo: string) {
           }] : []),
           ...(contactStatus === "CONTACTED" ? [{ stage: "NEW", OR: [{ metaStatus: { not: null } }, { assignedTo: { not: null } }, { executiveName: { not: null } }] }] : contactStatus === "NON_CONTACTED" ? [{ stage: "NEW", metaStatus: null, assignedTo: null, executiveName: null }] : contactStatus === "COMPLETED" ? [{ stage: { not: "NEW" } }] : []),
           ...(metaForm ? [{ metaFormName: metaForm }] : []),
-          ...(metaStatus ? [{ metaStatus }] : []),
+          ...(metaStatus === "__OPEN__" ? [{ metaStatus: null }] : metaStatus === "__NON_CONTACTED__" ? [{ metaStatus: { in: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] } }] : metaStatus === "__CONTACTED__" ? [{ metaStatus: { notIn: ["RNR", "Switched OFF", "Wrong Number", "Number Busy", "Busy", "Not Reachable"] }, NOT: { metaStatus: null } }] : metaStatus ? [{ metaStatus }] : []),
           ...(hiriseStatus === "ENTERED" ? [{
             OR: [
               { dmsEnquiryNo: { not: null } },
