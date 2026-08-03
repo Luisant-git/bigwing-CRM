@@ -449,7 +449,7 @@ export default function LeadListPage() {
       key: "createdAt",
       label: "CRM Created Date & Time",
       sortable: true,
-      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? "—" : formatDateTime(l.createdAt)}</span>,
+      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{(Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) && !["TELE", "SOCIAL"].includes(l.channel?.name ?? l.channel)) ? "—" : formatDateTime(l.createdAt)}</span>,
       sortValue: (l: any) => l.createdAt,
     },
     ...(tab.startsWith("meta") || isTeleRoute ? [
