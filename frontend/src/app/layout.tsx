@@ -166,6 +166,9 @@ export default function AppLayout() {
 
                 return true;
               }
+              if (user?.roles?.includes("MANAGER")) {
+                if (["/import", "/import-logs"].includes(item.to)) return false;
+              }
               return true;
             })
             .map((item) => {

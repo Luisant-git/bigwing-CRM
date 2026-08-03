@@ -157,12 +157,14 @@ export default function UserListPage() {
           </p>
         </div>
         <div className="flex shrink-0 items-center justify-end gap-2">
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
-          >
-            <Plus size={16} /> <span>Add User</span>
-          </button>
+          {user?.roles?.some((r: string) => ["SUPER_ADMIN", "ADMIN"].includes(r)) && (
+            <button
+              onClick={() => setShowForm(true)}
+              className="flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-[#2E75B6] to-[#245f96] px-3 sm:px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:shadow-lg hover:from-[#245f96] hover:to-[#1a4472]"
+            >
+              <Plus size={16} /> <span>Add User</span>
+            </button>
+          )}
         </div>
       </div>
 

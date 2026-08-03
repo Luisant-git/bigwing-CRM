@@ -16,8 +16,8 @@ export default function CustomerDetailPage() {
   const user = useAuthStore((s) => s.user);
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
-  // Only SUPER_ADMIN and MANAGER can delete (matches backend RBAC)
-  const canDelete = user?.roles?.some((r) => r === "SUPER_ADMIN" || r === "MANAGER");
+  const canEdit = user?.roles?.some((r) => ["SUPER_ADMIN", "ADMIN"].includes(r));
+  const canDelete = user?.roles?.some((r) => ["SUPER_ADMIN", "ADMIN"].includes(r));
 
   const { data, isLoading } = useQuery({
     queryKey: ["customers", id],
@@ -59,13 +59,15 @@ export default function CustomerDetailPage() {
           <p className="text-gray-500">{c.mobile}</p>
         </div>
         <div className="flex gap-2">
-          <Link
-            to="/customers/$id/edit"
-            params={{ id: String(c.id) }}
-            className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-          >
-            <Pencil size={14} /> Edit
-          </Link>
+          {canEdit && (
+            <Link
+              to="/customers/$id/edit"
+              params={{ id: String(c.id) }}
+              className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            >
+              <Pencil size={14} /> Edit
+            </Link>
+          )}
           {canDelete && (
             <button
               onClick={() => setShowConfirmDelete(true)}
