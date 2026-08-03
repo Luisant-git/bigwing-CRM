@@ -449,7 +449,11 @@ export default function LeadListPage() {
       key: "createdAt",
       label: "CRM Created Date & Time",
       sortable: true,
-      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{formatDateTime(l.createdAt)}</span>,
+      render: (l: any) => {
+        const isTeleOrSocial = l.channel === 'TELE' || l.channel === 'SOCIAL' || l.channel?.name === 'TELE' || l.channel?.name === 'SOCIAL';
+        const hideCrmEntered = Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) && !isTeleOrSocial;
+        return <span className="text-gray-500 whitespace-nowrap">{hideCrmEntered ? "—" : formatDateTime(l.createdAt)}</span>;
+      },
       sortValue: (l: any) => l.createdAt,
     },
     ...(tab.startsWith("meta") || isTeleRoute ? [

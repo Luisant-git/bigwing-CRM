@@ -322,7 +322,7 @@ export default function LeadDetailPage() {
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
 
               <Field label="Enquiry Created Date">{formatDate(lead.enquiryDate)}</Field>
-              <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
+
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
               </Field>
@@ -518,10 +518,12 @@ export default function LeadDetailPage() {
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Timeline</h2>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-gray-500">
-                <Calendar size={14} />
-                CRM Entered {formatDate(lead.createdAt)}
-              </div>
+              {(!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) || lead.channel === 'TELE' || lead.channel === 'SOCIAL' || lead.channel?.name === 'TELE' || lead.channel?.name === 'SOCIAL') && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Calendar size={14} />
+                  CRM Entered {formatDate(lead.createdAt)}
+                </div>
+              )}
               {lead.createdAt !== lead.updatedAt && (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} />
@@ -536,7 +538,6 @@ export default function LeadDetailPage() {
             linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} 
             enquiryType={lead.enquiryType?.name ?? lead.enquiryType}
             enquiryDate={lead.enquiryDate}
-            channel={lead.channel?.name ?? lead.channel}
           />
 
           {/* Follow-ups */}
@@ -697,34 +698,25 @@ function HiriseStatusCard({
   dmsEnquiryNo, 
   linkedDmsEnquiryNo, 
   enquiryType,
-  enquiryDate,
-  channel
+  enquiryDate
 }: { 
   dmsEnquiryNo?: string | null; 
   linkedDmsEnquiryNo?: string | null; 
   enquiryType?: string | null;
   enquiryDate?: string | null;
-  channel?: string | null;
 }) {
   const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
   const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
   return (
     <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
       <h2 className="mb-3 font-semibold">Hirise Honda System</h2>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex h-2.5 w-2.5 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
-          />
-          <span className={`text-sm font-medium ${entered ? "text-green-700" : "text-gray-500"}`}>
-            {entered ? "Entered" : "Not entered"}
-          </span>
-        </div>
-        {entered && channel !== "TELE" && (
-          <span className="text-[10px] font-semibold text-gray-400 tracking-wide">
-            Directly from Hi-Rise Excel
-          </span>
-        )}
+      <div className="flex items-center gap-2">
+        <span
+          className={`inline-flex h-2.5 w-2.5 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
+        />
+        <span className={`text-sm font-medium ${entered ? "text-green-700" : "text-gray-500"}`}>
+          {entered ? "Entered" : "Not entered"}
+        </span>
       </div>
       {entered && (
         <div className="mt-4 space-y-3">
