@@ -322,9 +322,7 @@ export default function LeadDetailPage() {
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
 
               <Field label="Enquiry Created Date">{formatDate(lead.enquiryDate)}</Field>
-              {(!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) || (lead.channel?.name || lead.channel) === "TELE") && (
-                <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
-              )}
+              <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
               </Field>
@@ -520,12 +518,10 @@ export default function LeadDetailPage() {
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Timeline</h2>
             <div className="space-y-2 text-sm">
-              {(!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) || (lead.channel?.name || lead.channel) === "TELE") && (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Calendar size={14} />
-                  CRM Entered {formatDate(lead.createdAt)}
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-gray-500">
+                <Calendar size={14} />
+                CRM Entered {formatDate(lead.createdAt)}
+              </div>
               {lead.createdAt !== lead.updatedAt && (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} />
