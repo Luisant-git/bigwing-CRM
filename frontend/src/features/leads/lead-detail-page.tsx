@@ -520,16 +520,18 @@ export default function LeadDetailPage() {
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Timeline</h2>
             <div className="space-y-2 text-sm">
-              {!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
+              {!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && formatDate(lead.createdAt) === formatDate(lead.updatedAt) && (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} />
                   CRM Entered {formatDate(lead.createdAt)}
                 </div>
               )}
-              <div className="flex items-center gap-2 text-gray-500">
-                <Calendar size={14} />
-                Updated {formatDate(lead.updatedAt)}
-              </div>
+              {formatDate(lead.createdAt) !== formatDate(lead.updatedAt) && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Calendar size={14} />
+                  CRM Updated {formatDate(lead.updatedAt)}
+                </div>
+              )}
             </div>
           </div>
 
