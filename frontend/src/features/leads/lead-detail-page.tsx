@@ -320,7 +320,9 @@ export default function LeadDetailPage() {
               <Field label="Variant">{lead.variant?.name ?? lead.variant ?? "—"}</Field>
               <Field label="Colour">{lead.colour?.name ?? lead.colour ?? "—"}</Field>
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
-              <Field label="Hi-Rise Date & Time">{formatDate(lead.enquiryDate)}</Field>
+              {Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
+                <Field label="Hi-Rise Date & Time">{formatDate(lead.enquiryDate)}</Field>
+              )}
               <Field label="Enquiry Entered Date & Time">{formatDateTime(lead.createdAt)}</Field>
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}

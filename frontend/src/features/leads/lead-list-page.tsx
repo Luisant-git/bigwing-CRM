@@ -442,8 +442,8 @@ export default function LeadListPage() {
       key: "enquiryDate",
       label: "Hi-Rise Date",
       sortable: true,
-      render: (l: any) => <span className="text-gray-500">{formatDate(l.enquiryDate)}</span>,
-      sortValue: (l: any) => l.enquiryDate,
+      render: (l: any) => <span className="text-gray-500">{Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? formatDate(l.enquiryDate) : "—"}</span>,
+      sortValue: (l: any) => Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? l.enquiryDate : 0,
     },
     {
       key: "createdAt",
