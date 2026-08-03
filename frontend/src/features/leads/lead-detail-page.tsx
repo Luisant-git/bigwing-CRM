@@ -699,7 +699,8 @@ function HiriseStatusCard({
   dmsEnquiryNo, 
   linkedDmsEnquiryNo, 
   enquiryType,
-  enquiryDate
+  enquiryDate,
+  channel
 }: { 
   dmsEnquiryNo?: string | null; 
   linkedDmsEnquiryNo?: string | null; 
