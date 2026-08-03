@@ -526,7 +526,7 @@ export default function LeadDetailPage() {
                   CRM Entered {formatDate(lead.createdAt)}
                 </div>
               )}
-              {lead.createdAt !== lead.updatedAt && (
+              {formatDate(lead.createdAt) !== formatDate(lead.updatedAt) && (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} />
                   CRM Updated {formatDate(lead.updatedAt)}
