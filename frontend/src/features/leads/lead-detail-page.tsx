@@ -321,7 +321,9 @@ export default function LeadDetailPage() {
               <Field label="Colour">{lead.colour?.name ?? lead.colour ?? "—"}</Field>
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
 
-              <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
+              {!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
+                <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
+              )}
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
               </Field>
