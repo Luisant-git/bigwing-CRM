@@ -717,9 +717,14 @@ function HiriseStatusCard({
           className={`inline-flex h-2.5 w-2.5 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
         />
         <span className={`text-sm font-medium ${entered ? "text-green-700" : "text-gray-500"}`}>
-          {entered ? (dmsEnquiryNo && !linkedDmsEnquiryNo ? "Imported from Hi-Rise Excel" : "Entered") : "Not entered"}
+          {entered ? "Entered" : "Not entered"}
         </span>
       </div>
+      {dmsEnquiryNo && !linkedDmsEnquiryNo && (
+        <p className="mt-1.5 text-[11px] text-gray-500 italic">
+          Lead is directly from Hirise Excel
+        </p>
+      )}
       {entered && (
         <div className="mt-4 space-y-3">
           {enquiryDate && (
