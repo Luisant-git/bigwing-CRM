@@ -538,6 +538,7 @@ export default function LeadDetailPage() {
             linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} 
             enquiryType={lead.enquiryType?.name ?? lead.enquiryType}
             enquiryDate={lead.enquiryDate}
+            channel={lead.channel?.name ?? lead.channel}
           />
 
           {/* Follow-ups */}
@@ -704,8 +705,10 @@ function HiriseStatusCard({
   linkedDmsEnquiryNo?: string | null; 
   enquiryType?: string | null;
   enquiryDate?: string | null;
+  channel?: string | null;
 }) {
   const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
+  const isDirectFromHirise = entered && channel !== 'TELE' && channel !== 'SOCIAL';
   const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
   return (
     <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
@@ -715,7 +718,7 @@ function HiriseStatusCard({
           className={`inline-flex h-2.5 w-2.5 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
         />
         <span className={`text-sm font-medium ${entered ? "text-green-700" : "text-gray-500"}`}>
-          {entered ? "Entered" : "Not entered"}
+          {entered ? (isDirectFromHirise ? "Directly from Hi-Rise" : "Entered") : "Not entered"}
         </span>
       </div>
       {entered && (
