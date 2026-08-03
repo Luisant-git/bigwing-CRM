@@ -712,19 +712,21 @@ function HiriseStatusCard({
   return (
     <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
       <h2 className="mb-3 font-semibold">Hirise Honda System</h2>
-      <div className="flex items-center gap-2">
+      <div className="flex items-start gap-2">
         <span
-          className={`inline-flex h-2.5 w-2.5 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
+          className={`mt-1.5 inline-flex h-2.5 w-2.5 shrink-0 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
         />
-        <span className={`text-sm font-medium ${entered ? "text-green-700" : "text-gray-500"}`}>
-          {entered ? "Entered" : "Not entered"}
-        </span>
+        <div className="flex flex-col">
+          <span className={`text-sm font-medium leading-5 ${entered ? "text-green-700" : "text-gray-500"}`}>
+            {entered ? "Entered" : "Not entered"}
+          </span>
+          {dmsEnquiryNo && !linkedDmsEnquiryNo && (
+            <span className="mt-0.5 text-[11px] font-medium italic text-gray-600">
+              Lead is directly from Hirise Excel
+            </span>
+          )}
+        </div>
       </div>
-      {dmsEnquiryNo && !linkedDmsEnquiryNo && (
-        <p className="mt-1.5 text-[11px] text-gray-500 italic">
-          Lead is directly from Hirise Excel
-        </p>
-      )}
       {entered && (
         <div className="mt-4 space-y-3">
           {enquiryDate && (
