@@ -322,7 +322,9 @@ export default function LeadDetailPage() {
               <Field label="Branch">{lead.referredFromBranch?.name ?? lead.referredFromBranch ?? "—"}</Field>
 
               <Field label="Enquiry Created Date">{formatDate(lead.enquiryDate)}</Field>
-
+              {!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
+                <Field label="CRM Created Date & Time">{formatDateTime(lead.createdAt)}</Field>
+              )}
               <Field label="Current Follow-up">
                 {formatDateTime(lead.lastFollowupAt) || "—"}
               </Field>
@@ -518,7 +520,7 @@ export default function LeadDetailPage() {
           <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
             <h2 className="mb-4 font-semibold">Timeline</h2>
             <div className="space-y-2 text-sm">
-              {(!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) || lead.channel === 'TELE' || lead.channel === 'SOCIAL' || lead.channel?.name === 'TELE' || lead.channel?.name === 'SOCIAL') && (
+              {!Boolean(lead.dmsEnquiryNo || lead.linkedDmsEnquiryNo) && (
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} />
                   CRM Entered {formatDate(lead.createdAt)}
@@ -538,7 +540,6 @@ export default function LeadDetailPage() {
             linkedDmsEnquiryNo={lead.linkedDmsEnquiryNo} 
             enquiryType={lead.enquiryType?.name ?? lead.enquiryType}
             enquiryDate={lead.enquiryDate}
-            channel={lead.channel?.name ?? lead.channel}
           />
 
           {/* Follow-ups */}
@@ -699,17 +700,14 @@ function HiriseStatusCard({
   dmsEnquiryNo, 
   linkedDmsEnquiryNo, 
   enquiryType,
-  enquiryDate,
-  channel
+  enquiryDate
 }: { 
   dmsEnquiryNo?: string | null; 
   linkedDmsEnquiryNo?: string | null; 
   enquiryType?: string | null;
   enquiryDate?: string | null;
-  channel?: string | null;
 }) {
   const entered = Boolean(dmsEnquiryNo || linkedDmsEnquiryNo);
-  const isDirectFromHirise = entered && channel !== 'TELE' && channel !== 'SOCIAL';
   const refNo = dmsEnquiryNo || linkedDmsEnquiryNo;
   return (
     <div className="rounded-xl bg-white p-5 ring-1 ring-gray-200">
@@ -719,7 +717,7 @@ function HiriseStatusCard({
           className={`inline-flex h-2.5 w-2.5 rounded-full ${entered ? "bg-green-500" : "bg-gray-400"}`}
         />
         <span className={`text-sm font-medium ${entered ? "text-green-700" : "text-gray-500"}`}>
-          {entered ? (isDirectFromHirise ? "Directly from Hi-Rise" : "Entered") : "Not entered"}
+          {entered ? "Entered" : "Not entered"}
         </span>
       </div>
       {entered && (
