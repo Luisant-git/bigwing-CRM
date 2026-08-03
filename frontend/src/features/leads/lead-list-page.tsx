@@ -454,20 +454,22 @@ export default function LeadListPage() {
       }
     ] : []),
 
-    {
-      key: "enquiryDate",
-      label: "Hi-Rise Date",
-      sortable: true,
-      render: (l: any) => <span className="text-gray-500">{Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? formatDate(l.linkedDmsEnquiryDate || l.enquiryDate) : "—"}</span>,
-      sortValue: (l: any) => Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? (l.linkedDmsEnquiryDate || l.enquiryDate) : 0,
-    },
-    {
-      key: "createdAt",
-      label: "CRM Created Date & Time",
-      sortable: true,
-      render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{(Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) && !["TELE", "SOCIAL"].includes(l.channel?.name ?? l.channel)) ? "—" : formatDateTime(l.createdAt)}</span>,
-      sortValue: (l: any) => l.createdAt,
-    },
+    ...(!isMetaRoute && !isTeleRoute && !isServiceRoute ? [
+      {
+        key: "enquiryDate",
+        label: "Hi-Rise Date",
+        sortable: true,
+        render: (l: any) => <span className="text-gray-500">{Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? formatDate(l.linkedDmsEnquiryDate || l.enquiryDate) : "—"}</span>,
+        sortValue: (l: any) => Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) ? (l.linkedDmsEnquiryDate || l.enquiryDate) : 0,
+      }
+    ] : []),
+    // {
+    //   key: "createdAt",
+    //   label: "CRM Created Date & Time",
+    //   sortable: true,
+    //   render: (l: any) => <span className="text-gray-500 whitespace-nowrap">{(Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo) && !["TELE", "SOCIAL"].includes(l.channel?.name ?? l.channel)) ? "—" : formatDateTime(l.createdAt)}</span>,
+    //   sortValue: (l: any) => l.createdAt,
+    // },
     ...(tab.startsWith("meta") || isTeleRoute ? [
       {
         key: "metaStatus",
