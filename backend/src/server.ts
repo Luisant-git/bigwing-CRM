@@ -55,18 +55,18 @@ app.use(express.urlencoded({ limit: "100mb", extended: true }));
 app.use(requestIdMiddleware);
 app.use(brandMiddleware);
 
-app.use(
-  rateLimit({
-    windowMs: env.RATE_LIMIT_WINDOW_MS,
-    max: env.RATE_LIMIT_MAX,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: {
-      success: false,
-      error: { code: "RATE_LIMITED", message: "Too many requests" },
-    },
-  })
-);
+// app.use(
+//   rateLimit({
+//     windowMs: env.RATE_LIMIT_WINDOW_MS,
+//     max: env.RATE_LIMIT_MAX,
+//     standardHeaders: true,
+//     legacyHeaders: false,
+//     message: {
+//       success: false,
+//       error: { code: "RATE_LIMITED", message: "Too many requests" },
+//     },
+//   })
+// );
 
 // ─── Health check ───────────────────────────────────────────────
 app.get("/api/health", (_req, res) => {
