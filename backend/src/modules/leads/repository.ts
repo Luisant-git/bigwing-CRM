@@ -33,7 +33,24 @@ const listIncludes = {
   },
 } as const;
 
+const exportIncludes = {
+  ...listIncludes,
+  followups: {
+    orderBy: { seqNo: "asc" as const },
+    select: { seqNo: true, followupDate: true, channel: true, remark: true, outcome: true, nextActionAt: true },
+  },
+};
+
 export class LeadRepository {
+  async findManyForExport(params: { where: any; orderBy?: any }) {
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.lead.findMany({
+      where: { ...params.where, brand },
+      orderBy: params.orderBy || [{ enquiryDate: "desc" }, { createdAt: "desc" }],
+      include: exportIncludes,
+    });
+  }
+
   async findMany(params: { where: any; skip?: number; take?: number; orderBy?: any }) {
     const brand = brandContext.getStore() || "BIGWING";
     return prisma.lead.findMany({

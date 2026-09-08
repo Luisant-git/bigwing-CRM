@@ -696,7 +696,7 @@ async getByPhoneNumber(phoneNo: string) {
           { createdAt: "desc" }
         ];
       }
-      leads = await leadRepository.findMany({ where, orderBy });
+      leads = await leadRepository.findManyForExport({ where, orderBy });
     } else {
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -802,7 +802,7 @@ async getByPhoneNumber(phoneNo: string) {
           { createdAt: "desc" }
         ];
       }
-      leads = await leadRepository.findMany({ where, orderBy });
+      leads = await leadRepository.findManyForExport({ where, orderBy });
     }
 
     const formatted = leads.map(this.formatLead);
@@ -813,7 +813,10 @@ async getByPhoneNumber(phoneNo: string) {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const data = formatted.map((l) => {
+    // Find max followup count across all leads for column generation
+    const maxFollowups = leads.reduce((max: number, l: any) => Math.max(max, l.followups?.length ?? 0), 0);
+
+    const data = formatted.map((l, idx) => {
       // Check for WhatsApp/Campaign format
       const isWhatsapp = String(filters?.format || "").toLowerCase() === "whatsapp";
       
@@ -847,41 +850,93 @@ async getByPhoneNumber(phoneNo: string) {
         LOST: "LOST",
       };
 
+      const isTeleMeta = view.startsWith("meta") || String(filters?.channel || "").includes("TELE") || String(filters?.channel || "").includes("SOCIAL");
+      const hiriseEntered = Boolean(l.dmsEnquiryNo || l.linkedDmsEnquiryNo);
+
+      // Build F1, F2, F3... columns from raw leads followups
+      const rawFollowups: any[] = (leads[idx] as any)?.followups ?? [];
+      const followupCols: Record<string, string> = {};
+      for (let i = 0; i < maxFollowups; i++) {
+        const f = rawFollowups[i];
+        const n = i + 1;
+        if (f) {
+          followupCols[`F${n} Date`] = f.followupDate ? new Date(f.followupDate).toLocaleDateString("en-IN") : "";
+          followupCols[`F${n} Channel`] = f.channel || "";
+          followupCols[`F${n} Outcome`] = f.outcome || "";
+          followupCols[`F${n} Remark`] = f.remark || "";
+          followupCols[`F${n} Next Action`] = f.nextActionAt ? new Date(f.nextActionAt).toLocaleDateString("en-IN") : "";
+        } else {
+          followupCols[`F${n} Date`] = "";
+          followupCols[`F${n} Channel`] = "";
+          followupCols[`F${n} Outcome`] = "";
+          followupCols[`F${n} Remark`] = "";
+          followupCols[`F${n} Next Action`] = "";
+        }
+      }
+
       const common = {
+        "S.No": idx + 1,
         "Enquiry No": l.enquiryNo,
-        "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`,
+        "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`.trim(),
         "Mobile": l.customer?.mobile,
-        "Model": l.model,
+        "Model": l.model || "",
         "Stage": stageMap[l.stage] || l.stage?.replace(/_/g, " "),
-        "Interest": l.interestLevel,
+        "Interest": l.interestLevel || "",
         "Assigned To": l.assignedTo?.fullName || l.executiveName || "Unassigned",
+        "Branch": l.referredFromBranch || "",
+        "Source": l.source || "",
+        "Channel": l.channel || "",
+        "Enquiry Date": l.enquiryDate ? new Date(l.enquiryDate).toLocaleDateString("en-IN") : "",
+        "Created At": l.createdAt ? new Date(l.createdAt).toLocaleString("en-IN") : "",
+        "Updated By": l.updatedByUsername || "",
       };
 
       if (view === "all" || view.startsWith("meta") || view === "service") {
         return {
           ...common,
-          "Enquiry Date": l.enquiryDate ? new Date(l.enquiryDate).toLocaleDateString() : "",
-          "Channel": l.channel,
-          "Source": l.source,
-          "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
-          "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleDateString() : "None",
+          ...(isTeleMeta && {
+            "Call Status": l.metaStatus || "Open",
+            "Meta Form": l.metaFormName || "",
+            "Hirise Status": hiriseEntered ? "Entered" : "Not Entered",
+            "Hirise Enquiry No": l.dmsEnquiryNo || l.linkedDmsEnquiryNo || "",
+          }),
+          "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleString("en-IN") : "None",
+          "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleString("en-IN") : "None",
+          "Telecaller Remark": l.telecallerRemark || "",
+          "Follow-up Remark": l.latestFollowupRemark || "",
           "Remarks": l.remark || "",
-          "Follow up Remark": l.latestFollowupRemark || l.telecallerRemark || "",
+          ...followupCols,
         };
       } else {
-        // Targeted format for follow-up views
         return {
           ...common,
-          "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleDateString() : "None",
-          "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleDateString() : "None",
+          ...(isTeleMeta && {
+            "Call Status": l.metaStatus || "Open",
+            "Meta Form": l.metaFormName || "",
+            "Hirise Status": hiriseEntered ? "Entered" : "Not Entered",
+            "Hirise Enquiry No": l.dmsEnquiryNo || l.linkedDmsEnquiryNo || "",
+          }),
+          "Last Follow-up": l.lastFollowupAt ? new Date(l.lastFollowupAt).toLocaleString("en-IN") : "None",
+          "Next Follow-up": l.nextFollowupAt ? new Date(l.nextFollowupAt).toLocaleString("en-IN") : "None",
           ...(view === "overdue" && { "Overdue Days": overdueDays }),
+          "Telecaller Remark": l.telecallerRemark || "",
+          "Follow-up Remark": l.latestFollowupRemark || "",
           "Remarks": l.remark || "",
-          "Follow up Remark": l.latestFollowupRemark || l.telecallerRemark || "",
+          ...followupCols,
         };
       }
     });
 
     const sheet = XLSX.utils.json_to_sheet(data);
+
+    // Bold header row
+    const range = XLSX.utils.decode_range(sheet["!ref"] || "A1");
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cellAddr = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (sheet[cellAddr]) {
+        sheet[cellAddr].s = { font: { bold: true }, fill: { fgColor: { rgb: "1F3864" } }, fontColor: { rgb: "FFFFFF" } };
+      }
+    }
     
     // Set column widths based on view/format
     let widths = [];
@@ -890,37 +945,43 @@ async getByPhoneNumber(phoneNo: string) {
         { wch: 35 }, // Customer Name
         { wch: 20 }, // Phone Number
       ];
-    } else if (view === "all" || view.startsWith("meta") || view === "service") {
-      widths = [
-        { wch: 15 }, // Enquiry No
-        { wch: 25 }, // Customer Name
-        { wch: 15 }, // Mobile
-        { wch: 15 }, // Model
-        { wch: 15 }, // Stage
-        { wch: 10 }, // Interest
-        { wch: 20 }, // Assigned To
-        { wch: 12 }, // Enquiry Date
-        { wch: 10 }, // Channel
-        { wch: 15 }, // Source
-        { wch: 15 }, // Next Follow-up
-        { wch: 15 }, // Last Follow-up
-        { wch: 30 }, // Remarks
-        { wch: 40 }, // Follow up Remark
-      ];
     } else {
+      const isTeleMetaView = view.startsWith("meta") || String(filters?.channel || "").includes("TELE") || String(filters?.channel || "").includes("SOCIAL");
       widths = [
-        { wch: 15 }, // Enquiry No
-        { wch: 25 }, // Customer Name
-        { wch: 15 }, // Mobile
-        { wch: 15 }, // Model
-        { wch: 15 }, // Stage
+        { wch: 6  }, // S.No
+        { wch: 18 }, // Enquiry No
+        { wch: 28 }, // Customer Name
+        { wch: 16 }, // Mobile
+        { wch: 18 }, // Model
+        { wch: 20 }, // Stage
         { wch: 10 }, // Interest
-        { wch: 20 }, // Assigned To
-        { wch: 15 }, // Last Follow-up
-        { wch: 15 }, // Next Follow-up
-        ...(view === "overdue" ? [{ wch: 12 }] : []), // Overdue Days
-        { wch: 40 }, // Remarks (Wider for focus)
-        { wch: 40 }, // Follow up Remark
+        { wch: 22 }, // Assigned To
+        { wch: 18 }, // Branch
+        { wch: 18 }, // Source
+        { wch: 12 }, // Channel
+        { wch: 14 }, // Enquiry Date
+        { wch: 20 }, // Created At
+        { wch: 18 }, // Updated By
+        ...(isTeleMetaView ? [
+          { wch: 20 }, // Call Status
+          { wch: 30 }, // Meta Form
+          { wch: 16 }, // Hirise Status
+          { wch: 20 }, // Hirise Enquiry No
+        ] : []),
+        { wch: 20 }, // Next/Last Follow-up
+        { wch: 20 }, // Last/Next Follow-up
+        ...(view === "overdue" ? [{ wch: 14 }] : []),
+        { wch: 40 }, // Telecaller Remark
+        { wch: 40 }, // Follow-up Remark
+        { wch: 40 }, // Remarks
+        // F1, F2... dynamic followup columns (5 cols each)
+        ...Array.from({ length: maxFollowups }, () => [
+          { wch: 14 }, // Date
+          { wch: 12 }, // Channel
+          { wch: 16 }, // Outcome
+          { wch: 40 }, // Remark
+          { wch: 14 }, // Next Action
+        ]).flat(),
       ];
     }
     sheet["!cols"] = widths;
