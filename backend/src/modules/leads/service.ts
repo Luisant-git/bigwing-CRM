@@ -236,6 +236,7 @@ export class LeadService {
             { customer: { firstName: { contains: q, mode: "insensitive" } } },
             { customer: { lastName: { contains: q, mode: "insensitive" } } },
             { customer: { mobile: { contains: q } } },
+            { customer: { location: { contains: q, mode: "insensitive" } } },
           ],
         }] : []),
       ]
@@ -553,6 +554,7 @@ async getByPhoneNumber(phoneNo: string) {
             { customer: { firstName: { contains: q, mode: "insensitive" } } },
             { customer: { lastName: { contains: q, mode: "insensitive" } } },
             { customer: { mobile: { contains: q } } },
+            { customer: { location: { contains: q, mode: "insensitive" } } },
           ],
         }] : []),
       ]
@@ -683,6 +685,7 @@ async getByPhoneNumber(phoneNo: string) {
               { customer: { firstName: { contains: q, mode: "insensitive" } } },
               { customer: { lastName: { contains: q, mode: "insensitive" } } },
               { customer: { mobile: { contains: q } } },
+              { customer: { location: { contains: q, mode: "insensitive" } } },
             ],
           }] : []),
         ]
@@ -772,6 +775,7 @@ async getByPhoneNumber(phoneNo: string) {
               { customer: { firstName: { contains: q, mode: "insensitive" } } },
               { customer: { lastName: { contains: q, mode: "insensitive" } } },
               { customer: { mobile: { contains: q } } },
+              { customer: { location: { contains: q, mode: "insensitive" } } },
             ],
           }] : []),
         ]
@@ -879,6 +883,7 @@ async getByPhoneNumber(phoneNo: string) {
         "Enquiry No": l.enquiryNo,
         "Customer Name": `${l.customer?.firstName} ${l.customer?.lastName ?? ""}`.trim(),
         "Mobile": l.customer?.mobile,
+        "Location": l.customer?.location || "",
         "Model": l.model || "",
         "Stage": stageMap[l.stage] || l.stage?.replace(/_/g, " "),
         "Interest": l.interestLevel || "",
@@ -952,6 +957,7 @@ async getByPhoneNumber(phoneNo: string) {
         { wch: 18 }, // Enquiry No
         { wch: 28 }, // Customer Name
         { wch: 16 }, // Mobile
+        { wch: 20 }, // Location
         { wch: 18 }, // Model
         { wch: 20 }, // Stage
         { wch: 10 }, // Interest
@@ -1047,6 +1053,7 @@ async getByPhoneNumber(phoneNo: string) {
             firstName: l.customer.firstName,
             lastName: l.customer.lastName,
             mobile: l.customer.mobile,
+            location: l.customer.location,
           }
         : undefined,
       channel: l.channel,

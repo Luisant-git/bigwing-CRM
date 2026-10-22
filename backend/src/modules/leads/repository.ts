@@ -10,6 +10,7 @@ const listIncludes = {
       firstName: true, 
       lastName: true, 
       mobile: true,
+      location: true,
       leads: {
         where: { dmsEnquiryNo: { not: null }, isDeleted: false },
         select: { dmsEnquiryNo: true },

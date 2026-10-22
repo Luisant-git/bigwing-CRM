@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { Kanban } from "lucide-react";
+import { Kanban, MapPin } from "lucide-react";
 import api from "@/lib/api";
 import { InterestBadge } from "@/components/interest-badge";
 import { Breadcrumb } from "@/components/ui";
@@ -131,6 +131,12 @@ export default function PipelineBoardPage() {
                       {lead.interestLevel && <InterestBadge level={lead.interestLevel} size="sm" />}
                     </div>
                     <p className="mt-0.5 text-[11px] text-gray-400">{lead.customer?.mobile}</p>
+                    {lead.customer?.location && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] font-medium text-gray-500 truncate" title={lead.customer.location}>
+                        <MapPin size={10} className="text-gray-400 shrink-0" />
+                        <span className="truncate">{lead.customer.location}</span>
+                      </p>
+                    )}
                     {lead.model && (
                       <p className="mt-1 text-[12px] font-medium text-gray-600">{lead.model}</p>
                     )}

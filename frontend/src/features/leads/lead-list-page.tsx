@@ -7,7 +7,7 @@ import {
   Flame, Sun, Snowflake, Search, TrendingUp,
   Download, Loader2, MessageCircle, Trash2,
   CheckCircle, XCircle, Clock,
-  Building, Wrench, Headset, Megaphone
+  Building, Wrench, Headset, Megaphone, MapPin
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate, formatDateTime, formatDateTimeShort, STAGE_COLORS, STAGE_LABELS, useLookup, useUsers, useSessionState } from "@/lib/hooks";
@@ -324,7 +324,7 @@ export default function LeadListPage() {
       sortable: true,
       render: (l) => (
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#1F3864] to-[#2E75B6] text-[10px] font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#1F3864] to-[#2E75B6] text-[10px] font-bold text-white shrink-0">
             {l.customer?.firstName?.[0]}{l.customer?.lastName?.[0] ?? ""}
           </div>
           <div className="min-w-0">
@@ -332,6 +332,12 @@ export default function LeadListPage() {
               {l.customer?.firstName} {l.customer?.lastName ?? ""}
             </p>
             <p className="truncate text-[11px] text-gray-400">{l.customer?.mobile}</p>
+            {l.customer?.location && (
+              <p className="truncate text-[11px] font-medium text-gray-500 flex items-center gap-1 mt-0.5" title={l.customer.location}>
+                <MapPin size={11} className="text-gray-400 shrink-0" />
+                <span className="truncate">{l.customer.location}</span>
+              </p>
+            )}
           </div>
         </div>
       ),
