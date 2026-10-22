@@ -54,6 +54,20 @@ export class CustomerRepository {
   async update(id: bigint, data: any) {
     return prisma.customer.update({ where: { id }, data });
   }
+
+  async getDistinctLocations() {
+    const brand = brandContext.getStore() || "BIGWING";
+    return prisma.customer.findMany({
+      where: {
+        brand,
+        isDeleted: false,
+        location: { not: null },
+      },
+      select: { location: true },
+      distinct: ["location"],
+      orderBy: { location: "asc" },
+    });
+  }
 }
 
 export const customerRepository = new CustomerRepository();

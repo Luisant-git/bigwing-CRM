@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Plus, Search, UserCircle, Users,
-  TrendingUp, Repeat, Building2,
+  TrendingUp, Repeat, Building2, MapPin, ChevronDown, X,
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/hooks";
@@ -15,12 +15,30 @@ export default function CustomerListPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
+  const [locationFilter, setLocationFilter] = useState("");
   const [tab, setTab] = useState<"all" | "crm" | "meta">("all");
 
+  const { data: locationsData } = useQuery({
+    queryKey: ["customer-locations"],
+    queryFn: () => api.get("/customers/locations").then((r) => r.data.data),
+    staleTime: 5 * 60 * 1000,
+  });
+  const locations: string[] = locationsData ?? [];
+
   const { data, isLoading } = useQuery({
-    queryKey: ["customers", { page, pageSize, q: search, tab }],
+    queryKey: ["customers", { page, pageSize, q: search, tab, location: locationFilter }],
     queryFn: () =>
-      api.get("/customers", { params: { page, pageSize, q: search || undefined, tab: tab !== "all" ? tab : undefined } }).then((r) => r.data),
+      api
+        .get("/customers", {
+          params: {
+            page,
+            pageSize,
+            q: search || undefined,
+            tab: tab !== "all" ? tab : undefined,
+            location: locationFilter || undefined,
+          },
+        })
+        .then((r) => r.data),
   });
 
   const customers = data?.data ?? [];
@@ -50,6 +68,20 @@ export default function CustomerListPage() {
         </div>
       ),
       sortValue: (c) => `${c.firstName} ${c.lastName}`,
+    },
+    {
+      key: "location",
+      label: "Location",
+      sortable: true,
+      render: (c) => c.location ? (
+        <span className="inline-flex items-center gap-1.5 text-gray-700 font-medium">
+          <MapPin size={13} className="text-gray-400 shrink-0" />
+          <span>{c.location}</span>
+        </span>
+      ) : (
+        <span className="text-gray-300">—</span>
+      ),
+      sortValue: (c) => c.location ?? "",
     },
     {
       key: "mobile",
@@ -97,7 +129,7 @@ export default function CustomerListPage() {
         <SummaryCard label="Institutional" value={institutional} icon={Building2} color="#9B59B6" />
       </div>
 
-      {/* Search */}
+      {/* Search & Filters */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* Tabs */}
         <div className="flex w-full sm:w-auto overflow-x-auto no-scrollbar gap-1 rounded-lg bg-gray-100 p-1">
@@ -120,15 +152,63 @@ export default function CustomerListPage() {
           ))}
         </div>
 
-        <div className="relative w-full sm:w-auto">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name or mobile..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="w-full sm:w-72 rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          {/* Location Filter */}
+          <div className="relative w-full sm:w-52">
+            <MapPin size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <select
+              value={locationFilter}
+              onChange={(e) => {
+                setLocationFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-8 text-sm text-gray-700 focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+            >
+              <option value="">All Locations</option>
+              {locations.map((loc) => (
+                <option key={loc} value={loc}>
+                  {loc}
+                </option>
+              ))}
+            </select>
+            {locationFilter ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocationFilter("");
+                  setPage(1);
+                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="Clear location filter"
+              >
+                <X size={14} />
+              </button>
+            ) : (
+              <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            )}
+          </div>
+
+          {/* Search bar */}
+          <div className="relative w-full sm:w-72">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, mobile, location..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="w-full rounded-lg border border-gray-200 bg-white pl-9 pr-8 py-2 text-sm focus:border-[#2E75B6] focus:outline-none focus:ring-2 focus:ring-[rgba(46,117,182,0.1)]"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => { setSearch(""); setPage(1); }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

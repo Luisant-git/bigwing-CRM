@@ -268,7 +268,8 @@ app.get("/api/docs/openapi.json", (_req, res) => {
           parameters: [
             { name: "page", in: "query", schema: { type: "integer", default: 1 } },
             { name: "pageSize", in: "query", schema: { type: "integer", default: 25, maximum: 200 } },
-            { name: "q", in: "query", schema: { type: "string" }, description: "Search by name or mobile" },
+            { name: "q", in: "query", schema: { type: "string" }, description: "Search by name, mobile, or location" },
+            { name: "location", in: "query", schema: { type: "string" }, description: "Filter by location" },
           ],
           responses: { "200": { description: "Customer list with pagination meta" } },
         },

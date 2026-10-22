@@ -169,6 +169,7 @@ export const leadListQuerySchema = paginationSchema.extend({
 
 export const customerListQuerySchema = paginationSchema.extend({
   tab: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
+  location: z.preprocess((v) => v === "" ? undefined : v, z.string().optional()),
 });
 
 // ─── Vehicle Catalogue (admin CRUD) ────────────────────────────

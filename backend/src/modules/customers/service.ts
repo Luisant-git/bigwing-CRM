@@ -1,3 +1,5 @@
+import { prisma } from "@bigwing/db";
+import { brandContext } from "../../middlewares/brand.js";
 import { customerRepository } from "./repository.js";
 import { AppError } from "../../middlewares/errorHandler.js";
 import { auditService } from "../audit/service.js";
@@ -5,7 +7,7 @@ import { auditService } from "../audit/service.js";
 const ALL_DATA_ROLES = ["SUPER_ADMIN", "ADMIN"];
 
 export class CustomerService {
-  async list(page: number, pageSize: number, q?: string, tab?: string, user?: any) {
+  async list(page: number, pageSize: number, q?: string, tab?: string, user?: any, location?: string) {
     const roles = user?.roles || [];
     const canSeeAll = roles.some((r: string) => ALL_DATA_ROLES.includes(r));
 
@@ -30,7 +32,14 @@ export class CustomerService {
           { firstName: { contains: q, mode: "insensitive" } },
           { lastName: { contains: q, mode: "insensitive" } },
           { mobile: { contains: q } },
+          { location: { contains: q, mode: "insensitive" } },
         ],
+      });
+    }
+
+    if (location) {
+      where.AND.push({
+        location: { contains: location, mode: "insensitive" },
       });
     }
 
@@ -224,6 +233,27 @@ export class CustomerService {
           createdAt: l.createdAt,
         })) ?? [],
     };
+  }
+
+  async getLocations() {
+    const brand = brandContext.getStore() || "BIGWING";
+    const [custLocs, lookupLocs] = await Promise.all([
+      customerRepository.getDistinctLocations(),
+      prisma.location.findMany({
+        where: { brand, isActive: true },
+        select: { officeName: true },
+      }),
+    ]);
+    const set = new Set<string>();
+    for (const c of custLocs) {
+      const trimmed = c.location?.trim();
+      if (trimmed) set.add(trimmed);
+    }
+    for (const l of lookupLocs) {
+      const trimmed = l.officeName?.trim();
+      if (trimmed) set.add(trimmed);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }
 }
 

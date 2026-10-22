@@ -4,15 +4,25 @@ import { customerService } from "./service.js";
 export class CustomerController {
   async list(req: Request, res: Response, next: NextFunction) {
     try {
-      const { page, pageSize, q, tab } = req.query as any;
+      const { page, pageSize, q, tab, location } = req.query as any;
       const result = await customerService.list(
         Number(page) || 1,
         Number(pageSize) || 25,
         q as string,
         tab as string,
-        (req as any).user
+        (req as any).user,
+        location as string
       );
       res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getLocations(req: Request, res: Response, next: NextFunction) {
+    try {
+      const locations = await customerService.getLocations();
+      res.json({ success: true, data: locations });
     } catch (err) {
       next(err);
     }
